@@ -11,7 +11,10 @@ export default async function Home() {
       <p className="max-w-md text-lg text-zinc-600 dark:text-zinc-400">
         Freelance work and internships from MSMEs, for students.
       </p>
-      <div className="flex gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
+        <Link href="/opportunities" className={buttonVariants({ variant: "outline" })}>
+          Browse opportunities
+        </Link>
         {session ? (
           <Link href="/dashboard" className={buttonVariants()}>
             Go to dashboard

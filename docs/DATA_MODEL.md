@@ -58,9 +58,10 @@ Rules (ADR-020):
 - Create, edit, publish and reopen need an approved MSME; close and delete-draft are always allowed. Only drafts can be deleted.
 - Transitions: draft → published → closed → published (reopen). Publish/reopen refused when the deadline has passed. Status updates are conditional on the expected current status.
 - All writes are scoped to the session user's own MSME profile (`src/lib/opportunities.ts`).
-- Visibility rule for Phase 5: students see a listing only if it is `published`, its MSME is `approved`, and its deadline hasn't passed.
+- Visibility rule (Phase 5, `src/lib/search.ts`): a listing is public only when it is `published`, its MSME is `approved`, and its deadline hasn't passed (India time).
+- `embedding vector(384)`: all-MiniLM-L6-v2 of the title, type, skills and description. Written with raw SQL after each save. HNSW cosine index `opportunity_embedding_idx` (created in the migration; the schema's `@@index([embedding])` only stops Migrate from dropping it).
 
-## Planned (Phases 5–6)
+## Planned (Phase 6)
 
 - Application. See `plan/2026-09-25-mvp-initial-plan.md`.
 - StudentProfile N–N Opportunity via Application.

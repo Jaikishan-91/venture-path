@@ -14,6 +14,12 @@ export default async function StudentHomePage() {
 
   return (
     <RoleHome title="Student dashboard" name={session.user.name}>
+      <Link
+        href="/opportunities"
+        className={buttonVariants({ variant: "outline", className: "self-start" })}
+      >
+        Browse opportunities
+      </Link>
       {profile ? (
         <Card>
           <CardHeader>

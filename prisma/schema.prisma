@@ -158,9 +158,9 @@ enum PayPeriod {
 }
 
 model Opportunity {
-  id            String            @id @default(uuid())
+  id            String                      @id @default(uuid())
   msmeProfileId String
-  msmeProfile   MsmeProfile       @relation(fields: [msmeProfileId], references: [id], onDelete: Cascade)
+  msmeProfile   MsmeProfile                 @relation(fields: [msmeProfileId], references: [id], onDelete: Cascade)
   type          OpportunityType
   title         String
   description   String
@@ -173,14 +173,18 @@ model Opportunity {
   payPeriod     PayPeriod?
   duration      String?
   /// Last day applications are accepted (India time).
-  deadline      DateTime?         @db.Date
-  status        OpportunityStatus @default(draft)
+  deadline      DateTime?                   @db.Date
+  status        OpportunityStatus           @default(draft)
   publishedAt   DateTime?
   closedAt      DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  /// all-MiniLM-L6-v2 embedding of the listing text; written with raw SQL (`src/lib/search.ts`).
+  embedding     Unsupported("vector(384)")?
+  createdAt     DateTime                    @default(now())
+  updatedAt     DateTime                    @updatedAt
 
   @@index([msmeProfileId])
   @@index([status])
+  /// Placeholder so Migrate keeps the HNSW index created by hand in the search_embeddings migration.
+  @@index([embedding], map: "opportunity_embedding_idx")
   @@map("opportunity")
 }

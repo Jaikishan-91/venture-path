@@ -47,6 +47,7 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `/onboarding/role` | Signed in without a role |
 | `/student`, `/msme`, `/admin` | Signed in with that role; other roles are redirected to their own home |
 | `/student/profile`, `/msme/profile` | Signed in with that role; create or edit own profile |
+| `/opportunities`, `/opportunities/[id]` | Public. Search (`q`, `type`, `workMode`, `city`, `page`) and detail. Hidden listings (draft, closed, unapproved MSME, passed deadline) are absent; their detail URL is 404. |
 | `/msme/opportunities`, `/msme/opportunities/new`, `/msme/opportunities/[id]/edit` | MSME; own listings only (other IDs give 404); forms only for approved MSMEs |
 | `/admin/msmes?status=pending\|approved\|rejected` | Admin; MSME review list (default `pending`, max 100 per status) |
 

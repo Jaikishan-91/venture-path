@@ -42,7 +42,7 @@ Sign up at `/sign-up`; the verification email lands in Mailpit (http://localhost
 | App        | http://localhost:3000        | `npm run dev`                           |
 | Grafana    | http://localhost:3001        | admin / admin; Loki is pre-configured   |
 | Loki       | http://localhost:3100        | Readiness: `/ready`                     |
-| PostgreSQL | localhost:5432               | Credentials from `.env`                 |
+| PostgreSQL | localhost:5432               | pgvector image; credentials from `.env` |
 | Mailpit    | http://localhost:8025        | Catches outgoing email (SMTP on 1025)   |
 
 All service ports bind to `127.0.0.1` only.
@@ -56,6 +56,7 @@ To see app logs, open Grafana → Explore → Loki and run `{app="venturepath"}`
 | `npm run dev`          | Start the dev server with live reload         |
 | `npm run dev:next`     | Start `next dev` without nodemon              |
 | `npm run email:test -- you@gmail.com` | Send a test email with the current SMTP settings |
+| `npm run embeddings:backfill` | Embed listings that have no embedding yet |
 | `npm run build`        | Production build                              |
 | `npm run lint`         | ESLint                                        |
 | `npm run typecheck`    | Generate route types and run `tsc --noEmit`   |

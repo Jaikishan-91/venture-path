@@ -5,6 +5,7 @@ import {
   type OpportunityInput,
   type OpportunityStatus,
 } from "./opportunity-schemas";
+import { refreshOpportunityEmbedding } from "./search";
 
 export type OpportunityFailure = "not_approved" | "not_found" | "invalid_state" | "deadline_passed";
 export type OpportunityResult<T = object> =
@@ -23,6 +24,15 @@ const TRANSITIONS: Record<
 
 /** Scopes a query to listings owned by the MSME user `userId` (from the session). */
 const ownedBy = (userId: string) => ({ msmeProfile: { userId } });
+
+/** A failed embedding never fails the save; `npm run embeddings:backfill` fills gaps. */
+async function tryRefreshEmbedding(userId: string, opportunityId: string) {
+  try {
+    await refreshOpportunityEmbedding(opportunityId);
+  } catch (err) {
+    getLogger().error({ userId, opportunityId, err }, "opportunity embedding failed");
+  }
+}
 
 function getProfile(userId: string) {
   return getDb().msmeProfile.findUnique({ where: { userId }, select: { id: true, status: true } });
@@ -51,6 +61,7 @@ export async function createOpportunity(
     select: { id: true },
   });
   getLogger().info({ userId, opportunityId: id }, "opportunity created");
+  await tryRefreshEmbedding(userId, id);
   return { ok: true, id };
 }
 
@@ -68,6 +79,7 @@ export async function updateOpportunity(
   });
   if (count === 0) return { ok: false, reason: "not_found" };
   getLogger().info({ userId, opportunityId: id }, "opportunity updated");
+  await tryRefreshEmbedding(userId, id);
   return { ok: true };
 }
 

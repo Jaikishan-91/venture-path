@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-25 — Phase 5: Browse and search
+Added:
+- Public `/opportunities` (search, type, work mode, city, pagination) and `/opportunities/[id]`. Home page and the student dashboard link to them.
+- Postgres image switched to `pgvector/pgvector:0.8.6-pg18-trixie`. Migration `search_embeddings` enables `vector`, adds `opportunity.embedding vector(384)` and an HNSW cosine index.
+- Local embeddings with `@huggingface/transformers` (`all-MiniLM-L6-v2`, cached in `.cache/models`). Hybrid ranking: semantic similarity plus keyword matches on title, skills, business name and description (ADR-021).
+- `npm run embeddings:backfill` fills listings saved while embedding failed.
+- Tests: search-parameter unit tests; search integration tests (visibility, filters, semantic match, keyword ranking) against the real model; Playwright browse flow.
+
 ## 2026-09-25 — Phase 4: Opportunities
 Added:
 - Migration `opportunities`: `opportunity` table and enums `OpportunityType`, `OpportunityStatus`, `WorkMode`, `PayType`, `PayPeriod`.

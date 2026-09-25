@@ -47,3 +47,6 @@ Thumbs.db
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# Transformers.js model cache
+/.cache/

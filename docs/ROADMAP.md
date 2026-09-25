@@ -7,9 +7,9 @@ Current:
 - Phase 2 (profiles) shipped 2026-09-25: `plan/2026-09-25-phase-2-profiles.md`.
 - Phase 3 (admin approval) shipped 2026-09-25: `plan/2026-09-25-phase-3-admin-approval.md`.
 - Phase 4 (opportunities) shipped 2026-09-25: `plan/2026-09-25-phase-4-opportunities.md`.
+- Phase 5 (browse and search) shipped 2026-09-25: `plan/2026-09-25-phase-5-browse-search.md`.
 
 Next (MVP phases, in order):
-5. Browse and search.
 6. Applications (apply, accept/reject, status tracking).
 
 Later:

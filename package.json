@@ -19,10 +19,12 @@
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "email:test": "tsx scripts/send-test-email.ts",
+    "embeddings:backfill": "tsx scripts/backfill-embeddings.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@huggingface/transformers": "^4.3.0",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "better-auth": "^1.7.6",
