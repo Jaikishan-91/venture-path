@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { ONBOARDING_PATH, homePathFor, isRole, signupRoleSchema } from "@/lib/roles";
+import {
+  ONBOARDING_PATH,
+  homePathFor,
+  isAuthPage,
+  isRole,
+  signInPathForArea,
+  signupRoleSchema,
+} from "@/lib/roles";
 
 describe("signupRoleSchema", () => {
-  it("accepts student and msme", () => {
-    expect(signupRoleSchema.parse("student")).toBe("student");
-    expect(signupRoleSchema.parse("msme")).toBe("msme");
+  it("accepts user and organisation", () => {
+    expect(signupRoleSchema.parse("user")).toBe("user");
+    expect(signupRoleSchema.parse("organisation")).toBe("organisation");
   });
 
   it("rejects admin and unknown values", () => {
@@ -16,8 +23,8 @@ describe("signupRoleSchema", () => {
 
 describe("homePathFor", () => {
   it("maps each role to its home page", () => {
-    expect(homePathFor("student")).toBe("/student");
-    expect(homePathFor("msme")).toBe("/msme");
+    expect(homePathFor("user")).toBe("/user");
+    expect(homePathFor("organisation")).toBe("/organisation");
     expect(homePathFor("admin")).toBe("/admin");
   });
 
@@ -32,5 +39,26 @@ describe("isRole", () => {
     expect(isRole("admin")).toBe(true);
     expect(isRole("root")).toBe(false);
     expect(isRole(null)).toBe(false);
+  });
+});
+
+describe("signInPathForArea", () => {
+  it("sends each protected area to its own sign-in page", () => {
+    expect(signInPathForArea("/organisation")).toBe("/organisation/sign-in");
+    expect(signInPathForArea("/organisation/opportunities/new")).toBe("/organisation/sign-in");
+    expect(signInPathForArea("/admin/settings")).toBe("/admin/sign-in");
+    expect(signInPathForArea("/user/applications")).toBe("/sign-in");
+    expect(signInPathForArea("/dashboard")).toBe("/sign-in");
+    expect(signInPathForArea("/organisations-fake")).toBe("/sign-in");
+  });
+});
+
+describe("isAuthPage", () => {
+  it("lets sign-in and sign-up pages through the proxy", () => {
+    expect(isAuthPage("/organisation/sign-in")).toBe(true);
+    expect(isAuthPage("/organisation/sign-up")).toBe(true);
+    expect(isAuthPage("/admin/sign-in")).toBe(true);
+    expect(isAuthPage("/organisation/profile")).toBe(false);
+    expect(isAuthPage("/admin/sign-in/extra")).toBe(false);
   });
 });

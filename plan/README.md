@@ -12,5 +12,10 @@ All implementation plans are stored here. See `AGENTS.md` → Project Operating 
 | 2026-09-25 | [Phase 4 — Opportunities](2026-09-25-phase-4-opportunities.md) | shipped |
 | 2026-09-25 | [Phase 5 — Browse and search](2026-09-25-phase-5-browse-search.md) | shipped |
 | 2026-09-25 | [Phase 6 — Applications](2026-09-25-phase-6-applications.md) | shipped |
+| 2026-09-25 | [Phase 7 — AI resume analysis](2026-09-25-phase-7-openai-resume-analysis.md) | shipped |
 | 2026-09-25 | [Docker build fix](2026-09-25-docker-build-fix.md) | shipped |
 | 2026-09-25 | [Careers UI](2026-09-25-careers-ui.md) | shipped |
+| 2026-09-26 | [Phase 7 hardening](2026-09-26-phase-7-hardening.md) | shipped |
+| 2026-09-26 | [Rename and per-role sign-in](2026-09-26-rename-and-role-auth.md) | shipped |
+| 2026-09-26 | [Toasts and Docker dev](2026-09-26-toasts-and-docker-dev.md) | shipped |
+| 2026-09-26 | [Resume library, AI skills, recommendations and screening](2026-09-26-resume-library-and-screening.md) | proposed |

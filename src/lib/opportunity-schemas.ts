@@ -92,11 +92,11 @@ const fields = z.object({
   payPeriod: z.string().default(""),
   duration: optionalText("the duration", 60),
   deadline: z.string().trim().default(""),
-  requirements: optionalText("the requirements", 2000),
+  requirements: z.string().default("").pipe(optionalText("the requirements", 2000)),
   experienceLevel: z
     .string()
-    .trim()
-    .transform((value) => value || null)
+    .default("")
+    .transform((value) => value.trim() || null)
     .pipe(z.enum(EXPERIENCE_LEVELS, "Choose an experience level").nullable()),
   compensationMin: z.string().trim().default(""),
   compensationMax: z.string().trim().default(""),
@@ -158,8 +158,8 @@ export const opportunitySchema = fields.transform((input, ctx) => {
     deadline,
     requirements: input.requirements,
     experienceLevel: input.experienceLevel,
-    compensationMin: parseCompensation(input.compensationMin),
-    compensationMax: parseCompensation(input.compensationMax),
+    compensationMin,
+    compensationMax,
   };
 });
 export type OpportunityInput = z.output<typeof opportunitySchema>;

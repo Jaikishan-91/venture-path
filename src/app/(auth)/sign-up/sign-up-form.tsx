@@ -1,19 +1,32 @@
 "use client";
 
+import { useActionErrorToast } from "@/components/use-action-error-toast";
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { GoogleButton } from "@/components/google-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import { SIGN_IN_PATHS, type SignupRole } from "@/lib/roles";
 import { signUp, type SignUpState } from "./actions";
 
-export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
-  const [state, action, pending] = useActionState<SignUpState, FormData>(signUp, {
+const COPY: Record<SignupRole, { title: string; description: string }> = {
+  user: { title: "Create your account", description: "Find freelance work and internships." },
+  organisation: {
+    title: "Create an organisation account",
+    description:
+      "Post freelance work and internships. An admin approves your organisation before its listings go live.",
+  },
+};
+
+export function SignUpForm({ role, googleEnabled }: { role: SignupRole; googleEnabled: boolean }) {
+  const [state, action, pending] = useActionState<SignUpState, FormData>(signUp.bind(null, role), {
     status: "idle",
   });
+  useActionErrorToast(state);
 
   if (state.status === "sent") {
     return <CheckInbox email={state.email} />;
@@ -22,22 +35,13 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create your account</CardTitle>
-        <CardDescription>Find work as a student, or post it as an MSME.</CardDescription>
+        <CardTitle>{COPY[role].title}</CardTitle>
+        <CardDescription>{COPY[role].description}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <form action={action} className="flex flex-col gap-4">
-          <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-sm font-medium">I am</legend>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="radio" name="role" value="student" defaultChecked /> A student
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="radio" name="role" value="msme" /> An MSME (business)
-            </label>
-          </fieldset>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{role === "organisation" ? "Your name" : "Name"}</Label>
             <Input id="name" name="name" autoComplete="name" required maxLength={100} />
           </div>
           <div className="flex flex-col gap-2">
@@ -56,19 +60,14 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
               maxLength={128}
             />
           </div>
-          {state.status === "error" && (
-            <p role="alert" className="text-sm text-destructive">
-              {state.message}
-            </p>
-          )}
           <Button type="submit" disabled={pending}>
             {pending ? "Creating account…" : "Create account"}
           </Button>
         </form>
-        {googleEnabled && <GoogleButton />}
+        {googleEnabled && <GoogleButton role={role} />}
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/sign-in" className="underline">
+          <Link href={SIGN_IN_PATHS[role]} className="underline">
             Sign in
           </Link>
         </p>
@@ -78,12 +77,18 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
 }
 
 function CheckInbox({ email }: { email: string }) {
-  const [resend, setResend] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    toast.success(`Account created. We sent a verification link to ${email}.`);
+  }, [email]);
 
   async function onResend() {
-    setResend("sending");
+    setSending(true);
     const { error } = await authClient.sendVerificationEmail({ email, callbackURL: "/dashboard" });
-    setResend(error ? "error" : "sent");
+    setSending(false);
+    if (error) toast.error("Couldn't resend right now. Try again in a minute.");
+    else toast.success("Verification email sent again.");
   }
 
   return (
@@ -95,15 +100,9 @@ function CheckInbox({ email }: { email: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        <Button variant="outline" onClick={onResend} disabled={resend === "sending"}>
+        <Button variant="outline" onClick={onResend} disabled={sending}>
           Resend verification email
         </Button>
-        {resend === "sent" && <p className="text-sm text-muted-foreground">Sent again.</p>}
-        {resend === "error" && (
-          <p role="alert" className="text-sm text-destructive">
-            Couldn&apos;t resend right now. Try again in a minute.
-          </p>
-        )}
       </CardContent>
     </Card>
   );

@@ -22,17 +22,17 @@ afterAll(async () => {
 describe("assignInitialRole", () => {
   it("sets the role of a user who has none", async () => {
     const user = await createUser();
-    expect(await assignInitialRole(user.id, "student")).toBe(true);
+    expect(await assignInitialRole(user.id, "user")).toBe(true);
     const stored = await getDb().user.findUniqueOrThrow({ where: { id: user.id } });
-    expect(stored.role).toBe("student");
+    expect(stored.role).toBe("user");
   });
 
   it("never overwrites an existing role", async () => {
     const user = await createUser();
-    await assignInitialRole(user.id, "msme");
-    expect(await assignInitialRole(user.id, "student")).toBe(false);
+    await assignInitialRole(user.id, "organisation");
+    expect(await assignInitialRole(user.id, "user")).toBe(false);
     const stored = await getDb().user.findUniqueOrThrow({ where: { id: user.id } });
-    expect(stored.role).toBe("msme");
+    expect(stored.role).toBe("organisation");
   });
 
   it("refuses admin and unknown roles", async () => {

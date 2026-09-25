@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeaderAuthLinks } from "@/components/auth-nav-links";
 import { getSession } from "@/lib/authz";
 import { homePathFor, isRole } from "@/lib/roles";
 
@@ -38,9 +39,7 @@ export async function SiteHeader({ tone = "plain" }: { tone?: "plain" | "hero" }
             Dashboard
           </Link>
         ) : (
-          <Link href="/sign-in" className={signInClass}>
-            Sign in
-          </Link>
+          <HeaderAuthLinks linkClass={linkClass} signInClass={signInClass} />
         )}
       </nav>
     </header>

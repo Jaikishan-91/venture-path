@@ -1,5 +1,60 @@
 # Changelog
 
+## 2026-09-26 — Toast notifications; live Docker development
+
+Added:
+- Toasts for every alert and notification (ADR-027): form errors, sign-in errors (with a "Go there" action for the wrong sign-in page), `?error=` messages, and success messages for sign-in, sign-out, role choice, profile saves, listing saves and status changes, applying, withdrawing, accepting and rejecting, admin reviews, prompt saves, re-analysis and verification emails. Themed with the app palette; full width on phones.
+- `src/lib/flash.ts` (`flash()`), `src/components/app-toaster.tsx`, `src/components/use-action-error-toast.ts`. Dependency: `sonner` 2.0.8.
+- `npm run docker:dev`: Docker development with Compose watch; code changes sync into the container and hot-reload (ADR-028). `npm run docker:prod` for the production image.
+- Header and footer hide the link to the sign-in/sign-up area you are on (e.g. no "For organisations" on the organisation sign-in page, which offers "User sign in" instead).
+- Tests: `tests/flash.test.ts`; e2e success toasts after a redirect and after an in-place action; phone-width checks (no sideways scroll, toast on screen).
+
+Changed:
+- The production `next` service runs only with `--profile prod`; `docker compose up -d` starts only Postgres, Loki, Grafana and Mailpit.
+- `.dockerignore` excludes `.env*`, the Google client secret file and host build output, so images no longer contain secrets.
+- Withdrawing and accepting/rejecting now report failures, which were silently ignored before.
+
+Fixed:
+- Search embeddings failed in every Docker image: `onnxruntime-node` needs glibc (`ld-linux-x86-64.so.2`) and the images were built on `node:22-alpine` (musl), so new listings got no embedding and semantic search missed them. All Dockerfile stages now use `node:22-bookworm-slim`, with OpenSSL installed for Prisma.
+
+## 2026-09-26 — Organisation/user rename; sign-in and sign-up per role
+
+Changed:
+- MSME is now "organisation" and student is now "user" in the UI, emails, routes, code and database (ADR-025). Migration `rename_roles` renames enum values, tables, columns, keys and indexes in place. `/student/*`, `/msme/*`, `/admin/msmes` redirect to `/user/*`, `/organisation/*`, `/admin/organisations`.
+- Signed-out visitors are sent to the sign-in page of the area they asked for.
+
+Added:
+- `/organisation/sign-in`, `/organisation/sign-up`, `/admin/sign-in`; `/sign-in` and `/sign-up` are for users and no longer ask for a role (ADR-026).
+- Each sign-in page accepts only its own account type, after checking the password; Google sign-in is checked by `/auth/continue`.
+- Header link "For organisations"; footer links to organisation sign-up and admin sign-in.
+- Tests: `tests/role-sign-in.test.ts`, path helpers in `tests/roles.test.ts`; e2e for per-area redirects, wrong-role refusal, the admin page and old-URL redirects.
+- Requirements NFR-3 (toast notifications themed to the app, not built yet) and NFR-4 (mobile, tablet and desktop).
+
+## 2026-09-26 — Phase 7 hardening (resume analysis)
+
+Fixed:
+- Re-analysis, and analysis after a withdraw-and-reapply, failed on the unique `analysis.applicationId`; results are now upserted.
+- Any MSME could trigger analysis of any application by ID; re-analysis now requires owning the listing (`reanalyzeForMsme`).
+- Accept/Reject redirected to `/msme/opportunities`; it again refreshes the applicants page (Phase 6 behaviour, `e2e/applications.spec.ts`).
+- An invalid `LLM_PROVIDER` (e.g. `enabled`) or a missing `LLM_BASE_URL` threw while rendering the applicants page; it now logs a warning and disables AI features.
+- PDF resumes are now read (`unpdf` 1.8.1). DOCX reading used wrong ZIP header offsets and split words across runs; DOC scanning kept only the first run of text.
+- Non-integer LLM scores broke the insert; scores are rounded.
+- The seeded prompts contained a literal `
+`; migration `fix_prompt_newlines` fixes unedited rows.
+- Saving a prompt whose row was missing failed; it now creates the row.
+- `requirements` and `experienceLevel` were required by the listing schema when absent from the form data (broke 14 unit tests); they default to empty.
+- `import "server-only"` broke Vitest; `vitest.config.mts` maps it to a stub.
+
+Changed:
+- The LLM gets a system message treating listing and resume as data; resume text is wrapped in `<resume>` tags.
+- Tests force `LLM_PROVIDER=disabled`; the Vitest timeout is 30 s because the embedding model loads per test file.
+
+Added:
+- `tests/llm.test.ts` (config, prompt building, output parsing) and `tests/resume-analysis.test.ts` (PDF/DOCX/DOC extraction, upsert, ownership, parse errors, stubbed `fetch`).
+- ADR-023 and ADR-024. Phase 7 documented in `ARCHITECTURE.md`, `DATA_MODEL.md`, `API.md`.
+
+Correction to the Phase 7 entry below: the env vars are `LLM_PROVIDER` (`disabled` | `openai`), `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `LLM_FALLBACK_MODEL`, `LLM_MAX_TOKENS`, `LLM_TEMPERATURE` (there is no Azure/Anthropic mode or `OPENAI_API_KEY`), and the function is `analyzeResume(applicationId)`.
+
 ## 2026-09-25 — Careers UI
 
 Restyled the product as a hiring portal: forest-green and cream tokens, Newsreader headlines, a framed public layout, and a sidebar for signed-in student, MSME, and admin pages. Routes, form fields, and existing action labels are unchanged.

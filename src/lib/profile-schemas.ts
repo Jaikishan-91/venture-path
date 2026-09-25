@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const MSME_STATUSES = ["pending", "approved", "rejected"] as const;
-export type MsmeStatus = (typeof MSME_STATUSES)[number];
+export const ORGANISATION_STATUSES = ["pending", "approved", "rejected"] as const;
+export type OrganisationStatus = (typeof ORGANISATION_STATUSES)[number];
 
 export const MAX_SKILLS = 20;
 export const MAX_LINKS = 5;
@@ -47,7 +47,7 @@ export const skillList = (max: number) =>
         .max(max, `Add at most ${max} skills`),
     );
 
-export const studentProfileSchema = z.object({
+export const userProfileSchema = z.object({
   institution: requiredText("your institution", 120),
   course: requiredText("your course", 120),
   graduationYear: z.coerce
@@ -65,9 +65,9 @@ export const studentProfileSchema = z.object({
       .max(MAX_LINKS, `Add at most ${MAX_LINKS} links`),
   ),
 });
-export type StudentProfileInput = z.output<typeof studentProfileSchema>;
+export type UserProfileInput = z.output<typeof userProfileSchema>;
 
-export const msmeProfileSchema = z.object({
+export const organisationProfileSchema = z.object({
   businessName: requiredText("your business name", 120),
   description: requiredText("a description", 2000),
   industry: requiredText("your industry", 80),
@@ -78,25 +78,31 @@ export const msmeProfileSchema = z.object({
     .transform((value) => value || null)
     .pipe(webUrl("Website must be a full web address starting with https://").nullable()),
 });
-export type MsmeProfileInput = z.output<typeof msmeProfileSchema>;
+export type OrganisationProfileInput = z.output<typeof organisationProfileSchema>;
 
-const MSME_REVIEWED_FIELDS = [
+const ORGANISATION_REVIEWED_FIELDS = [
   "businessName",
   "description",
   "industry",
   "location",
   "website",
-] as const satisfies readonly (keyof MsmeProfileInput)[];
+] as const satisfies readonly (keyof OrganisationProfileInput)[];
 
-export function msmeProfileChanged(current: MsmeProfileInput, next: MsmeProfileInput): boolean {
-  return MSME_REVIEWED_FIELDS.some((field) => current[field] !== next[field]);
+export function organisationProfileChanged(
+  current: OrganisationProfileInput,
+  next: OrganisationProfileInput,
+): boolean {
+  return ORGANISATION_REVIEWED_FIELDS.some((field) => current[field] !== next[field]);
 }
 
 /**
- * Status after an MSME saves its profile. Any change to an approved profile, and any save of a
+ * Status after an organisation saves its profile. Any change to an approved profile, and any save of a
  * rejected one, sends it back for admin review.
  */
-export function nextMsmeStatus(current: MsmeStatus | null, changed: boolean): MsmeStatus {
+export function nextOrganisationStatus(
+  current: OrganisationStatus | null,
+  changed: boolean,
+): OrganisationStatus {
   if (current === "approved" && !changed) return "approved";
   return "pending";
 }

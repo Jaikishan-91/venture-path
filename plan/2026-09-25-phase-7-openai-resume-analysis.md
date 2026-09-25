@@ -1,6 +1,6 @@
 # Implementation Plan — Phase 7: OpenAI-compatible endpoints, resume analysis & job lifecycle
 
-Status: approved
+Status: shipped (hardened by `plan/2026-09-26-phase-7-hardening.md`)
 Parent plan: `plan/2026-09-25-mvp-initial-plan.md`
 
 User decisions:

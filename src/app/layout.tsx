@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
+import { Suspense } from "react";
+import { AppToaster } from "@/components/app-toaster";
+import { readFlash } from "@/lib/flash";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,10 +23,11 @@ const newsreader = Newsreader({
 
 export const metadata: Metadata = {
   title: "VenturePath",
-  description: "Freelance work and internships from MSMEs, for students.",
+  description: "Freelance work and internships from organisations, for users.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const flash = await readFlash();
   return (
     <html
       lang="en"
@@ -31,6 +35,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col bg-[#e8e9ec] font-sans text-foreground">
         {children}
+        {/* useSearchParams needs a Suspense boundary. */}
+        <Suspense>
+          <AppToaster flash={flash} />
+        </Suspense>
       </body>
     </html>
   );

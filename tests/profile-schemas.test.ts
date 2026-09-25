@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   maxGraduationYear,
-  msmeProfileChanged,
-  msmeProfileSchema,
-  nextMsmeStatus,
-  studentProfileSchema,
+  organisationProfileChanged,
+  organisationProfileSchema,
+  nextOrganisationStatus,
+  userProfileSchema,
 } from "@/lib/profile-schemas";
 
-const student = {
+const user = {
   institution: "  IIT Delhi ",
   course: "B.Tech CSE",
   graduationYear: "2027",
@@ -16,7 +16,7 @@ const student = {
   links: "https://github.com/someone\r\n\nhttps://linkedin.com/in/someone",
 };
 
-const msme = {
+const organisation = {
   businessName: "Acme Tools",
   description: "We make tools.",
   industry: "Manufacturing",
@@ -24,9 +24,9 @@ const msme = {
   website: "",
 };
 
-describe("studentProfileSchema", () => {
+describe("userProfileSchema", () => {
   it("normalises form input", () => {
-    expect(studentProfileSchema.parse(student)).toEqual({
+    expect(userProfileSchema.parse(user)).toEqual({
       institution: "IIT Delhi",
       course: "B.Tech CSE",
       graduationYear: 2027,
@@ -37,7 +37,7 @@ describe("studentProfileSchema", () => {
   });
 
   it("accepts empty skills and links", () => {
-    const parsed = studentProfileSchema.parse({ ...student, skills: "", links: "" });
+    const parsed = userProfileSchema.parse({ ...user, skills: "", links: "" });
     expect(parsed.skills).toEqual([]);
     expect(parsed.links).toEqual([]);
   });
@@ -57,19 +57,19 @@ describe("studentProfileSchema", () => {
     ["link without protocol", { links: "github.com/someone" }],
     ["bio too long", { bio: "x".repeat(1001) }],
   ])("rejects %s", (_name, override) => {
-    expect(studentProfileSchema.safeParse({ ...student, ...override }).success).toBe(false);
+    expect(userProfileSchema.safeParse({ ...user, ...override }).success).toBe(false);
   });
 });
 
-describe("msmeProfileSchema", () => {
+describe("organisationProfileSchema", () => {
   it("turns an empty website into null", () => {
-    expect(msmeProfileSchema.parse(msme).website).toBeNull();
+    expect(organisationProfileSchema.parse(organisation).website).toBeNull();
   });
 
   it("accepts an https website", () => {
-    expect(msmeProfileSchema.parse({ ...msme, website: "https://acme.in" }).website).toBe(
-      "https://acme.in",
-    );
+    expect(
+      organisationProfileSchema.parse({ ...organisation, website: "https://acme.in" }).website,
+    ).toBe("https://acme.in");
   });
 
   it.each([
@@ -78,28 +78,32 @@ describe("msmeProfileSchema", () => {
     ["javascript website", { website: "javascript:alert(1)" }],
     ["ftp website", { website: "ftp://acme.in" }],
   ])("rejects %s", (_name, override) => {
-    expect(msmeProfileSchema.safeParse({ ...msme, ...override }).success).toBe(false);
+    expect(organisationProfileSchema.safeParse({ ...organisation, ...override }).success).toBe(
+      false,
+    );
   });
 
   it("ignores a status field in the input", () => {
-    expect(msmeProfileSchema.parse({ ...msme, status: "approved" })).not.toHaveProperty("status");
+    expect(
+      organisationProfileSchema.parse({ ...organisation, status: "approved" }),
+    ).not.toHaveProperty("status");
   });
 });
 
-describe("msmeProfileChanged", () => {
-  const base = msmeProfileSchema.parse(msme);
+describe("organisationProfileChanged", () => {
+  const base = organisationProfileSchema.parse(organisation);
 
   it("is false for identical values", () => {
-    expect(msmeProfileChanged(base, { ...base })).toBe(false);
+    expect(organisationProfileChanged(base, { ...base })).toBe(false);
   });
 
   it("is true when any reviewed field differs", () => {
-    expect(msmeProfileChanged(base, { ...base, location: "Mumbai" })).toBe(true);
-    expect(msmeProfileChanged(base, { ...base, website: "https://acme.in" })).toBe(true);
+    expect(organisationProfileChanged(base, { ...base, location: "Mumbai" })).toBe(true);
+    expect(organisationProfileChanged(base, { ...base, website: "https://acme.in" })).toBe(true);
   });
 });
 
-describe("nextMsmeStatus", () => {
+describe("nextOrganisationStatus", () => {
   it.each([
     [null, false, "pending"],
     ["pending", false, "pending"],
@@ -109,6 +113,6 @@ describe("nextMsmeStatus", () => {
     ["rejected", false, "pending"],
     ["rejected", true, "pending"],
   ] as const)("%s with changed=%s gives %s", (current, changed, expected) => {
-    expect(nextMsmeStatus(current, changed)).toBe(expected);
+    expect(nextOrganisationStatus(current, changed)).toBe(expected);
   });
 });

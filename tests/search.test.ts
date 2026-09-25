@@ -12,14 +12,14 @@ const token = randomUUID().slice(0, 8);
 const businessName = `Search Co ${token}`;
 const city = `Searchpur ${token}`;
 
-async function createApprovedMsme() {
+async function createApprovedOrganisation() {
   return getDb().user.create({
     data: {
       id: randomUUID(),
-      name: "Search MSME",
+      name: "Search organisation",
       email: `${randomUUID()}@${EMAIL_DOMAIN}`,
-      role: "msme",
-      msmeProfile: {
+      role: "organisation",
+      organisationProfile: {
         create: {
           businessName,
           description: "A test business.",
@@ -64,7 +64,7 @@ async function publish(userId: string, input: OpportunityInput) {
 const ours = async (params: Parameters<typeof searchOpportunities>[0]) =>
   (await searchOpportunities(params)).results.filter((row) => row.businessName === businessName);
 
-let msmeId: string;
+let organisationId: string;
 let marketingId: string;
 let logoId: string;
 let draftId: string;
@@ -76,11 +76,11 @@ afterAll(async () => {
 
 describe("search", () => {
   it("embeds listings and applies the visibility rule", async () => {
-    const msme = await createApprovedMsme();
-    msmeId = msme.id;
+    const organisation = await createApprovedOrganisation();
+    organisationId = organisation.id;
 
     marketingId = await publish(
-      msme.id,
+      organisation.id,
       listing({
         title: "Social media marketing intern",
         description:
@@ -91,7 +91,7 @@ describe("search", () => {
       }),
     );
     logoId = await publish(
-      msme.id,
+      organisation.id,
       listing({
         type: "freelance",
         title: "Logo and brand identity",
@@ -101,11 +101,11 @@ describe("search", () => {
         payAmount: 20000,
       }),
     );
-    const draft = await createOpportunity(msme.id, listing({ title: "Secret draft" }));
+    const draft = await createOpportunity(organisation.id, listing({ title: "Secret draft" }));
     if (!draft.ok) throw new Error(draft.reason);
     draftId = draft.id;
 
-    const expiredId = await publish(msme.id, listing({ title: "Expired campaign" }));
+    const expiredId = await publish(organisation.id, listing({ title: "Expired campaign" }));
     await getDb().opportunity.update({
       where: { id: expiredId },
       data: { deadline: new Date("2000-01-01") },
@@ -116,17 +116,23 @@ describe("search", () => {
 
     expect(await getVisibleOpportunity(marketingId)).toMatchObject({
       title: expect.stringContaining("Social media"),
-      msmeProfile: { businessName },
+      organisationProfile: { businessName },
     });
     expect(await getVisibleOpportunity(draftId)).toBeNull();
     expect(await getVisibleOpportunity(expiredId)).toBeNull();
   });
 
-  it("hides listings when the MSME is no longer approved", async () => {
-    await getDb().msmeProfile.update({ where: { userId: msmeId }, data: { status: "pending" } });
+  it("hides listings when the organisation is no longer approved", async () => {
+    await getDb().organisationProfile.update({
+      where: { userId: organisationId },
+      data: { status: "pending" },
+    });
     expect(await ours({ q: token, type: null, workMode: null, city: null, page: 1 })).toEqual([]);
     expect(await getVisibleOpportunity(marketingId)).toBeNull();
-    await getDb().msmeProfile.update({ where: { userId: msmeId }, data: { status: "approved" } });
+    await getDb().organisationProfile.update({
+      where: { userId: organisationId },
+      data: { status: "approved" },
+    });
   });
 
   it("finds a listing from related words that never appear in it", async () => {

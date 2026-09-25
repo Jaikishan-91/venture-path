@@ -5,12 +5,13 @@ import { requireRole } from "@/lib/authz";
 import { applyToOpportunity, MAX_NOTE_LENGTH, withdrawApplication } from "@/lib/applications";
 import { getLogger } from "@/lib/logger";
 import { displayFileName, resumeExtension, resumeFileError } from "@/lib/resumes";
+import { flash } from "@/lib/flash";
 
 export type ApplyState =
   { status: "idle" } | { status: "error"; message: string } | { status: "done" };
 
 export async function applyAction(_prev: ApplyState, formData: FormData): Promise<ApplyState> {
-  const session = await requireRole("student");
+  const session = await requireRole("user");
   const opportunityId = formData.get("opportunityId");
   const note = formData.get("note");
   const file = formData.get("resume");
@@ -46,14 +47,19 @@ export async function applyAction(_prev: ApplyState, formData: FormData): Promis
     return { status: "error", message: "Something went wrong. Please try again." };
   }
 
+  await flash("success", "Application sent. The organisation will review it.");
   revalidatePath(`/opportunities/${opportunityId}`);
   return { status: "done" };
 }
 
 export async function withdrawAction(formData: FormData): Promise<void> {
-  const session = await requireRole("student");
+  const session = await requireRole("user");
   const id = formData.get("applicationId");
-  if (typeof id === "string") await withdrawApplication(session.user.id, id);
-  revalidatePath("/student/applications");
+  const result = typeof id === "string" ? await withdrawApplication(session.user.id, id) : null;
+  await flash(
+    result?.ok ? "success" : "error",
+    result?.ok ? "Application withdrawn." : "This application can no longer be withdrawn.",
+  );
+  revalidatePath("/user/applications");
   revalidatePath("/opportunities");
 }

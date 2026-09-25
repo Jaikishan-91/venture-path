@@ -2,13 +2,13 @@
 
 Name: VenturePath
 
-Purpose: A two-sided marketplace that connects students with MSMEs (Micro, Small and Medium Enterprises) so that MSMEs can post freelance work and internships, and students can discover and apply for them.
+Purpose: A two-sided marketplace that connects users with organisations (MSMEs: Micro, Small and Medium Enterprises; called "organisations" in the product since 2026-09-26, ADR-025) so that organisations can post freelance work and internships, and users can discover and apply for them.
 
 Core Functionality:
-- Student and MSME accounts/profiles.
-- MSMEs post freelance gigs and internships.
-- Students browse, search and apply for opportunities.
-- Two-way connection between students and MSMEs.
+- User and organisation accounts/profiles.
+- Organisations post freelance gigs and internships.
+- Users browse, search and apply for opportunities.
+- Two-way connection between users and organisations.
 - Detailed scope is being defined — see `docs/REQUIREMENTS.md` and `plan/`.
 
 Technology Stack:
@@ -23,4 +23,4 @@ Technology Stack:
 - Version control: Git (local repository; remote not yet configured).
 - See `docs/DECISIONS.md` ADR-001 to ADR-015.
 
-Current State: Phase 0 (foundation) and Phase 1 (authentication) shipped on 2026-09-25. Users can sign up as a student or MSME, verify their email, sign in, and reach a role-specific placeholder dashboard; an admin is created by a seed script. Google sign-in is enabled for local development. Next: Phase 2 (profiles). See `README.md` for local setup.
+Current State (2026-09-26): MVP phases 0–6 shipped (auth, profiles, admin approval of organisations, listings, public browse with semantic search, applications with resumes and emails), plus Phase 7: optional AI resume analysis with admin-editable prompts, and a careers-portal UI. Runs locally with Docker Compose; see `README.md`. Production hosting is not decided.

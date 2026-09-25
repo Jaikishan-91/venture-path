@@ -12,12 +12,12 @@ export async function RoleHome({
   children?: React.ReactNode;
 }) {
   const session = await getSession();
-  const role: Role = isRole(session?.user.role) ? session.user.role : "student";
+  const role: Role = isRole(session?.user.role) ? session.user.role : "user";
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-3.5 py-7">
       <div className="overflow-hidden rounded-[28px] bg-[#f7f7f9] shadow-[0_18px_40px_-28px_rgba(22,24,29,0.28)] md:flex md:min-h-[calc(100dvh-3.5rem)]">
-        <AppSidebar role={role} />
+        <AppSidebar role={role} name={name} />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="border-b border-[#ecedef] px-6 py-5">
             <h1 className="text-3xl font-medium tracking-tight text-[#26594a]">{title}</h1>

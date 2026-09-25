@@ -22,8 +22,8 @@ const TRANSITIONS: Record<
   reopen: { from: "closed", to: "published", needsApproval: true },
 };
 
-/** Scopes a query to listings owned by the MSME user `userId` (from the session). */
-const ownedBy = (userId: string) => ({ msmeProfile: { userId } });
+/** Scopes a query to listings owned by the organisation user `userId` (from the session). */
+const ownedBy = (userId: string) => ({ organisationProfile: { userId } });
 
 /** A failed embedding never fails the save; `npm run embeddings:backfill` fills gaps. */
 async function tryRefreshEmbedding(userId: string, opportunityId: string) {
@@ -35,7 +35,10 @@ async function tryRefreshEmbedding(userId: string, opportunityId: string) {
 }
 
 function getProfile(userId: string) {
-  return getDb().msmeProfile.findUnique({ where: { userId }, select: { id: true, status: true } });
+  return getDb().organisationProfile.findUnique({
+    where: { userId },
+    select: { id: true, status: true },
+  });
 }
 
 export function listOwnOpportunities(userId: string) {
@@ -57,7 +60,7 @@ export async function createOpportunity(
   if (profile?.status !== "approved") return { ok: false, reason: "not_approved" };
 
   const { id } = await getDb().opportunity.create({
-    data: { ...input, msmeProfileId: profile.id },
+    data: { ...input, organisationProfileId: profile.id },
     select: { id: true },
   });
   getLogger().info({ userId, opportunityId: id }, "opportunity created");
@@ -74,7 +77,7 @@ export async function updateOpportunity(
   if (profile?.status !== "approved") return { ok: false, reason: "not_approved" };
 
   const { count } = await getDb().opportunity.updateMany({
-    where: { id, msmeProfileId: profile.id },
+    where: { id, organisationProfileId: profile.id },
     data: input,
   });
   if (count === 0) return { ok: false, reason: "not_found" };
@@ -94,7 +97,7 @@ export async function changeOpportunityStatus(
   if (needsApproval && profile.status !== "approved") return { ok: false, reason: "not_approved" };
 
   const current = await getDb().opportunity.findFirst({
-    where: { id, msmeProfileId: profile.id },
+    where: { id, organisationProfileId: profile.id },
     select: { status: true, deadline: true },
   });
   if (!current) return { ok: false, reason: "not_found" };
@@ -105,7 +108,7 @@ export async function changeOpportunityStatus(
 
   const now = new Date();
   const { count } = await getDb().opportunity.updateMany({
-    where: { id, msmeProfileId: profile.id, status: from },
+    where: { id, organisationProfileId: profile.id, status: from },
     data:
       action === "publish"
         ? { status: to, publishedAt: now }

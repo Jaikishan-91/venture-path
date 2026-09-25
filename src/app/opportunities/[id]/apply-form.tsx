@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionErrorToast } from "@/components/use-action-error-toast";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,8 +11,9 @@ export function ApplyForm({ opportunityId }: { opportunityId: string }) {
   const [state, action, pending] = useActionState<ApplyState, FormData>(applyAction, {
     status: "idle",
   });
+  useActionErrorToast(state);
   if (state.status === "done")
-    return <p className="text-sm">Application sent. The MSME will review it.</p>;
+    return <p className="text-sm">Application sent. The organisation will review it.</p>;
 
   return (
     <form action={action} className="flex flex-col gap-3">
@@ -31,11 +33,6 @@ export function ApplyForm({ opportunityId }: { opportunityId: string }) {
         <Label htmlFor="note">Note (optional)</Label>
         <Textarea id="note" name="note" maxLength={1000} rows={4} />
       </div>
-      {state.status === "error" && (
-        <p role="alert" className="text-sm text-destructive">
-          {state.message}
-        </p>
-      )}
       <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Sending…" : "Apply"}
       </Button>

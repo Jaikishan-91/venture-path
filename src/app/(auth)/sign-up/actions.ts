@@ -5,25 +5,30 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { getAuth } from "@/lib/auth";
 import { getLogger } from "@/lib/logger";
-import { signupRoleSchema } from "@/lib/roles";
+import { signupRoleSchema, type SignupRole } from "@/lib/roles";
 import { assignInitialRole } from "@/lib/user-roles";
 
 const signUpSchema = z.object({
   name: z.string().trim().min(1, "Enter your name").max(100),
   email: z.email("Enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters").max(128),
-  role: signupRoleSchema,
 });
 
 export type SignUpState =
   { status: "idle" } | { status: "error"; message: string } | { status: "sent"; email: string };
 
-export async function signUp(_prev: SignUpState, formData: FormData): Promise<SignUpState> {
+export async function signUp(
+  pageRole: SignupRole,
+  _prev: SignUpState,
+  formData: FormData,
+): Promise<SignUpState> {
+  const role = signupRoleSchema.safeParse(pageRole);
+  if (!role.success) return { status: "error", message: "Unknown sign-up page." };
   const parsed = signUpSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: parsed.error.issues[0]?.message ?? "Check the form" };
   }
-  const { name, email, password, role } = parsed.data;
+  const { name, email, password } = parsed.data;
 
   try {
     const result = await getAuth().api.signUpEmail({
@@ -31,7 +36,7 @@ export async function signUp(_prev: SignUpState, formData: FormData): Promise<Si
       headers: await headers(),
     });
     // For an already-registered email Better Auth returns a placeholder user, so this is a no-op.
-    await assignInitialRole(result.user.id, role);
+    await assignInitialRole(result.user.id, role.data);
   } catch (err) {
     if (err instanceof APIError) {
       return { status: "error", message: err.message };

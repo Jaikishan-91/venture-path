@@ -1,6 +1,6 @@
 # VenturePath
 
-A marketplace where MSMEs post freelance work and internships, and students find and apply for them.
+A marketplace where organisations post freelance work and internships, and users find and apply for them.
 
 Project docs live in `docs/`; plans live in `plan/`.
 
@@ -49,23 +49,35 @@ All service ports bind to `127.0.0.1` only.
 
 To see app logs, open Grafana → Explore → Loki and run `{app="venturepath"}`.
 
-### Full Docker setup
+### Docker: live development
 
-For a fully containerized setup (no local Node.js needed):
+Runs the app in a container that picks up code changes without rebuilding:
 
 ```bash
-cp .env.example .env
-docker compose up -d --build
+npm run docker:dev    # = docker compose --profile dev up --build --watch next-dev
 ```
 
-The app builds as a standalone Next.js server. The `hf-cache` volume persists the HuggingFace model between container restarts. Database migrations must still be applied once:
+Compose watches the files on your machine and copies changes into the container, where `next dev` hot-reloads them (Compose "watch" mode; see `docs/DECISIONS.md` ADR-028).
+
+| You change | What happens |
+| --- | --- |
+| `src/**` | Synced; hot-reloaded in the browser |
+| `prisma/**`, `prisma7.config.ts` | Synced; nodemon regenerates the Prisma client and restarts `next dev`. Apply new migrations with `npm run db:migrate` on the host. |
+| `next.config.ts`, `nodemon.json` | Synced; the container restarts |
+| `package.json`, `package-lock.json` | The image is rebuilt (fresh `npm ci`) |
+| `.env` | Not watched (secrets stay out of the image). Recreate the container: stop `docker:dev` and run it again. |
+
+The container uses your `.env`, except that it reaches Postgres, Loki and Mailpit by their service names. Email goes out through the SMTP server in `.env` exactly as with `npm run dev`. The container reuses the embedding model in `.cache/models` on your machine (downloaded by the first `npm run dev` or `npm test`), so it needs no download. Stop with Ctrl+C.
+
+### Docker: production image
 
 ```bash
-docker compose run --rm next npx prisma migrate deploy
+npm run docker:prod   # = docker compose --profile prod up -d --build next
+docker compose run --rm next npx prisma migrate deploy   # once, and after new migrations
 docker compose run --rm next npm run db:seed
 ```
 
-For active development, prefer the `npm run dev` workflow above — it provides hot reload without rebuilding the image.
+The app builds as a standalone Next.js server; code changes need a rebuild. The `hf-cache` volume keeps the HuggingFace model between restarts. `docker:dev` and `docker:prod` both use port 3000, so run one at a time. Plain `docker compose up -d` starts only Postgres, Loki, Grafana and Mailpit.
 
 ## Scripts
 
@@ -84,6 +96,8 @@ For active development, prefer the `npm run dev` workflow above — it provides 
 | `npm run db:migrate`   | Create and apply a Prisma migration           |
 | `npm run db:seed`      | Create the admin account (safe to re-run)     |
 | `npm run db:studio`    | Open Prisma Studio                            |
+| `npm run docker:dev`   | Run the app in Docker with live code sync     |
+| `npm run docker:prod`  | Build and run the production image            |
 
 ## Notes
 

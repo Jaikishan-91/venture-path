@@ -1,11 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
-import { createPendingMsme, setMsmeStatus, signUpVerified, uniqueEmail } from "./helpers";
+import {
+  createPendingOrganisation,
+  setOrganisationStatus,
+  signUpVerified,
+  uniqueEmail,
+  toast,
+} from "./helpers";
 
-async function createApprovedMsme(page: Page, prefix: string) {
+async function createApprovedOrganisation(page: Page, prefix: string) {
   const email = uniqueEmail(prefix);
-  await createPendingMsme(page, email, `Listings Co ${randomUUID().slice(0, 8)}`);
-  await setMsmeStatus(email, "approved");
+  await createPendingOrganisation(page, email, `Listings Co ${randomUUID().slice(0, 8)}`);
+  await setOrganisationStatus(email, "approved");
   return email;
 }
 
@@ -20,15 +26,17 @@ async function fillListing(page: Page, title: string) {
   await page.getByLabel("Amount (₹)").fill("15000");
 }
 
-test("approved MSME creates, publishes, edits, closes and reopens a listing", async ({ page }) => {
-  await createApprovedMsme(page, "msme-listing");
-  await page.goto("/msme");
+test("approved organisation creates, publishes, edits, closes and reopens a listing", async ({
+  page,
+}) => {
+  await createApprovedOrganisation(page, "organisation-listing");
+  await page.goto("/organisation");
   await page.getByRole("link", { name: "Your listings" }).click();
   await page.getByRole("link", { name: "New listing" }).click();
 
   await fillListing(page, "Marketing intern");
   await page.getByRole("button", { name: "Save as draft" }).click();
-  await expect(page).toHaveURL(/\/msme\/opportunities$/);
+  await expect(page).toHaveURL(/\/organisation\/opportunities$/);
 
   const card = page.getByRole("article", { name: "Marketing intern" });
   await expect(card).toContainText("Internship · Draft · ₹15,000 / month · Hybrid, Pune");
@@ -50,16 +58,14 @@ test("approved MSME creates, publishes, edits, closes and reopens a listing", as
 });
 
 test("drafts can be deleted; unpaid freelance work is refused", async ({ page }) => {
-  await createApprovedMsme(page, "msme-draft");
-  await page.goto("/msme/opportunities/new");
+  await createApprovedOrganisation(page, "organisation-draft");
+  await page.goto("/organisation/opportunities/new");
 
   await fillListing(page, "Logo design");
   await page.getByLabel("Freelance work").check();
   await page.getByLabel("Unpaid (internships only)").check();
   await page.getByRole("button", { name: "Save as draft" }).click();
-  await expect(
-    page.getByRole("alert").filter({ hasText: "Freelance work must be paid" }),
-  ).toBeVisible();
+  await expect(toast(page, "Freelance work must be paid")).toBeVisible();
   await expect(page.getByLabel("Title")).toHaveValue("Logo design");
 
   await page.getByLabel("Paid", { exact: true }).check();
@@ -74,19 +80,19 @@ test("drafts can be deleted; unpaid freelance work is refused", async ({ page })
   await expect(card).toBeHidden();
 });
 
-test("a pending MSME can't create listings", async ({ page }) => {
-  await createPendingMsme(page, uniqueEmail("msme-pending-listing"), "Pending Co");
-  await page.goto("/msme/opportunities");
+test("a pending organisation can't create listings", async ({ page }) => {
+  await createPendingOrganisation(page, uniqueEmail("organisation-pending-listing"), "Pending Co");
+  await page.goto("/organisation/opportunities");
   await expect(page.getByRole("status")).toContainText("needs admin approval");
   await expect(page.getByRole("link", { name: "New listing" })).toHaveCount(0);
 
-  await page.goto("/msme/opportunities/new");
+  await page.goto("/organisation/opportunities/new");
   await expect(page.getByText("Approval needed")).toBeVisible();
   await expect(page.getByLabel("Title")).toHaveCount(0);
 });
 
-test("students can't open MSME listing pages", async ({ page }) => {
-  await signUpVerified(page, "student", uniqueEmail("student-listings"));
-  await page.goto("/msme/opportunities/new");
-  await expect(page).toHaveURL(/\/student$/);
+test("users can't open organisation listing pages", async ({ page }) => {
+  await signUpVerified(page, "user", uniqueEmail("user-listings"));
+  await page.goto("/organisation/opportunities/new");
+  await expect(page).toHaveURL(/\/user$/);
 });

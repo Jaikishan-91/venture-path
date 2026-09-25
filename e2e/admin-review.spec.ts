@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import {
   adminCredentials,
-  createPendingMsme,
+  createPendingOrganisation,
   getEmailText,
   signInAdmin,
   signUpVerified,
@@ -17,17 +17,17 @@ test.describe("admin review", () => {
     "ADMIN_EMAIL/ADMIN_PASSWORD not set; run npm run db:seed",
   );
 
-  test("admin approves a pending MSME; the MSME sees it and gets an email", async ({
+  test("admin approves a pending organisation; the organisation sees it and gets an email", async ({
     page,
     browser,
   }) => {
-    const email = uniqueEmail("msme-approve");
+    const email = uniqueEmail("organisation-approve");
     const businessName = `Approve Co ${randomUUID().slice(0, 8)}`;
-    await createPendingMsme(page, email, businessName);
+    await createPendingOrganisation(page, email, businessName);
 
     const admin = await (await browser.newContext()).newPage();
     await signInAdmin(admin);
-    await admin.getByRole("link", { name: "Review MSMEs" }).click();
+    await admin.getByRole("link", { name: "Review organisations" }).click();
     const card = admin.getByRole("article", { name: businessName });
     await expect(card).toContainText(email);
     await card.getByRole("button", { name: "Approve" }).click();
@@ -41,17 +41,17 @@ test.describe("admin review", () => {
     expect(await getEmailText(email, "is approved")).toContain(businessName);
   });
 
-  test("rejecting needs a reason; the MSME sees the reason and gets an email", async ({
+  test("rejecting needs a reason; the organisation sees the reason and gets an email", async ({
     page,
     browser,
   }) => {
-    const email = uniqueEmail("msme-reject");
+    const email = uniqueEmail("organisation-reject");
     const businessName = `Reject Co ${randomUUID().slice(0, 8)}`;
-    await createPendingMsme(page, email, businessName);
+    await createPendingOrganisation(page, email, businessName);
 
     const admin = await (await browser.newContext()).newPage();
     await signInAdmin(admin);
-    await admin.goto("/admin/msmes");
+    await admin.goto("/admin/organisations");
     const card = admin.getByRole("article", { name: businessName });
     const reason = card.getByLabel("Reason for rejecting");
 
@@ -70,7 +70,7 @@ test.describe("admin review", () => {
     await expect(page.getByRole("status")).toContainText("Please add your GST number");
     expect(await getEmailText(email, "wasn't approved")).toContain("Please add your GST number");
 
-    await admin.goto("/admin/msmes?status=rejected");
+    await admin.goto("/admin/organisations?status=rejected");
     const rejectedCard = admin.getByRole("article", { name: businessName });
     await rejectedCard.getByRole("button", { name: "Approve" }).click();
     await expect(rejectedCard).toBeHidden();
@@ -79,13 +79,13 @@ test.describe("admin review", () => {
   });
 });
 
-test("students and MSMEs can't open the admin review page", async ({ page, browser }) => {
-  await signUpVerified(page, "student", uniqueEmail("student-admin"));
-  await page.goto("/admin/msmes");
-  await expect(page).toHaveURL(/\/student$/);
+test("users and organisations can't open the admin review page", async ({ page, browser }) => {
+  await signUpVerified(page, "user", uniqueEmail("user-admin"));
+  await page.goto("/admin/organisations");
+  await expect(page).toHaveURL(/\/user$/);
 
-  const msme = await (await browser.newContext()).newPage();
-  await signUpVerified(msme, "msme", uniqueEmail("msme-admin"));
-  await msme.goto("/admin/msmes");
-  await expect(msme).toHaveURL(/\/msme$/);
+  const organisation = await (await browser.newContext()).newPage();
+  await signUpVerified(organisation, "organisation", uniqueEmail("organisation-admin"));
+  await organisation.goto("/admin/organisations");
+  await expect(organisation).toHaveURL(/\/organisation$/);
 });

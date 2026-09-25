@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getLogger } from "../logger";
 
 const emptyToUndefined = (value: unknown) => (value === "" ? undefined : value);
 
@@ -37,6 +38,17 @@ const FALLBACK_MODEL = "gpt-3.5-turbo";
 
 let cached: LlmProviderConfig | undefined;
 
+const disabled = (maxTokens = 1024, temperature = 0.3): LlmProviderConfig => ({
+  kind: "disabled",
+  model: "",
+  maxTokens,
+  temperature,
+});
+
+/**
+ * Read the LLM settings from the environment. An invalid configuration is logged and
+ * treated as disabled: AI features are optional and must never break a page.
+ */
 export function getLlmConfig(): LlmProviderConfig {
   if (cached) return cached;
 
@@ -45,14 +57,18 @@ export function getLlmConfig(): LlmProviderConfig {
     const problems = result.error.issues
       .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
       .join("; ");
-    throw new Error(`Invalid LLM configuration: ${problems}`);
+    getLogger().warn({ problems }, "Invalid LLM configuration; AI features disabled");
+    cached = disabled();
+    return cached;
   }
 
   const env = result.data;
 
   if (env.LLM_PROVIDER === "openai") {
     if (!env.LLM_BASE_URL) {
-      throw new Error("LLM_BASE_URL is required when LLM_PROVIDER=openai");
+      getLogger().warn("LLM_BASE_URL is required when LLM_PROVIDER=openai; AI features disabled");
+      cached = disabled(env.LLM_MAX_TOKENS, env.LLM_TEMPERATURE);
+      return cached;
     }
     cached = {
       kind: "openai",
@@ -64,13 +80,7 @@ export function getLlmConfig(): LlmProviderConfig {
       temperature: env.LLM_TEMPERATURE,
     };
   } else {
-    cached = {
-      kind: "disabled",
-      model: "",
-      fallbackModel: undefined,
-      maxTokens: env.LLM_MAX_TOKENS,
-      temperature: env.LLM_TEMPERATURE,
-    };
+    cached = disabled(env.LLM_MAX_TOKENS, env.LLM_TEMPERATURE);
   }
 
   return cached;

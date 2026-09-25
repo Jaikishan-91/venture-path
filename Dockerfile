@@ -1,8 +1,24 @@
 # syntax=docker.io/docker/dockerfile:1.11
 
-# Base image with Node.js
-FROM node:22-alpine AS base
+# Base image with Node.js. Debian (glibc), not Alpine (musl): onnxruntime-node, used for the
+# search embeddings, ships glibc binaries and fails to load on Alpine.
+FROM node:22-bookworm-slim AS base
 ENV NEXT_TELEMETRY_DISABLED=1
+# Prisma detects the OpenSSL version at runtime; the slim image doesn't ship it.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+
+# Development image for `npm run docker:dev`. Compose watch syncs source changes into the
+# running container and `next dev` hot-reloads them, so code changes need no rebuild.
+FROM base AS dev
+WORKDIR /app
+COPY package.json package-lock.json* ./
+COPY prisma/schema.prisma ./prisma/schema.prisma
+RUN npm ci
+COPY . .
+ENV PORT=3000
+EXPOSE 3000
+# nodemon (nodemon.json) regenerates the Prisma client and restarts `next dev` on schema changes.
+CMD ["npm", "run", "dev"]
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -26,8 +42,7 @@ FROM base AS runner
 WORKDIR /app
 
 # Create a non-root user. Stay root until copies and chown finish.
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs --ingroup nodejs
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs --no-create-home nextjs
 
 # Copy built output. Prisma 7 emits the client to src/generated/prisma.
 COPY --from=builder /app/public ./public

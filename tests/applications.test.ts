@@ -16,21 +16,21 @@ import type { OpportunityInput } from "@/lib/opportunity-schemas";
 const EMAIL_DOMAIN = "applications-test.venturepath.local";
 const pdf = Buffer.from("%PDF-1.4\n");
 
-async function createUser(role: "student" | "msme", approved = true) {
+async function createUser(role: "user" | "organisation", approved = true) {
   return getDb().user.create({
     data: {
       id: randomUUID(),
       name: `Test ${role}`,
       email: `${randomUUID()}@${EMAIL_DOMAIN}`,
       role,
-      ...(role === "student"
+      ...(role === "user"
         ? {
-            studentProfile: {
+            userProfile: {
               create: { institution: "IIT", course: "CSE", graduationYear: 2027, skills: [] },
             },
           }
         : {
-            msmeProfile: {
+            organisationProfile: {
               create: {
                 businessName: "Acme",
                 description: "Tools",
@@ -62,10 +62,10 @@ const listing: OpportunityInput = {
   compensationMax: null,
 };
 
-async function publishedListing(msmeId: string) {
-  const created = await createOpportunity(msmeId, listing);
+async function publishedListing(organisationId: string) {
+  const created = await createOpportunity(organisationId, listing);
   if (!created.ok) throw new Error(created.reason);
-  await changeOpportunityStatus(msmeId, created.id, "publish");
+  await changeOpportunityStatus(organisationId, created.id, "publish");
   return created.id;
 }
 
@@ -86,38 +86,38 @@ afterAll(async () => {
 
 describe("applications", () => {
   it("applies once, withdraws, and applies again", async () => {
-    const msme = await createUser("msme");
-    const student = await createUser("student");
-    const opportunityId = await publishedListing(msme.id);
+    const organisation = await createUser("organisation");
+    const user = await createUser("user");
+    const opportunityId = await publishedListing(organisation.id);
 
-    const first = await applyToOpportunity(student.id, opportunityId, { ...resume, note: "Hello" });
+    const first = await applyToOpportunity(user.id, opportunityId, { ...resume, note: "Hello" });
     expect(first.ok).toBe(true);
-    expect(await applyToOpportunity(student.id, opportunityId, { ...resume, note: "" })).toEqual({
+    expect(await applyToOpportunity(user.id, opportunityId, { ...resume, note: "" })).toEqual({
       ok: false,
       reason: "already_applied",
     });
 
     if (!first.ok) return;
-    expect(await withdrawApplication(student.id, first.id)).toEqual({ ok: true });
-    const again = await applyToOpportunity(student.id, opportunityId, { ...resume, note: "Again" });
+    expect(await withdrawApplication(user.id, first.id)).toEqual({ ok: true });
+    const again = await applyToOpportunity(user.id, opportunityId, { ...resume, note: "Again" });
     expect(again).toEqual({ ok: true, id: first.id });
   });
 
-  it("refuses a closed listing and a student without a profile", async () => {
-    const msme = await createUser("msme");
-    const student = await createUser("student");
+  it("refuses a closed listing and a user without a profile", async () => {
+    const organisation = await createUser("organisation");
+    const user = await createUser("user");
     const bare = await getDb().user.create({
       data: {
         id: randomUUID(),
         name: "Bare",
         email: `${randomUUID()}@${EMAIL_DOMAIN}`,
-        role: "student",
+        role: "user",
       },
     });
-    const opportunityId = await publishedListing(msme.id);
-    await changeOpportunityStatus(msme.id, opportunityId, "close");
+    const opportunityId = await publishedListing(organisation.id);
+    await changeOpportunityStatus(organisation.id, opportunityId, "close");
 
-    expect(await applyToOpportunity(student.id, opportunityId, { ...resume, note: "" })).toEqual({
+    expect(await applyToOpportunity(user.id, opportunityId, { ...resume, note: "" })).toEqual({
       ok: false,
       reason: "not_open",
     });
@@ -127,24 +127,24 @@ describe("applications", () => {
     });
   });
 
-  it("lets only the student and the owning MSME read the resume, and only the MSME decide", async () => {
-    const msme = await createUser("msme");
-    const other = await createUser("msme");
-    const student = await createUser("student");
-    const stranger = await createUser("student");
-    const opportunityId = await publishedListing(msme.id);
-    const applied = await applyToOpportunity(student.id, opportunityId, { ...resume, note: "" });
+  it("lets only the user and the owning organisation read the resume, and only the organisation decide", async () => {
+    const organisation = await createUser("organisation");
+    const other = await createUser("organisation");
+    const user = await createUser("user");
+    const stranger = await createUser("user");
+    const opportunityId = await publishedListing(organisation.id);
+    const applied = await applyToOpportunity(user.id, opportunityId, { ...resume, note: "" });
     if (!applied.ok) throw new Error(applied.reason);
 
-    expect(await getResumeForUser(student.id, applied.id)).not.toBeNull();
-    expect(await getResumeForUser(msme.id, applied.id)).not.toBeNull();
+    expect(await getResumeForUser(user.id, applied.id)).not.toBeNull();
+    expect(await getResumeForUser(organisation.id, applied.id)).not.toBeNull();
     expect(await getResumeForUser(stranger.id, applied.id)).toBeNull();
     expect(await decideApplication(other.id, applied.id, "accepted")).toEqual({
       ok: false,
       reason: "invalid_state",
     });
-    expect(await decideApplication(msme.id, applied.id, "accepted")).toEqual({ ok: true });
-    expect(await withdrawApplication(student.id, applied.id)).toEqual({
+    expect(await decideApplication(organisation.id, applied.id, "accepted")).toEqual({ ok: true });
+    expect(await withdrawApplication(user.id, applied.id)).toEqual({
       ok: false,
       reason: "invalid_state",
     });

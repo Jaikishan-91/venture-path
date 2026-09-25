@@ -6,6 +6,7 @@ import { getLogger } from "@/lib/logger";
 import { updatePrompt } from "@/lib/prompts";
 import type { PromptKey } from "@/lib/llm/prompts";
 import { PROMPT_KEYS } from "@/lib/llm/prompts";
+import { flash } from "@/lib/flash";
 
 export type SettingsFormState = { status: "idle" } | { status: "error"; message: string };
 
@@ -30,13 +31,13 @@ export async function savePromptAction(
   }
 
   try {
-    const result = await updatePrompt(session.user.id, key as PromptKey, content.trim());
-    if (!result.ok) return { status: "error", message: "Prompt not found" };
+    await updatePrompt(session.user.id, key as PromptKey, content.trim());
   } catch (err) {
     getLogger().error({ adminId: session.user.id, key, err }, "prompt save failed");
     return { status: "error", message: "Something went wrong. Please try again." };
   }
 
+  await flash("success", "Prompt saved.");
   revalidatePath("/admin/settings");
   return { status: "idle" };
 }

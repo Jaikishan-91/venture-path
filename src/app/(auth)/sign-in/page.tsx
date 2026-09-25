@@ -11,8 +11,9 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
   const { error } = await searchParams;
   return (
     <SignInForm
+      role="user"
       googleEnabled={Boolean(getEnv().GOOGLE_CLIENT_ID)}
-      googleFailed={error === "google"}
+      error={typeof error === "string" ? error : undefined}
     />
   );
 }

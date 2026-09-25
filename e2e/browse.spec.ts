@@ -1,17 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { createPendingMsme, setMsmeStatus, uniqueEmail } from "./helpers";
+import { createPendingOrganisation, setOrganisationStatus, uniqueEmail } from "./helpers";
 
 test("anyone can search and open a listing; hidden listings stay hidden", async ({
   page,
   browser,
 }) => {
-  const email = uniqueEmail("browse-msme");
+  const email = uniqueEmail("browse-organisation");
   const business = `Browse Co ${randomUUID().slice(0, 8)}`;
-  await createPendingMsme(page, email, business);
-  await setMsmeStatus(email, "approved");
+  await createPendingOrganisation(page, email, business);
+  await setOrganisationStatus(email, "approved");
 
-  await page.goto("/msme/opportunities/new");
+  await page.goto("/organisation/opportunities/new");
   await page.getByLabel("Title").fill("Social media marketing intern");
   await page.getByLabel("Description").fill("Plan Instagram posts and report on engagement.");
   await page.getByRole("textbox", { name: "Skill", exact: true }).fill("canva");

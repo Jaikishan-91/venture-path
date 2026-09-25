@@ -1,19 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 import { getDb } from "@/lib/db";
-import type { MsmeProfileInput, StudentProfileInput } from "@/lib/profile-schemas";
-import { getMsmeProfile, saveMsmeProfile, saveStudentProfile } from "@/lib/profiles";
+import type { OrganisationProfileInput, UserProfileInput } from "@/lib/profile-schemas";
+import { getOrganisationProfile, saveOrganisationProfile, saveUserProfile } from "@/lib/profiles";
 
 // Integration tests: need the Docker Postgres from docker-compose.yml.
 const EMAIL_DOMAIN = "profiles-test.venturepath.local";
 
-async function createUser(role: "student" | "msme") {
+async function createUser(role: "user" | "organisation") {
   return getDb().user.create({
     data: { id: randomUUID(), name: "Test User", email: `${randomUUID()}@${EMAIL_DOMAIN}`, role },
   });
 }
 
-const student: StudentProfileInput = {
+const profileInput: UserProfileInput = {
   institution: "IIT Delhi",
   course: "B.Tech CSE",
   graduationYear: 2027,
@@ -22,7 +22,7 @@ const student: StudentProfileInput = {
   links: [],
 };
 
-const msme: MsmeProfileInput = {
+const organisation: OrganisationProfileInput = {
   businessName: "Acme Tools",
   description: "We make tools.",
   industry: "Manufacturing",
@@ -31,7 +31,7 @@ const msme: MsmeProfileInput = {
 };
 
 async function setStatus(userId: string, status: "approved" | "rejected") {
-  await getDb().msmeProfile.update({ where: { userId }, data: { status } });
+  await getDb().organisationProfile.update({ where: { userId }, data: { status } });
 }
 
 afterAll(async () => {
@@ -39,67 +39,81 @@ afterAll(async () => {
   await getDb().$disconnect();
 });
 
-describe("saveStudentProfile", () => {
+describe("saveUserProfile", () => {
   it("creates, then updates the same row", async () => {
-    const user = await createUser("student");
-    await saveStudentProfile(user.id, student);
-    await saveStudentProfile(user.id, { ...student, skills: ["react", "sql"], bio: "Hi" });
+    const user = await createUser("user");
+    await saveUserProfile(user.id, profileInput);
+    await saveUserProfile(user.id, { ...profileInput, skills: ["react", "sql"], bio: "Hi" });
 
-    const rows = await getDb().studentProfile.findMany({ where: { userId: user.id } });
+    const rows = await getDb().userProfile.findMany({ where: { userId: user.id } });
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ skills: ["react", "sql"], bio: "Hi" });
   });
 
   it("is deleted with its user", async () => {
-    const user = await createUser("student");
-    await saveStudentProfile(user.id, student);
+    const user = await createUser("user");
+    await saveUserProfile(user.id, profileInput);
     await getDb().user.delete({ where: { id: user.id } });
-    expect(await getDb().studentProfile.findUnique({ where: { userId: user.id } })).toBeNull();
+    expect(await getDb().userProfile.findUnique({ where: { userId: user.id } })).toBeNull();
   });
 });
 
-describe("saveMsmeProfile", () => {
+describe("saveOrganisationProfile", () => {
   it("creates a pending profile", async () => {
-    const user = await createUser("msme");
-    expect(await saveMsmeProfile(user.id, msme)).toEqual({ ok: true, status: "pending" });
-    expect((await getMsmeProfile(user.id))?.status).toBe("pending");
-  });
-
-  it("keeps an approved profile approved when nothing changed", async () => {
-    const user = await createUser("msme");
-    await saveMsmeProfile(user.id, msme);
-    await setStatus(user.id, "approved");
-
-    expect(await saveMsmeProfile(user.id, { ...msme })).toEqual({ ok: true, status: "approved" });
-  });
-
-  it("sends an approved profile back to pending when it changes", async () => {
-    const user = await createUser("msme");
-    await saveMsmeProfile(user.id, msme);
-    await setStatus(user.id, "approved");
-
-    expect(await saveMsmeProfile(user.id, { ...msme, location: "Mumbai" })).toEqual({
+    const user = await createUser("organisation");
+    expect(await saveOrganisationProfile(user.id, organisation)).toEqual({
       ok: true,
       status: "pending",
     });
-    expect(await getMsmeProfile(user.id)).toMatchObject({ location: "Mumbai", status: "pending" });
+    expect((await getOrganisationProfile(user.id))?.status).toBe("pending");
+  });
+
+  it("keeps an approved profile approved when nothing changed", async () => {
+    const user = await createUser("organisation");
+    await saveOrganisationProfile(user.id, organisation);
+    await setStatus(user.id, "approved");
+
+    expect(await saveOrganisationProfile(user.id, { ...organisation })).toEqual({
+      ok: true,
+      status: "approved",
+    });
+  });
+
+  it("sends an approved profile back to pending when it changes", async () => {
+    const user = await createUser("organisation");
+    await saveOrganisationProfile(user.id, organisation);
+    await setStatus(user.id, "approved");
+
+    expect(await saveOrganisationProfile(user.id, { ...organisation, location: "Mumbai" })).toEqual(
+      {
+        ok: true,
+        status: "pending",
+      },
+    );
+    expect(await getOrganisationProfile(user.id)).toMatchObject({
+      location: "Mumbai",
+      status: "pending",
+    });
   });
 
   it("resubmits a rejected profile on save", async () => {
-    const user = await createUser("msme");
-    await saveMsmeProfile(user.id, msme);
+    const user = await createUser("organisation");
+    await saveOrganisationProfile(user.id, organisation);
     await setStatus(user.id, "rejected");
 
-    expect(await saveMsmeProfile(user.id, msme)).toEqual({ ok: true, status: "pending" });
+    expect(await saveOrganisationProfile(user.id, organisation)).toEqual({
+      ok: true,
+      status: "pending",
+    });
   });
 
   it("only writes the given user's profile", async () => {
-    const owner = await createUser("msme");
-    const other = await createUser("msme");
-    await saveMsmeProfile(owner.id, msme);
-    await saveMsmeProfile(other.id, { ...msme, businessName: "Other Co" });
+    const owner = await createUser("organisation");
+    const other = await createUser("organisation");
+    await saveOrganisationProfile(owner.id, organisation);
+    await saveOrganisationProfile(other.id, { ...organisation, businessName: "Other Co" });
 
-    expect((await getMsmeProfile(owner.id))?.businessName).toBe("Acme Tools");
-    expect((await getMsmeProfile(other.id))?.businessName).toBe("Other Co");
+    expect((await getOrganisationProfile(owner.id))?.businessName).toBe("Acme Tools");
+    expect((await getOrganisationProfile(other.id))?.businessName).toBe("Other Co");
   });
 });

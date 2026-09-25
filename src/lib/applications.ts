@@ -21,12 +21,12 @@ const noteOrNull = (note: string) => {
 };
 
 export async function applyToOpportunity(
-  studentUserId: string,
+  applicantUserId: string,
   opportunityId: string,
   input: { note: string; fileName: string; extension: ResumeExtension; bytes: Buffer },
 ): Promise<ApplyResult> {
   const db = getDb();
-  const profile = await db.studentProfile.findUnique({ where: { userId: studentUserId } });
+  const profile = await db.userProfile.findUnique({ where: { userId: applicantUserId } });
   if (!profile) return { ok: false, reason: "needs_profile" };
 
   const open = await db.opportunity.findFirst({
@@ -36,7 +36,7 @@ export async function applyToOpportunity(
   if (!open) return { ok: false, reason: "not_open" };
 
   const existing = await db.application.findUnique({
-    where: { opportunityId_studentProfileId: { opportunityId, studentProfileId: profile.id } },
+    where: { opportunityId_userProfileId: { opportunityId, userProfileId: profile.id } },
   });
   if (existing && existing.status !== "withdrawn") return { ok: false, reason: "already_applied" };
 
@@ -53,14 +53,14 @@ export async function applyToOpportunity(
   try {
     if (!existing) {
       const created = await db.application.create({
-        data: { ...data, opportunityId, studentProfileId: profile.id },
+        data: { ...data, opportunityId, userProfileId: profile.id },
         select: { id: true },
       });
       getLogger().info(
-        { userId: studentUserId, applicationId: created.id, opportunityId },
+        { userId: applicantUserId, applicationId: created.id, opportunityId },
         "application submitted",
       );
-      void notifyMsme(created.id);
+      void notifyOrganisation(created.id);
       // Analyze the resume in the background. Never awaited — a failure does not block the flow.
       void analyzeResume(created.id).catch((err: unknown) =>
         getLogger().error({ applicationId: created.id, err }, "resume analysis failed"),
@@ -78,10 +78,10 @@ export async function applyToOpportunity(
     }
     await deleteResume(existing.resumeStorageKey);
     getLogger().info(
-      { userId: studentUserId, applicationId: existing.id, opportunityId },
+      { userId: applicantUserId, applicationId: existing.id, opportunityId },
       "application resubmitted",
     );
-    void notifyMsme(existing.id);
+    void notifyOrganisation(existing.id);
     void analyzeResume(existing.id).catch((err: unknown) =>
       getLogger().error({ applicationId: existing.id, err }, "resume analysis failed"),
     );
@@ -96,20 +96,20 @@ export async function applyToOpportunity(
 }
 
 export async function withdrawApplication(
-  studentUserId: string,
+  applicantUserId: string,
   applicationId: string,
 ): Promise<DecisionResult> {
   const { count } = await getDb().application.updateMany({
-    where: { id: applicationId, status: "submitted", studentProfile: { userId: studentUserId } },
+    where: { id: applicationId, status: "submitted", userProfile: { userId: applicantUserId } },
     data: { status: "withdrawn" },
   });
   if (count === 0) return { ok: false, reason: "invalid_state" };
-  getLogger().info({ userId: studentUserId, applicationId }, "application withdrawn");
+  getLogger().info({ userId: applicantUserId, applicationId }, "application withdrawn");
   return { ok: true };
 }
 
 export async function decideApplication(
-  msmeUserId: string,
+  organisationUserId: string,
   applicationId: string,
   decision: "accepted" | "rejected",
 ): Promise<DecisionResult> {
@@ -117,17 +117,20 @@ export async function decideApplication(
     where: {
       id: applicationId,
       status: "submitted",
-      opportunity: { msmeProfile: { userId: msmeUserId } },
+      opportunity: { organisationProfile: { userId: organisationUserId } },
     },
     data: { status: decision, decidedAt: new Date() },
   });
   if (count === 0) return { ok: false, reason: "invalid_state" };
-  getLogger().info({ userId: msmeUserId, applicationId, status: decision }, "application decided");
-  void notifyStudent(applicationId, decision);
+  getLogger().info(
+    { userId: organisationUserId, applicationId, status: decision },
+    "application decided",
+  );
+  void notifyUser(applicationId, decision);
   return { ok: true };
 }
 
-async function notifyMsme(applicationId: string) {
+async function notifyOrganisation(applicationId: string) {
   const logger = getLogger();
   try {
     const application = await getDb().application.findUniqueOrThrow({
@@ -137,17 +140,17 @@ async function notifyMsme(applicationId: string) {
           select: {
             id: true,
             title: true,
-            msmeProfile: { select: { user: { select: { email: true } } } },
+            organisationProfile: { select: { user: { select: { email: true } } } },
           },
         },
-        studentProfile: { select: { user: { select: { name: true } } } },
+        userProfile: { select: { user: { select: { name: true } } } },
       },
     });
-    const url = `${getEnv().BETTER_AUTH_URL}/msme/opportunities/${application.opportunity.id}/applicants`;
+    const url = `${getEnv().BETTER_AUTH_URL}/organisation/opportunities/${application.opportunity.id}/applicants`;
     await sendEmail({
-      to: application.opportunity.msmeProfile.user.email,
+      to: application.opportunity.organisationProfile.user.email,
       subject: `New application for ${application.opportunity.title}`,
-      text: `${application.studentProfile.user.name} applied to ${application.opportunity.title}.\n\nReview applicants:\n${url}`,
+      text: `${application.userProfile.user.name} applied to ${application.opportunity.title}.\n\nReview applicants:\n${url}`,
     });
     logger.info({ applicationId }, "application email sent");
   } catch (err) {
@@ -155,7 +158,7 @@ async function notifyMsme(applicationId: string) {
   }
 }
 
-async function notifyStudent(applicationId: string, decision: "accepted" | "rejected") {
+async function notifyUser(applicationId: string, decision: "accepted" | "rejected") {
   const logger = getLogger();
   try {
     const application = await getDb().application.findUniqueOrThrow({
@@ -164,20 +167,22 @@ async function notifyStudent(applicationId: string, decision: "accepted" | "reje
         opportunity: {
           select: {
             title: true,
-            msmeProfile: { select: { businessName: true, user: { select: { email: true } } } },
+            organisationProfile: {
+              select: { businessName: true, user: { select: { email: true } } },
+            },
           },
         },
-        studentProfile: { select: { user: { select: { email: true } } } },
+        userProfile: { select: { user: { select: { email: true } } } },
       },
     });
-    const url = `${getEnv().BETTER_AUTH_URL}/student/applications`;
-    const business = application.opportunity.msmeProfile;
+    const url = `${getEnv().BETTER_AUTH_URL}/user/applications`;
+    const business = application.opportunity.organisationProfile;
     const text =
       decision === "accepted"
         ? `${business.businessName} accepted your application for ${application.opportunity.title}.\n\nContact them at ${business.user.email}.\n\n${url}`
         : `${business.businessName} didn't accept your application for ${application.opportunity.title}.\n\n${url}`;
     await sendEmail({
-      to: application.studentProfile.user.email,
+      to: application.userProfile.user.email,
       subject:
         decision === "accepted"
           ? `Application accepted: ${application.opportunity.title}`
@@ -190,15 +195,17 @@ async function notifyStudent(applicationId: string, decision: "accepted" | "reje
   }
 }
 
-export function listStudentApplications(studentUserId: string) {
+export function listUserApplications(applicantUserId: string) {
   return getDb().application.findMany({
-    where: { studentProfile: { userId: studentUserId } },
+    where: { userProfile: { userId: applicantUserId } },
     include: {
       opportunity: {
         select: {
           id: true,
           title: true,
-          msmeProfile: { select: { businessName: true, user: { select: { email: true } } } },
+          organisationProfile: {
+            select: { businessName: true, user: { select: { email: true } } },
+          },
         },
       },
     },
@@ -206,17 +213,17 @@ export function listStudentApplications(studentUserId: string) {
   });
 }
 
-export function getOwnApplication(studentUserId: string, opportunityId: string) {
+export function getOwnApplication(applicantUserId: string, opportunityId: string) {
   return getDb().application.findFirst({
-    where: { opportunityId, studentProfile: { userId: studentUserId } },
+    where: { opportunityId, userProfile: { userId: applicantUserId } },
   });
 }
 
-export function listApplicants(msmeUserId: string, opportunityId: string) {
+export function listApplicants(organisationUserId: string, opportunityId: string) {
   return getDb().application.findMany({
-    where: { opportunityId, opportunity: { msmeProfile: { userId: msmeUserId } } },
+    where: { opportunityId, opportunity: { organisationProfile: { userId: organisationUserId } } },
     include: {
-      studentProfile: {
+      userProfile: {
         select: {
           institution: true,
           course: true,
@@ -229,12 +236,12 @@ export function listApplicants(msmeUserId: string, opportunityId: string) {
   });
 }
 
-/** Fetch all resume analyses for the listings owned by `msmeUserId`. */
-export function listApplicantAnalyses(msmeUserId: string, opportunityId: string) {
+/** Fetch all resume analyses for the listings owned by `organisationUserId`. */
+export function listApplicantAnalyses(organisationUserId: string, opportunityId: string) {
   return getDb().analysis.findMany({
     where: {
       application: {
-        opportunity: { msmeProfile: { userId: msmeUserId } },
+        opportunity: { organisationProfile: { userId: organisationUserId } },
         opportunityId,
       },
     },
@@ -256,7 +263,7 @@ export async function getResumeForUser(userId: string, applicationId: string) {
   const application = await getDb().application.findFirst({
     where: {
       id: applicationId,
-      OR: [{ studentProfile: { userId } }, { opportunity: { msmeProfile: { userId } } }],
+      OR: [{ userProfile: { userId } }, { opportunity: { organisationProfile: { userId } } }],
     },
     select: { resumeFileName: true, resumeStorageKey: true },
   });

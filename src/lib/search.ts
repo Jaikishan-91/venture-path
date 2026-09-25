@@ -33,7 +33,7 @@ export type OpportunitySummary = {
 };
 
 /**
- * Visibility rule for anything shown outside the owning MSME: published, MSME approved,
+ * Visibility rule for anything shown outside the owning organisation: published, organisation approved,
  * deadline (last day to apply, India time) not passed. Mirrored in `visibleOpportunityWhere`.
  */
 function visibleSql(today: string) {
@@ -44,7 +44,7 @@ function visibleSql(today: string) {
 export function visibleOpportunityWhere(today = todayInIndia()): Prisma.OpportunityWhereInput {
   return {
     status: "published",
-    msmeProfile: { status: "approved" },
+    organisationProfile: { status: "approved" },
     OR: [{ deadline: null }, { deadline: { gte: new Date(`${today}T00:00:00Z`) } }],
   };
 }
@@ -82,7 +82,7 @@ export async function searchOpportunities(
       o."payType"::text AS "payType", o."payAmount", o."payPeriod"::text AS "payPeriod",
       o.deadline, o.skills, o."publishedAt", m."businessName"
     FROM opportunity o
-    JOIN msme_profile m ON m.id = o."msmeProfileId"
+    JOIN organisation_profile m ON m.id = o."organisationProfileId"
     WHERE ${Prisma.join(filters, " AND ")}
     ORDER BY ${order}
     LIMIT ${PAGE_SIZE + 1} OFFSET ${(params.page - 1) * PAGE_SIZE}`;
@@ -99,7 +99,7 @@ export async function listVisibleCities(): Promise<string[]> {
   const rows = await getDb().$queryRaw<{ city: string }[]>`
     SELECT min(trim(o.city)) AS city
     FROM opportunity o
-    JOIN msme_profile m ON m.id = o."msmeProfileId"
+    JOIN organisation_profile m ON m.id = o."organisationProfileId"
     WHERE ${visibleSql(todayInIndia())} AND o.city IS NOT NULL AND trim(o.city) <> ''
     GROUP BY lower(trim(o.city))
     ORDER BY 1`;
@@ -110,7 +110,7 @@ export function getVisibleOpportunity(id: string) {
   return getDb().opportunity.findFirst({
     where: { id, ...visibleOpportunityWhere() },
     include: {
-      msmeProfile: {
+      organisationProfile: {
         select: {
           businessName: true,
           industry: true,

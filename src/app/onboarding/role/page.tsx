@@ -15,24 +15,24 @@ export default async function ChooseRolePage() {
 
   return (
     <PublicFrame>
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>How will you use VenturePath?</CardTitle>
-          <CardDescription>You can&apos;t change this later.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={chooseRole} className="flex flex-col gap-3">
-            <Button type="submit" name="role" value="student">
-              I&apos;m a student
-            </Button>
-            <Button type="submit" name="role" value="msme" variant="outline">
-              I&apos;m an MSME (business)
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </main>
+      <main className="flex flex-1 items-center justify-center px-6 py-16">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>How will you use VenturePath?</CardTitle>
+            <CardDescription>You can&apos;t change this later.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={chooseRole} className="flex flex-col gap-3">
+              <Button type="submit" name="role" value="user">
+                I&apos;m a user
+              </Button>
+              <Button type="submit" name="role" value="organisation" variant="outline">
+                I&apos;m an organisation (business)
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
     </PublicFrame>
   );
 }

@@ -3,7 +3,7 @@ import { getLogger } from "./logger";
 import { signupRoleSchema } from "./roles";
 
 /**
- * The only path that writes `User.role` from user input. It accepts student/msme only and never
+ * The only path that writes `User.role` from user input. It accepts user/organisation only and never
  * overwrites a role that is already set. Returns true if the role was assigned.
  */
 export async function assignInitialRole(userId: string, role: unknown): Promise<boolean> {

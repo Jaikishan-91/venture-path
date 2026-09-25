@@ -1,62 +1,59 @@
 import { getDb } from "./db";
 import { getLogger } from "./logger";
 import {
-  msmeProfileChanged,
-  nextMsmeStatus,
-  type MsmeProfileInput,
-  type MsmeStatus,
-  type StudentProfileInput,
+  organisationProfileChanged,
+  nextOrganisationStatus,
+  type OrganisationProfileInput,
+  type OrganisationStatus,
+  type UserProfileInput,
 } from "./profile-schemas";
 
-export function getStudentProfile(userId: string) {
-  return getDb().studentProfile.findUnique({ where: { userId } });
+export function getUserProfile(userId: string) {
+  return getDb().userProfile.findUnique({ where: { userId } });
 }
 
-export function getMsmeProfile(userId: string) {
-  return getDb().msmeProfile.findUnique({ where: { userId } });
+export function getOrganisationProfile(userId: string) {
+  return getDb().organisationProfile.findUnique({ where: { userId } });
 }
 
-export async function saveStudentProfile(
-  userId: string,
-  input: StudentProfileInput,
-): Promise<void> {
-  await getDb().studentProfile.upsert({
+export async function saveUserProfile(userId: string, input: UserProfileInput): Promise<void> {
+  await getDb().userProfile.upsert({
     where: { userId },
     create: { userId, ...input },
     update: input,
   });
-  getLogger().info({ userId }, "student profile saved");
+  getLogger().info({ userId }, "user profile saved");
 }
 
-export type SaveMsmeProfileResult =
-  { ok: true; status: MsmeStatus } | { ok: false; reason: "conflict" };
+export type SaveOrganisationProfileResult =
+  { ok: true; status: OrganisationStatus } | { ok: false; reason: "conflict" };
 
 /** `userId` must come from the session. The status is derived here, never taken from input. */
-export async function saveMsmeProfile(
+export async function saveOrganisationProfile(
   userId: string,
-  input: MsmeProfileInput,
-): Promise<SaveMsmeProfileResult> {
+  input: OrganisationProfileInput,
+): Promise<SaveOrganisationProfileResult> {
   const db = getDb();
   const logger = getLogger();
-  const current = await db.msmeProfile.findUnique({ where: { userId } });
+  const current = await db.organisationProfile.findUnique({ where: { userId } });
 
   if (!current) {
-    await db.msmeProfile.create({ data: { userId, ...input, status: "pending" } });
-    logger.info({ userId, status: "pending" }, "msme profile created");
+    await db.organisationProfile.create({ data: { userId, ...input, status: "pending" } });
+    logger.info({ userId, status: "pending" }, "Organisation profile created");
     return { ok: true, status: "pending" };
   }
 
-  const status = nextMsmeStatus(current.status, msmeProfileChanged(current, input));
+  const status = nextOrganisationStatus(current.status, organisationProfileChanged(current, input));
   // Conditional on the status we read, so a concurrent review decision is never overwritten.
-  const { count } = await db.msmeProfile.updateMany({
+  const { count } = await db.organisationProfile.updateMany({
     where: { userId, status: current.status },
     data: { ...input, status },
   });
   if (count === 0) {
-    logger.warn({ userId }, "msme profile save conflicted with a status change");
+    logger.warn({ userId }, "Organisation profile save conflicted with a status change");
     return { ok: false, reason: "conflict" };
   }
 
-  logger.info({ userId, from: current.status, to: status }, "msme profile saved");
+  logger.info({ userId, from: current.status, to: status }, "Organisation profile saved");
   return { ok: true, status };
 }

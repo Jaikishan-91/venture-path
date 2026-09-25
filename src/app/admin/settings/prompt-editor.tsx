@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionErrorToast } from "@/components/use-action-error-toast";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ export function PromptEditor({
   const [state, action, pending] = useActionState<SettingsFormState, FormData>(savePromptAction, {
     status: "idle",
   });
+  useActionErrorToast(state);
 
   return (
     <Card>
@@ -39,11 +41,6 @@ export function PromptEditor({
               className="font-mono text-sm"
             />
           </div>
-          {state.status === "error" && (
-            <p role="alert" className="text-sm text-destructive">
-              {state.message}
-            </p>
-          )}
           <Button type="submit" disabled={pending} className="self-start">
             {pending ? "Saving…" : "Save"}
           </Button>

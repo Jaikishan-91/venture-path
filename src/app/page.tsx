@@ -11,14 +11,14 @@ const PATHS = [
     body: "Browse internships and freelance work from approved businesses. Apply when a listing fits.",
   },
   {
-    href: "/student/applications",
+    href: "/user/applications",
     title: "Follow your application",
-    body: "Sign in as a student to see which listings you have applied to and what the business decided.",
+    body: "Sign in as a user to see which listings you have applied to and what the business decided.",
   },
   {
-    href: "/sign-up",
-    title: "Post work as a business",
-    body: "MSMEs create a profile, get approved, and publish internships or paid freelance listings.",
+    href: "/organisation/sign-up",
+    title: "Post work as an organisation",
+    body: "Organisations create a profile, get approved, and publish internships or paid freelance listings.",
   },
 ];
 
@@ -33,7 +33,7 @@ const NOTES = [
   },
   {
     title: "Businesses reviewed first",
-    body: "An admin approves an MSME before students can see its published listings.",
+    body: "An admin approves an organisation before users can see its published listings.",
   },
 ];
 
@@ -53,7 +53,7 @@ export default async function Home() {
               Find freelance work and internships from growing businesses.
             </p>
             <p className="max-w-md text-sm leading-relaxed text-[#f4eddd]/75">
-              Students apply to MSME listings. Businesses post the work and review who applied.
+              Users apply to organisation listings. Businesses post the work and review who applied.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -69,7 +69,9 @@ export default async function Home() {
               {session ? (
                 <Link
                   href="/dashboard"
-                  className={buttonVariants({ className: "bg-[#f4eddd] text-[#1f4138] hover:bg-[#f4eddd]/90" })}
+                  className={buttonVariants({
+                    className: "bg-[#f4eddd] text-[#1f4138] hover:bg-[#f4eddd]/90",
+                  })}
                 >
                   Go to dashboard
                 </Link>

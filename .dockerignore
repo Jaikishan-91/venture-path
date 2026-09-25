@@ -15,3 +15,13 @@ Dockerfile
 uploads
 .cache
 *.tsbuildinfo
+# Secrets come from env_file at runtime, never baked into an image.
+.env
+.env.*
+!.env.example
+client_secret_*.json
+# Host build output; each image builds its own.
+.next
+src/generated
+test-results
+playwright-report

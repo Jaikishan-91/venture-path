@@ -47,7 +47,9 @@ services:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
 
+  # Production image (`npm run docker:prod`). Code changes need a rebuild.
   next:
+    profiles: ["prod"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -70,8 +72,62 @@ services:
       - hf-cache:/app/.cache/models
     restart: unless-stopped
 
+  # Live development (`npm run docker:dev`). Compose watches the host files and syncs changes
+  # into the container, where `next dev` hot-reloads them: no image rebuild for code changes.
+  next-dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: .env
+    environment:
+      # Same as `npm run dev` on the host, except the services the container reaches by name.
+      # SMTP stays as in .env (e.g. Gmail); reserved test domains go to the Mailpit container.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-venturepath}:${POSTGRES_PASSWORD:-venturepath}@postgres:5432/${POSTGRES_DB:-venturepath}
+      LOKI_URL: http://loki:3100
+      MAIL_CATCHER_URL: smtp://mailpit:1025
+    depends_on:
+      - postgres
+      - loki
+      - mailpit
+    volumes:
+      # The embedding model already downloaded by `npm run dev`/tests on the host; no download needed.
+      - ./.cache/models:/app/.cache/models
+      - dev-uploads:/app/uploads
+    develop:
+      watch:
+        # Hot-reloaded by next dev.
+        - action: sync
+          path: ./src
+          target: /app/src
+          ignore:
+            - generated/
+        # nodemon regenerates the Prisma client and restarts next dev on schema changes.
+        # Run `npm run db:migrate` on the host to apply new migrations.
+        - action: sync
+          path: ./prisma
+          target: /app/prisma
+        - action: sync
+          path: ./prisma7.config.ts
+          target: /app/prisma7.config.ts
+        - action: sync+restart
+          path: ./next.config.ts
+          target: /app/next.config.ts
+        - action: sync+restart
+          path: ./nodemon.json
+          target: /app/nodemon.json
+        # New dependencies need a fresh npm ci.
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./package-lock.json
+
 volumes:
   postgres-data:
   loki-data:
   grafana-data:
   hf-cache:
+  dev-uploads:

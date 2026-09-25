@@ -12,6 +12,9 @@ Known Limitations (not blocking):
 - Better Auth's built-in rate limiting is on in production only; locally, sign-in and resend-verification endpoints are not rate limited.
 - No password reset yet (not in the Phase 1 plan). Consequence: if someone signs up with another person's email and never verifies it, the real owner can't use Google with that email (Better Auth refuses to link to an unverified local account) and can't sign up again. The squatter still can't sign in. Password reset will give the owner a way back.
 - Google OAuth client is for local development only (origin and redirect URI `http://localhost:3000`). The downloaded `client_secret_*.json` in the repo root is git-ignored; its values are copied into `.env`, so the file can be deleted.
+- Resume analysis needs `LLM_PROVIDER=openai` and a reachable endpoint; the tests use a stubbed `fetch`, so a real model has not been exercised by the test suite. Scanned (image-only) PDFs have no text and can't be analysed. Legacy DOC extraction is a rough scan of printable text.
+- `LLM_FALLBACK_MODEL` is read but not used. The `job_description` prompt is editable but no feature uses it yet.
+- Running the whole Playwright suite in parallel on a cold dev server can time out (route compilation plus the embedding model load). Every spec passes when re-run, or with `--workers=1`.
 - An invalid or expired verification link redirects to `/dashboard`, which sends signed-out users to `/sign-in` without explaining why.
 
 Resolved Blockers:

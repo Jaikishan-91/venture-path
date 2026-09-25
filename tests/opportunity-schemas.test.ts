@@ -39,7 +39,37 @@ describe("opportunitySchema", () => {
       payPeriod: "month",
       duration: "3 months",
       deadline: null,
+      requirements: null,
+      experienceLevel: null,
+      compensationMin: null,
+      compensationMax: null,
     });
+  });
+
+  it("reads the optional requirements, experience level and compensation range", () => {
+    const parsed = opportunitySchema.parse({
+      ...valid,
+      requirements: " A portfolio ",
+      experienceLevel: "junior",
+      compensationMin: "10000",
+      compensationMax: "20000",
+    });
+    expect(parsed).toMatchObject({
+      requirements: "A portfolio",
+      experienceLevel: "junior",
+      compensationMin: 10000,
+      compensationMax: 20000,
+    });
+  });
+
+  it("rejects an unknown experience level and an inverted compensation range", () => {
+    expect(opportunitySchema.safeParse({ ...valid, experienceLevel: "guru" }).success).toBe(false);
+    const inverted = opportunitySchema.safeParse({
+      ...valid,
+      compensationMin: "20000",
+      compensationMax: "10000",
+    });
+    expect(inverted.error?.issues[0].message).toContain("can't exceed");
   });
 
   it("allows remote work without a city", () => {

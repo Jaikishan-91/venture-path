@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { Client } from "pg";
 
 loadEnvConfig(process.cwd());
@@ -9,13 +9,16 @@ const MAILPIT_URL = "http://localhost:8025";
 export const E2E_EMAIL_DOMAIN = "e2e.venturepath.local";
 export const PASSWORD = "correct-horse-battery";
 
+/** A toast notification (NFR-3) containing `text`. */
+export const toast = (page: Page, text: string | RegExp): Locator =>
+  page.locator("[data-sonner-toast]").filter({ hasText: text });
+
 export const uniqueEmail = (prefix: string) =>
   `${prefix}-${randomUUID().slice(0, 8)}@${E2E_EMAIL_DOMAIN}`;
 
-export async function signUp(page: Page, role: "student" | "msme", email: string) {
-  await page.goto("/sign-up");
-  await page.getByLabel(role === "student" ? "A student" : "An MSME (business)").check();
-  await page.getByLabel("Name").fill(`E2E ${role}`);
+export async function signUp(page: Page, role: "user" | "organisation", email: string) {
+  await page.goto(role === "user" ? "/sign-up" : "/organisation/sign-up");
+  await page.getByLabel(role === "user" ? "Name" : "Your name").fill(`E2E ${role}`);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Create account" }).click();
@@ -23,7 +26,7 @@ export async function signUp(page: Page, role: "student" | "msme", email: string
 }
 
 /** Signs up, verifies the email and lands on the role's dashboard. */
-export async function signUpVerified(page: Page, role: "student" | "msme", email: string) {
+export async function signUpVerified(page: Page, role: "user" | "organisation", email: string) {
   await signUp(page, role, email);
   await page.goto(await getVerificationLink(email));
   await expect(page).toHaveURL(new RegExp(`/${role}$`), { timeout: 15_000 });
@@ -74,23 +77,23 @@ export const adminCredentials = () => ({
 
 export async function signInAdmin(page: Page) {
   const { email, password } = adminCredentials();
-  await page.goto("/sign-in");
+  await page.goto("/admin/sign-in");
   await page.getByLabel("Email").fill(email!);
   await page.getByLabel("Password").fill(password!);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
 }
 
-/** Signs up a verified MSME and submits a business profile for review. */
-export async function createPendingMsme(page: Page, email: string, businessName: string) {
-  await signUpVerified(page, "msme", email);
-  await page.goto("/msme/profile");
+/** Signs up a verified organisation and submits a business profile for review. */
+export async function createPendingOrganisation(page: Page, email: string, businessName: string) {
+  await signUpVerified(page, "organisation", email);
+  await page.goto("/organisation/profile");
   await page.getByLabel("Business name").fill(businessName);
   await page.getByLabel("Description").fill("We make tools.");
   await page.getByLabel("Industry").fill("Manufacturing");
   await page.getByLabel("Location").fill("Pune");
   await page.getByRole("button", { name: "Submit for review" }).click();
-  await expect(page).toHaveURL(/\/msme$/);
+  await expect(page).toHaveURL(/\/organisation$/);
 }
 
 async function query(sql: string, params: unknown[]): Promise<void> {
@@ -109,9 +112,12 @@ export async function clearRole(email: string): Promise<void> {
 }
 
 /** Stands in for the admin review that arrives in Phase 3. */
-export async function setMsmeStatus(email: string, status: "approved" | "rejected"): Promise<void> {
+export async function setOrganisationStatus(
+  email: string,
+  status: "approved" | "rejected",
+): Promise<void> {
   await query(
-    `UPDATE msme_profile SET status = $2 WHERE "userId" = (SELECT id FROM "user" WHERE email = $1)`,
+    `UPDATE organisation_profile SET status = $2 WHERE "userId" = (SELECT id FROM "user" WHERE email = $1)`,
     [email, status],
   );
 }

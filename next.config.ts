@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
   // pino, pino-pretty, thread-stream, pg and @prisma/client are already external by default.
   // Transformers.js loads native onnxruntime-node binaries and model files at runtime.
   serverExternalPackages: ["pino-loki", "@huggingface/transformers"],
+  // Old role routes before the MSME/student rename (ADR-025); keeps bookmarks and email links working.
+  async redirects() {
+    return [
+      { source: "/student/:path*", destination: "/user/:path*", permanent: true },
+      { source: "/msme/:path*", destination: "/organisation/:path*", permanent: true },
+      { source: "/admin/msmes", destination: "/admin/organisations", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

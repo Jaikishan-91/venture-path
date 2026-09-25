@@ -8,5 +8,5 @@ export const metadata: Metadata = { title: "Sign up · VenturePath" };
 
 export default async function SignUpPage() {
   if (await getSession()) redirect("/dashboard");
-  return <SignUpForm googleEnabled={Boolean(getEnv().GOOGLE_CLIENT_ID)} />;
+  return <SignUpForm role="user" googleEnabled={Boolean(getEnv().GOOGLE_CLIENT_ID)} />;
 }
