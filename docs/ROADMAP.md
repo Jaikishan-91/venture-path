@@ -1,7 +1,8 @@
 # Roadmap
 
 Current:
-- MVP initial plan drafted: `plan/2026-09-25-mvp-initial-plan.md` (awaiting approval).
+- MVP initial plan approved: `plan/2026-09-25-mvp-initial-plan.md`.
+- Phase 0 plan drafted: `plan/2026-09-25-phase-0-foundation.md` (awaiting approval).
 
 Next (MVP phases, in order):
 0. Foundation (Next.js, Docker Compose, Prisma, pino → Loki, test tooling).

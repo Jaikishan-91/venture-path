@@ -1,6 +1,6 @@
 # Implementation Plan — VenturePath MVP (initial)
 
-Status: draft
+Status: approved (2026-09-25)
 Date: 2026-09-25
 Decisions this plan relies on: ADR-001 to ADR-009 in `docs/DECISIONS.md`.
 

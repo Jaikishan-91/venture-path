@@ -4,4 +4,5 @@ All implementation plans are stored here. See `AGENTS.md` → Project Operating 
 
 | Date | Plan | Status |
 |------|------|--------|
-| 2026-09-25 | [MVP initial plan](2026-09-25-mvp-initial-plan.md) | draft |
+| 2026-09-25 | [MVP initial plan](2026-09-25-mvp-initial-plan.md) | approved |
+| 2026-09-25 | [Phase 0 — Foundation](2026-09-25-phase-0-foundation.md) | draft |
