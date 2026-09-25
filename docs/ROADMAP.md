@@ -2,11 +2,10 @@
 
 Current:
 - MVP initial plan approved: `plan/2026-09-25-mvp-initial-plan.md`.
-- Phase 0 plan drafted: `plan/2026-09-25-phase-0-foundation.md` (awaiting approval).
+- Phase 0 (foundation) shipped 2026-09-25: `plan/2026-09-25-phase-0-foundation.md`.
 
 Next (MVP phases, in order):
-0. Foundation (Next.js, Docker Compose, Prisma, pino → Loki, test tooling).
-1. Authentication (email/password + Google, roles, email verification).
+1. Authentication (email/password + Google, roles, email verification). Needs a Google OAuth client from the product owner.
 2. Profiles (student, MSME).
 3. Admin approval of MSMEs.
 4. Opportunities (freelance, internship).

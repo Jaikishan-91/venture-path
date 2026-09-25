@@ -44,3 +44,18 @@ Decision: Develop locally with Docker Compose running Next.js, PostgreSQL, Loki 
 Date: 2026-09-25
 Context: Remaining technical choices after ADR-001.
 Decision: TypeScript, Next.js App Router, Prisma ORM (PostgreSQL, Prisma Migrate), Better Auth (email/password + Google), Tailwind CSS with shadcn/ui, pino for structured logging shipped to Loki, Vitest for unit/integration tests and Playwright for end-to-end tests. Package manager: npm.
+
+## ADR-010 — Pin Prisma 7.10.0; override two vulnerable CLI dependencies
+Date: 2026-09-25
+Context: npm's `latest` tag for `prisma` is `8.0.0-rc.17`, but Better Auth 1.7.6 declares `prisma ^5 || ^6 || ^7`. The Prisma 7.10.0 CLI pulls in `deepmerge-ts` 7.x (GHSA-ggr8-5vv4-36mx) and a vulnerable `mysql2`; npm's suggested fix was downgrading to Prisma 6.
+Decision: Pin `prisma`, `@prisma/client` and `@prisma/adapter-pg` to exactly 7.10.0. Add npm `overrides` for `mysql2 ^3.24.4` and `deepmerge-ts ^8.0.2`. Verified afterwards: `npm audit` reports 0 vulnerabilities, and `prisma validate` and `prisma generate` still work. Revisit when Better Auth supports Prisma 8.
+
+## ADR-011 — Push logs directly to Loki with pino-loki
+Date: 2026-09-25
+Context: Logs could be shipped by an agent (Grafana Alloy/Promtail) or pushed by the app.
+Decision: Use the `pino-loki` transport in a pino worker thread, with 2-second batching. No log agent is needed locally. Trade-off: logs buffered at shutdown or while Loki is unreachable can be lost; stdout still receives every line. Revisit for production hosting.
+
+## ADR-012 — shadcn/ui default preset
+Date: 2026-09-25
+Context: shadcn/ui 4.21 offers several presets and component bases.
+Decision: Use `shadcn init --defaults` (template `next`, preset `base-nova`, Base UI components). It installs the `cn` package (published by shadcn from `shadcn-ui/cn` with npm provenance) instead of `clsx` + `tailwind-merge`. `cn` is only weeks old; watch it for issues.

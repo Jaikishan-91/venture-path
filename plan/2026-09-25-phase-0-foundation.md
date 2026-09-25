@@ -1,6 +1,6 @@
 # Implementation Plan — Phase 0: Foundation
 
-Status: draft
+Status: shipped (2026-09-25)
 Date: 2026-09-25
 Parent plan: `plan/2026-09-25-mvp-initial-plan.md`
 
@@ -86,3 +86,27 @@ All work lands in one commit; revert that commit to undo it. `docker compose dow
 ## Ship
 
 When verification passes: update docs, mark this plan `shipped`, and commit `feat: project foundation (Next.js, Postgres, Loki, tooling)`.
+
+## Outcome (2026-09-25)
+
+Deviations from the plan:
+- `create-next-app` now adds its own `AGENTS.md` and `CLAUDE.md`. Scaffolded in a temp folder; our files were kept, and the Next.js agent-rules block (which `next dev` re-adds anyway) was appended to `AGENTS.md`.
+- `@types/node` raised from ^20 to ^24; Vitest 5 requires ^22 or >=24.
+- npm overrides added for `mysql2` and `deepmerge-ts` (ADR-010).
+- The Loki healthcheck was removed; the image has no shell.
+- Review finding fixed: Compose ports were bound to all interfaces, exposing development credentials to the local network. They now bind to 127.0.0.1.
+- Vitest config is `vitest.config.mts`, because an ESM `.ts` config triggered a warning in this CommonJS package.
+- Prettier configured with `printWidth` 100 and LF line endings; markdown excluded.
+
+Verification actually run:
+- `docker compose up -d`: Postgres and Mailpit healthy; Loki `/ready` reachable; Grafana's Loki data source health is "OK".
+- `npm run lint`, `npm run typecheck`, `npm run build`, `npm run format:check`: pass.
+- `npm test`: 2 files, 6 tests pass (unit, plus integration against Docker Postgres).
+- `npm run test:e2e`: 2 tests pass (home page, `/api/health`).
+- Manual: `/api/health` → 200. The log line appeared in Loki under `{app="venturepath"}` with labels `app`, `env`, `level`.
+- Manual: Postgres stopped → `/api/health` returned 503 in about 100 ms, and an error log reached Loki with `level=error`. Neither the dev log nor Loki contained the connection string or password. After Postgres restarted, `/api/health` returned 200 without an app restart.
+- `npm audit`: 0 vulnerabilities.
+
+Not verified:
+- Production build served with `npm start` (only `next build` was run).
+- Behavior on macOS/Linux.

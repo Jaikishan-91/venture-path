@@ -21,6 +21,6 @@ Technology Stack:
 - Testing: Vitest (unit/integration), Playwright (end-to-end).
 - Local environment: Docker Compose. Production hosting: not yet decided.
 - Version control: Git (local repository; remote not yet configured).
-- See `docs/DECISIONS.md` ADR-001 to ADR-009.
+- See `docs/DECISIONS.md` ADR-001 to ADR-012.
 
-Current State: Greenfield. No application code yet. Documentation and agent operating rules initialized on 2026-09-25. Next step: initial plan in `plan/`.
+Current State: Phase 0 (foundation) shipped on 2026-09-25: Next.js app, Docker Compose services, Prisma connection, logging to Loki, and test tooling. No product features yet. Next: Phase 1 (authentication). See `README.md` for local setup.
