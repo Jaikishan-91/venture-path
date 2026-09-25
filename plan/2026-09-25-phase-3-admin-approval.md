@@ -1,4 +1,4 @@
-﻿# Implementation Plan â€” Phase 3: Admin approval of MSMEs
+# Implementation Plan — Phase 3: Admin approval of MSMEs
 
 Status: shipped (2026-09-25)
 Date: 2026-09-25
@@ -22,7 +22,7 @@ Phase 2: `MsmeProfile.status` exists (`pending` on create, back to `pending` on 
 ## Design
 
 - **Schema** (migration `msme_review`): `MsmeProfile.reviewedById String?` (FK to `User`, `onDelete: SetNull`), `reviewedAt DateTime?`, `rejectionReason String?`. They describe the last decision; an MSME edit that resets the status to `pending` leaves them as history.
-- **Review** (`src/lib/msme-review.ts`): `reviewMsme(adminId, input)` with zod input `{ profileId, decision: approve|reject, reason, profileUpdatedAt }`. Reason required (1â€“500) for reject, cleared on approve. The update is conditional on `updatedAt` matching the value the admin saw, so an MSME edit made after the page loaded (or a second admin's decision) makes it fail with a "changed, review again" message instead of approving unseen content. `adminId` comes from the session.
+- **Review** (`src/lib/msme-review.ts`): `reviewMsme(adminId, input)` with zod input `{ profileId, decision: approve|reject, reason, profileUpdatedAt }`. Reason required (1–500) for reject, cleared on approve. The update is conditional on `updatedAt` matching the value the admin saw, so an MSME edit made after the page loaded (or a second admin's decision) makes it fail with a "changed, review again" message instead of approving unseen content. `adminId` comes from the session.
 - **Email:** after a successful update, sent without awaiting (logged on success or failure), to the MSME user's email: approved, or not approved with the reason and a link to edit the profile.
 - **Pages:** `/admin` shows pending count and links to `/admin/msmes`. `/admin/msmes?status=pending|approved|rejected` (invalid values fall back to pending) lists profiles with owner name/email, details, last review; tabs show counts. Each card offers the decisions that change the status: pending gets Approve and Reject, approved gets Reject (revoke), rejected gets Approve. Reject needs a reason. Max 100 per tab (oldest first for pending, newest first otherwise).
 - **MSME dashboard:** shows the rejection reason when rejected.

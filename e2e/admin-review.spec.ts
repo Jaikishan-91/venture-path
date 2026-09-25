@@ -71,10 +71,9 @@ test.describe("admin review", () => {
     expect(await getEmailText(email, "wasn't approved")).toContain("Please add your GST number");
 
     await admin.goto("/admin/msmes?status=rejected");
-    await admin
-      .getByRole("article", { name: businessName })
-      .getByRole("button", { name: "Approve" })
-      .click();
+    const rejectedCard = admin.getByRole("article", { name: businessName });
+    await rejectedCard.getByRole("button", { name: "Approve" }).click();
+    await expect(rejectedCard).toBeHidden();
     await page.reload();
     await expect(page.getByRole("status")).toContainText("Approved");
   });

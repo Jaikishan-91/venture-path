@@ -58,23 +58,24 @@ model StudentProfile {
 }
 
 model MsmeProfile {
-  id              String     @id @default(uuid())
-  userId          String     @unique
-  user            User       @relation("MsmeOwner", fields: [userId], references: [id], onDelete: Cascade)
+  id              String        @id @default(uuid())
+  userId          String        @unique
+  user            User          @relation("MsmeOwner", fields: [userId], references: [id], onDelete: Cascade)
   businessName    String
   description     String
   industry        String
   location        String
   website         String?
   /// Written only by application code (`src/lib/profiles.ts`, later admin review), never from form input.
-  status          MsmeStatus @default(pending)
+  status          MsmeStatus    @default(pending)
   /// Last admin decision. Kept as history when an edit sends the profile back to pending.
   reviewedById    String?
-  reviewedBy      User?      @relation("MsmeReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedBy      User?         @relation("MsmeReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt      DateTime?
   rejectionReason String?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  opportunities   Opportunity[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([status])
   @@map("msme_profile")
@@ -126,4 +127,60 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+enum OpportunityType {
+  freelance
+  internship
+}
+
+enum OpportunityStatus {
+  draft
+  published
+  closed
+}
+
+enum WorkMode {
+  remote
+  onsite
+  hybrid
+}
+
+enum PayType {
+  paid
+  unpaid
+}
+
+enum PayPeriod {
+  fixed
+  month
+  hour
+}
+
+model Opportunity {
+  id            String            @id @default(uuid())
+  msmeProfileId String
+  msmeProfile   MsmeProfile       @relation(fields: [msmeProfileId], references: [id], onDelete: Cascade)
+  type          OpportunityType
+  title         String
+  description   String
+  skills        String[]
+  workMode      WorkMode
+  city          String?
+  payType       PayType
+  /// Whole INR; set only when payType is paid.
+  payAmount     Int?
+  payPeriod     PayPeriod?
+  duration      String?
+  /// Last day applications are accepted (India time).
+  deadline      DateTime?         @db.Date
+  status        OpportunityStatus @default(draft)
+  publishedAt   DateTime?
+  closedAt      DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([msmeProfileId])
+  @@index([status])
+  @@map("opportunity")
 }

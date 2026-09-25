@@ -6,9 +6,9 @@ Current:
 - Phase 1 (authentication) shipped 2026-09-25: `plan/2026-09-25-phase-1-auth.md`. Google sign-in enabled for local development.
 - Phase 2 (profiles) shipped 2026-09-25: `plan/2026-09-25-phase-2-profiles.md`.
 - Phase 3 (admin approval) shipped 2026-09-25: `plan/2026-09-25-phase-3-admin-approval.md`.
+- Phase 4 (opportunities) shipped 2026-09-25: `plan/2026-09-25-phase-4-opportunities.md`.
 
 Next (MVP phases, in order):
-4. Opportunities (freelance, internship).
 5. Browse and search.
 6. Applications (apply, accept/reject, status tracking).
 

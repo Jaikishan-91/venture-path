@@ -49,7 +49,18 @@ Review rules (ADR-019):
 - The update is conditional on `updatedAt` equal to what the admin saw and on the status actually changing, so edits made after the page loaded or repeated submits are refused.
 - An MSME edit that resets the status to `pending` keeps the last review fields as history.
 
-## Planned (Phases 4–6)
+## Implemented (Phase 4)
 
-- Opportunity (freelance | internship), Application. See `plan/2026-09-25-mvp-initial-plan.md`.
-- MsmeProfile 1–N Opportunity; StudentProfile N–N Opportunity via Application.
+`Opportunity` (`opportunity`): `msmeProfileId` (MsmeProfile 1–N, cascade delete), `type` (`freelance` | `internship`), `title`, `description`, `skills String[]` (max 15), `workMode` (`remote` | `onsite` | `hybrid`), `city?` (required unless remote), `payType` (`paid` | `unpaid`), `payAmount Int?` and `payPeriod?` (`fixed` | `month` | `hour`, both set only when paid), `duration?`, `deadline Date?` (last day to apply, India time), `status` (`draft` | `published` | `closed`), `publishedAt?`, `closedAt?`. Indexed on `msmeProfileId` and `status`.
+
+Rules (ADR-020):
+- Unpaid only for internships.
+- Create, edit, publish and reopen need an approved MSME; close and delete-draft are always allowed. Only drafts can be deleted.
+- Transitions: draft → published → closed → published (reopen). Publish/reopen refused when the deadline has passed. Status updates are conditional on the expected current status.
+- All writes are scoped to the session user's own MSME profile (`src/lib/opportunities.ts`).
+- Visibility rule for Phase 5: students see a listing only if it is `published`, its MSME is `approved`, and its deadline hasn't passed.
+
+## Planned (Phases 5–6)
+
+- Application. See `plan/2026-09-25-mvp-initial-plan.md`.
+- StudentProfile N–N Opportunity via Application.

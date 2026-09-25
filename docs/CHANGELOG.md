@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-25 — Phase 4: Opportunities
+Added:
+- Migration `opportunities`: `opportunity` table and enums `OpportunityType`, `OpportunityStatus`, `WorkMode`, `PayType`, `PayPeriod`.
+- `/msme/opportunities` (own listings with status, pay, location, deadline and actions), `/msme/opportunities/new`, `/msme/opportunities/[id]/edit`. MSME dashboard links to them.
+- Approved MSMEs create drafts, publish, edit, close, reopen; drafts can be deleted. Pending/rejected MSMEs can only close and delete drafts (ADR-020).
+- Validation in `src/lib/opportunity-schemas.ts`: pay rules (unpaid internships only, whole INR amount, period), city unless remote, deadline not in the past (India time).
+- Tests: validation, deadline and pay-format unit tests; listing integration tests (approval, ownership, transitions, deadline, delete); Playwright listing flows.
+
+Fixed:
+- Text encoding: a PowerShell rewrite had added byte-order marks to `src/lib/env.ts`, `src/lib/email.ts`, `tests/env.test.ts`, `tests/email.test.ts` and garbled the dashes in the Phase 3 plan; restored to plain UTF-8.
+- Flaky Phase 3 E2E step that reloaded the MSME page before the admin's re-approval finished.
+
 ## 2026-09-25 — Phase 3: Admin approval of MSMEs
 Added:
 - Migration `msme_review`: `reviewedById`, `reviewedAt`, `rejectionReason` on `msme_profile`.

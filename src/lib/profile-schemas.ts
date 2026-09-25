@@ -8,14 +8,14 @@ export const MAX_LINKS = 5;
 export const MIN_GRADUATION_YEAR = 1950;
 export const maxGraduationYear = () => new Date().getFullYear() + 8;
 
-const requiredText = (label: string, max: number) =>
+export const requiredText = (label: string, max: number) =>
   z
     .string(`Enter ${label}`)
     .trim()
     .min(1, `Enter ${label}`)
     .max(max, `Keep ${label} under ${max} characters`);
 
-const optionalText = (label: string, max: number) =>
+export const optionalText = (label: string, max: number) =>
   z
     .string()
     .trim()
@@ -37,6 +37,16 @@ const listFrom = (separator: RegExp) =>
         .filter(Boolean),
     );
 
+/** Comma-separated tags, lowercased and de-duplicated. */
+export const skillList = (max: number) =>
+  listFrom(/,/)
+    .transform((skills) => [...new Set(skills.map((skill) => skill.toLowerCase()))])
+    .pipe(
+      z
+        .array(z.string().max(40, "Keep each skill under 40 characters"))
+        .max(max, `Add at most ${max} skills`),
+    );
+
 export const studentProfileSchema = z.object({
   institution: requiredText("your institution", 120),
   course: requiredText("your course", 120),
@@ -47,13 +57,7 @@ export const studentProfileSchema = z.object({
       (year) => year >= MIN_GRADUATION_YEAR && year <= maxGraduationYear(),
       `Enter a year between ${MIN_GRADUATION_YEAR} and ${maxGraduationYear()}`,
     ),
-  skills: listFrom(/,/)
-    .transform((skills) => [...new Set(skills.map((skill) => skill.toLowerCase()))])
-    .pipe(
-      z
-        .array(z.string().max(40, "Keep each skill under 40 characters"))
-        .max(MAX_SKILLS, `Add at most ${MAX_SKILLS} skills`),
-    ),
+  skills: skillList(MAX_SKILLS),
   bio: optionalText("your bio", 1000),
   links: listFrom(/\r?\n/).pipe(
     z

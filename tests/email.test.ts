@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { isReservedAddress, smtpOptions, usesMailCatcher } from "@/lib/email";
 import { parseEnv } from "@/lib/env";
 

@@ -54,12 +54,14 @@ export default async function MsmeHomePage() {
                 {profile.website}
               </a>
             )}
-            <Link
-              href="/msme/profile"
-              className={buttonVariants({ variant: "outline", className: "self-start" })}
-            >
-              Edit profile
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/msme/opportunities" className={buttonVariants()}>
+                Your listings
+              </Link>
+              <Link href="/msme/profile" className={buttonVariants({ variant: "outline" })}>
+                Edit profile
+              </Link>
+            </div>
           </CardContent>
         </Card>
       ) : (
