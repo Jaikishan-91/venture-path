@@ -23,7 +23,7 @@ One `Application` row per student per listing. Withdrawal keeps the row; applyin
 
 Verification actually run:
 - `npx prisma migrate dev --name applications` applied.
-- `npm run lint`, `npm run typecheck` pass. `npm run format:check` and `npm run build` run at close-out.
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm run build`: pass.
 - `npm test`: 14 files, 138 tests pass. New: resume validation; apply once, withdraw, reapply; closed listing and missing profile refused; resume readable only by the student and owning MSME; only that MSME can accept; an accepted application cannot be withdrawn.
 - `npm run test:e2e`: 25 tests pass, including a student applying with a PDF, the MSME accepting, both sides seeing the contact email, and both decision emails in Mailpit.
 
