@@ -33,6 +33,7 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `signUp` | `src/app/(auth)/sign-up/actions.ts` | none | Validates name, email, password (8–128), role (`student`/`msme`); calls `auth.api.signUpEmail`; assigns the role. Always answers "check your inbox" for a valid form, including for already-registered emails. |
 | `chooseRole` | `src/app/onboarding/role/actions.ts` | session | Sets the role of a user who has none. Never overwrites a role. |
 | `saveStudentProfileAction` | `src/app/student/profile/actions.ts` | `student` | Validates and upserts the signed-in student's profile; redirects to `/student`. |
+| `reviewMsmeAction` | `src/app/admin/msmes/actions.ts` | `admin` | Approves or rejects (reason required) an MSME profile from any status; refused if the profile changed since the page loaded. Emails the MSME. |
 | `saveMsmeProfileAction` | `src/app/msme/profile/actions.ts` | `msme` | Validates and saves the signed-in MSME's profile; the status is derived on the server (ADR-016). Redirects to `/msme`, or asks to save again if the status changed concurrently. |
 
 ## Pages and access
@@ -44,5 +45,6 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `/onboarding/role` | Signed in without a role |
 | `/student`, `/msme`, `/admin` | Signed in with that role; other roles are redirected to their own home |
 | `/student/profile`, `/msme/profile` | Signed in with that role; create or edit own profile |
+| `/admin/msmes?status=pending\|approved\|rejected` | Admin; MSME review list (default `pending`, max 100 per status) |
 
 `src/proxy.ts` redirects requests without a session cookie to `/sign-in`. It is only an optimisation; each page checks the session and role on the server (`src/lib/authz.ts`).

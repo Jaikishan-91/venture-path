@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-25 — Phase 3: Admin approval of MSMEs
+Added:
+- Migration `msme_review`: `reviewedById`, `reviewedAt`, `rejectionReason` on `msme_profile`.
+- `/admin/msmes` with Pending / Approved / Rejected tabs and counts; approve, reject (reason required) and revoke. `/admin` shows the pending count.
+- Decisions are refused if the MSME edited its profile after the admin opened the page (ADR-019).
+- The MSME gets an email on each decision (with the reason when rejected) and sees the reason on its dashboard.
+- Tests: review schema and integration tests; Playwright approve, reject-with-reason, re-approve and access tests reading decision emails from Mailpit.
+
 ## 2026-09-25 — Real email over SMTP (Gmail)
 Changed:
 - `src/lib/email.ts` supports SMTP login and TLS: new optional env vars `SMTP_USER`, `SMTP_PASSWORD` (set together), `SMTP_SECURE` (defaults to true on port 465; otherwise STARTTLS is required when logging in), and `MAIL_CATCHER_URL` (default `smtp://localhost:1025`).

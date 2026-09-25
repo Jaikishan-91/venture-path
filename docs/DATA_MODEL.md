@@ -34,8 +34,22 @@ Profile rules (ADR-016):
 - `status` is never read from input. Creating a profile sets `pending`. Saving a changed `approved` profile sets `pending`; saving a `rejected` profile sets `pending` (resubmission); an unchanged `approved` save stays `approved`.
 - The status update is conditional on the status that was read, so it can't overwrite a concurrent review decision.
 
-## Planned (Phases 3–6)
+## Implemented (Phase 3)
 
-- Phase 3 adds review fields to `MsmeProfile` (reviewer, reviewed at, rejection reason).
+`MsmeProfile` review fields, describing the last admin decision:
+
+| Field | Notes |
+|-------|-------|
+| `reviewedById` | FK to `User` (the admin), `onDelete: SetNull`. |
+| `reviewedAt` | Time of the last decision. |
+| `rejectionReason` | Required when rejecting (max 500), cleared on approval. |
+
+Review rules (ADR-019):
+- Only `reviewMsme` (`src/lib/msme-review.ts`) writes them, from an admin session, for any status (approve, reject, revoke).
+- The update is conditional on `updatedAt` equal to what the admin saw and on the status actually changing, so edits made after the page loaded or repeated submits are refused.
+- An MSME edit that resets the status to `pending` keeps the last review fields as history.
+
+## Planned (Phases 4–6)
+
 - Opportunity (freelance | internship), Application. See `plan/2026-09-25-mvp-initial-plan.md`.
 - MsmeProfile 1–N Opportunity; StudentProfile N–N Opportunity via Application.

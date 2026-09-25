@@ -51,6 +51,48 @@ export async function getVerificationLink(to: string, timeoutMs = 15_000): Promi
   throw new Error(`No verification email for ${to} within ${timeoutMs} ms`);
 }
 
+/** Polls Mailpit for the newest email to `to` whose subject contains `subject`; returns its text. */
+export async function getEmailText(to: string, subject: string, timeoutMs = 15_000) {
+  const query = encodeURIComponent(`to:"${to}" subject:"${subject}"`);
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const search = await fetch(`${MAILPIT_URL}/api/v1/search?query=${query}`);
+    const { messages } = (await search.json()) as MailpitSearch;
+    if (messages.length > 0) {
+      const message = await fetch(`${MAILPIT_URL}/api/v1/message/${messages[0].ID}`);
+      return ((await message.json()) as MailpitMessage).Text;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  throw new Error(`No email to ${to} with subject "${subject}" within ${timeoutMs} ms`);
+}
+
+export const adminCredentials = () => ({
+  email: process.env.ADMIN_EMAIL,
+  password: process.env.ADMIN_PASSWORD,
+});
+
+export async function signInAdmin(page: Page) {
+  const { email, password } = adminCredentials();
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email!);
+  await page.getByLabel("Password").fill(password!);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
+}
+
+/** Signs up a verified MSME and submits a business profile for review. */
+export async function createPendingMsme(page: Page, email: string, businessName: string) {
+  await signUpVerified(page, "msme", email);
+  await page.goto("/msme/profile");
+  await page.getByLabel("Business name").fill(businessName);
+  await page.getByLabel("Description").fill("We make tools.");
+  await page.getByLabel("Industry").fill("Manufacturing");
+  await page.getByLabel("Location").fill("Pune");
+  await page.getByRole("button", { name: "Submit for review" }).click();
+  await expect(page).toHaveURL(/\/msme$/);
+}
+
 async function query(sql: string, params: unknown[]): Promise<void> {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();

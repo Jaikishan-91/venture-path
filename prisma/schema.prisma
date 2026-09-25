@@ -28,7 +28,8 @@ model User {
   sessions       Session[]
   accounts       Account[]
   studentProfile StudentProfile?
-  msmeProfile    MsmeProfile?
+  msmeProfile    MsmeProfile?    @relation("MsmeOwner")
+  msmeReviews    MsmeProfile[]   @relation("MsmeReviewer")
 
   @@unique([email])
   @@map("user")
@@ -57,18 +58,23 @@ model StudentProfile {
 }
 
 model MsmeProfile {
-  id           String     @id @default(uuid())
-  userId       String     @unique
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessName String
-  description  String
-  industry     String
-  location     String
-  website      String?
+  id              String     @id @default(uuid())
+  userId          String     @unique
+  user            User       @relation("MsmeOwner", fields: [userId], references: [id], onDelete: Cascade)
+  businessName    String
+  description     String
+  industry        String
+  location        String
+  website         String?
   /// Written only by application code (`src/lib/profiles.ts`, later admin review), never from form input.
-  status       MsmeStatus @default(pending)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  status          MsmeStatus @default(pending)
+  /// Last admin decision. Kept as history when an edit sends the profile back to pending.
+  reviewedById    String?
+  reviewedBy      User?      @relation("MsmeReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   @@index([status])
   @@map("msme_profile")

@@ -38,6 +38,9 @@ export default async function MsmeHomePage() {
           <CardContent className="flex flex-col gap-4 text-sm">
             <div role="status" className="rounded-md bg-muted p-3">
               <p className="font-medium">Status: {STATUS_TEXT[profile.status].label}</p>
+              {profile.status === "rejected" && profile.rejectionReason && (
+                <p>Reason: {profile.rejectionReason}</p>
+              )}
               <p className="text-muted-foreground">{STATUS_TEXT[profile.status].detail}</p>
             </div>
             <p className="whitespace-pre-line">{profile.description}</p>
