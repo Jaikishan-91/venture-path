@@ -23,4 +23,4 @@ Technology Stack:
 - Version control: Git (local repository; remote not yet configured).
 - See `docs/DECISIONS.md` ADR-001 to ADR-015.
 
-Current State: Phase 0 (foundation) and Phase 1 (authentication) shipped on 2026-09-25. Users can sign up as a student or MSME, verify their email, sign in, and reach a role-specific placeholder dashboard; an admin is created by a seed script. Google sign-in is built but disabled until credentials are provided. Next: Phase 2 (profiles). See `README.md` for local setup.
+Current State: Phase 0 (foundation) and Phase 1 (authentication) shipped on 2026-09-25. Users can sign up as a student or MSME, verify their email, sign in, and reach a role-specific placeholder dashboard; an admin is created by a seed script. Google sign-in is enabled for local development. Next: Phase 2 (profiles). See `README.md` for local setup.

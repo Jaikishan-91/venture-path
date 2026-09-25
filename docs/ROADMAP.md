@@ -3,7 +3,7 @@
 Current:
 - MVP initial plan approved: `plan/2026-09-25-mvp-initial-plan.md`.
 - Phase 0 (foundation) shipped 2026-09-25: `plan/2026-09-25-phase-0-foundation.md`.
-- Phase 1 (authentication) shipped 2026-09-25: `plan/2026-09-25-phase-1-auth.md`. Google sign-in waits on OAuth credentials (B-003) and a linking fix (R-001).
+- Phase 1 (authentication) shipped 2026-09-25: `plan/2026-09-25-phase-1-auth.md`. Google sign-in enabled for local development.
 
 Next (MVP phases, in order):
 2. Profiles (student, MSME).

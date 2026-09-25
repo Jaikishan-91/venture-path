@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-25 — Google sign-in enabled
+Changed:
+- Google OAuth credentials configured locally (B-003 resolved). `client_secret_*.json` git-ignored.
+- A failed Google sign-in returns to `/sign-in?error=google` with an explanation instead of Better Auth's error page.
+- E2E: Google button redirects to Google with the configured client ID and callback URI; error message test.
+- R-001 closed: Better Auth already refuses to link Google to an unverified local account.
+
 ## 2026-09-25 — Phase 1: Authentication
 Added:
 - Better Auth 1.7.6 with the Prisma adapter: email/password sign-up and sign-in, required email verification (sent via nodemailer to Mailpit locally), Google sign-in when `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set.

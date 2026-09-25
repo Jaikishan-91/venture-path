@@ -6,7 +6,13 @@ import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = { title: "Sign in · VenturePath" };
 
-export default async function SignInPage() {
+export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   if (await getSession()) redirect("/dashboard");
-  return <SignInForm googleEnabled={Boolean(getEnv().GOOGLE_CLIENT_ID)} />;
+  const { error } = await searchParams;
+  return (
+    <SignInForm
+      googleEnabled={Boolean(getEnv().GOOGLE_CLIENT_ID)}
+      googleFailed={error === "google"}
+    />
+  );
 }

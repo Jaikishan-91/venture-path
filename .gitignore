@@ -24,6 +24,7 @@ src/generated/
 .env*.local
 .env.*
 !.env.example
+client_secret_*.json
 *.pem
 
 # testing

@@ -79,6 +79,30 @@ test("wrong password shows a generic error", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("Google sign-in redirects to Google with our callback", async ({ page }) => {
+  test.skip(!process.env.GOOGLE_CLIENT_ID, "Google credentials not configured");
+
+  await page.route("https://accounts.google.com/**", (route) => route.abort());
+  await page.goto("/sign-in");
+  const request = page.waitForRequest((req) =>
+    req.url().startsWith("https://accounts.google.com/"),
+  );
+  await page.getByRole("button", { name: "Continue with Google" }).click();
+
+  const url = new URL((await request).url());
+  expect(url.searchParams.get("client_id")).toBe(process.env.GOOGLE_CLIENT_ID);
+  expect(url.searchParams.get("redirect_uri")).toBe(
+    "http://localhost:3000/api/auth/callback/google",
+  );
+});
+
+test("a failed Google sign-in explains what to do", async ({ page }) => {
+  await page.goto("/sign-in?error=google");
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Couldn't sign in with Google" }),
+  ).toBeVisible();
+});
+
 test("seeded admin signs in to the admin dashboard", async ({ page }) => {
   const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;

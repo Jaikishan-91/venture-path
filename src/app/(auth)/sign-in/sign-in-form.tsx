@@ -10,10 +10,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 
-export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
+const GOOGLE_FAILED_MESSAGE =
+  "Couldn't sign in with Google. If you already signed up with this email and a password, sign in with your password instead.";
+
+export function SignInForm({
+  googleEnabled,
+  googleFailed = false,
+}: {
+  googleEnabled: boolean;
+  googleFailed?: boolean;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(
+    googleFailed ? GOOGLE_FAILED_MESSAGE : null,
+  );
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

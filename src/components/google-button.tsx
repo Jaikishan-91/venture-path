@@ -12,6 +12,7 @@ export function GoogleButton() {
     const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: "/dashboard",
+      errorCallbackURL: "/sign-in?error=google",
     });
     if (error) setPending(false);
   }
