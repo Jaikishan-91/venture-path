@@ -21,6 +21,6 @@ Technology Stack:
 - Testing: Vitest (unit/integration), Playwright (end-to-end).
 - Local environment: Docker Compose. Production hosting: not yet decided.
 - Version control: Git (local repository; remote not yet configured).
-- See `docs/DECISIONS.md` ADR-001 to ADR-012.
+- See `docs/DECISIONS.md` ADR-001 to ADR-015.
 
-Current State: Phase 0 (foundation) shipped on 2026-09-25: Next.js app, Docker Compose services, Prisma connection, logging to Loki, and test tooling. No product features yet. Next: Phase 1 (authentication). See `README.md` for local setup.
+Current State: Phase 0 (foundation) and Phase 1 (authentication) shipped on 2026-09-25. Users can sign up as a student or MSME, verify their email, sign in, and reach a role-specific placeholder dashboard; an admin is created by a seed script. Google sign-in is built but disabled until credentials are provided. Next: Phase 2 (profiles). See `README.md` for local setup.

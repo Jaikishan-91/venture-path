@@ -1,14 +1,16 @@
 # Architecture
 
-Status: Phase 0 (foundation) implemented on 2026-09-25. No product features yet.
+Status: Phase 0 (foundation) and Phase 1 (authentication) implemented on 2026-09-25.
 
 System Overview:
 A TypeScript Next.js 16 (App Router, Turbopack) web application backed by PostgreSQL through Prisma 7, with structured pino logs pushed directly to Grafana Loki. Local development runs the supporting services in Docker Compose.
 
 Components:
-- **Web app (Next.js App Router)** — UI (Tailwind 4 + shadcn/ui) and server logic (route handlers; server actions later).
-- **Auth (Better Auth)** — planned for Phase 1: email/password with email verification, Google sign-in, roles student / msme / admin.
-- **Database (PostgreSQL 18 + Prisma 7)** — system of record. Prisma uses the `@prisma/adapter-pg` driver adapter; schema changes go through Prisma Migrate. No models yet.
+- **Web app (Next.js App Router)** — UI (Tailwind 4 + shadcn/ui) and server logic (route handlers and server actions).
+- **Auth (Better Auth 1.7.6)** — email/password with required email verification, Google sign-in when configured, database sessions via the Prisma adapter. Roles student / msme / admin (ADR-013 to ADR-015).
+- **Access control** — `src/proxy.ts` does an optimistic session-cookie redirect; the real checks are `requireSession` / `requireRole` in `src/lib/authz.ts`, called by every protected page and action.
+- **Email** — nodemailer over SMTP (`src/lib/email.ts`); Mailpit locally. Production provider not chosen.
+- **Database (PostgreSQL 18 + Prisma 7)** — system of record. Prisma uses the `@prisma/adapter-pg` driver adapter; schema changes go through Prisma Migrate. See `docs/DATA_MODEL.md`.
 - **Logging (pino → pino-loki → Loki → Grafana)** — structured JSON logs with labels `app`, `env`, `level`. Secrets are redacted by path.
 - **Local dev services (Docker Compose)** — Postgres, Loki, Grafana (Loki data source provisioned) and Mailpit.
 
@@ -20,13 +22,20 @@ Next.js → pino → stdout (pretty in development) and pino-loki worker thread 
 
 | Path | Purpose |
 |------|---------|
-| `src/app/` | Routes (App Router). `api/health/route.ts` is the health check. |
+| `src/app/` | Routes (App Router). `api/health/route.ts` is the health check; `api/auth/[...all]` is Better Auth; `(auth)/` holds sign-in and sign-up; `onboarding/role`, `dashboard`, `student`, `msme`, `admin` are protected pages. |
+| `src/proxy.ts` | Optimistic redirect to `/sign-in` when there is no session cookie. |
+| `src/lib/auth.ts` | `getAuth()` — Better Auth server instance. `auth-client.ts` is the browser client. |
+| `src/lib/authz.ts` | `getSession`, `requireSession`, `requireRole` (server only). |
+| `src/lib/roles.ts` | Role constants, sign-up role schema, home path per role. |
+| `src/lib/user-roles.ts` | `assignInitialRole` — the only user-driven write to `User.role`. |
+| `src/lib/email.ts` | `sendEmail` over SMTP. |
 | `src/lib/env.ts` | Validates server environment variables with zod; `getEnv()` caches the result. |
 | `src/lib/db.ts` | `getDb()` — single Prisma client, reused across hot reloads. |
 | `src/lib/logger.ts` | `getLogger()` — single pino logger with redaction and transports. |
 | `src/lib/utils.ts`, `src/components/ui/` | shadcn/ui helpers and components. |
 | `src/generated/prisma/` | Generated Prisma client (git-ignored; created by `npm install` / `npm run db:generate`). |
-| `prisma/schema.prisma`, `prisma7.config.ts` | Prisma schema and CLI config. |
+| `prisma/schema.prisma`, `prisma7.config.ts`, `prisma/migrations/` | Prisma schema, CLI config and migrations. |
+| `prisma/seed.ts` | Creates the admin account (`npm run db:seed`). |
 | `docker-compose.yml`, `docker/` | Local services and Grafana provisioning. |
 | `tests/` | Vitest unit and integration tests. |
 | `e2e/` | Playwright end-to-end tests. |

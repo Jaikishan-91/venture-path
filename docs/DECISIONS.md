@@ -33,7 +33,7 @@ Decision: Every user verifies their email. An admin role approves each MSME, and
 ## ADR-007 — Sign-in with email/password and Google
 Date: 2026-09-25
 Context: Need a sign-in method that is familiar to students and supports email verification.
-Decision: Support email and password (with email verification) and Google sign-in. Auth library choice is still open.
+Decision: Support email and password (with email verification) and Google sign-in. Auth library: Better Auth (ADR-009).
 
 ## ADR-008 — Local Docker Compose first; production hosting deferred
 Date: 2026-09-25
@@ -59,3 +59,18 @@ Decision: Use the `pino-loki` transport in a pino worker thread, with 2-second b
 Date: 2026-09-25
 Context: shadcn/ui 4.21 offers several presets and component bases.
 Decision: Use `shadcn init --defaults` (template `next`, preset `base-nova`, Base UI components). It installs the `cn` package (published by shadcn from `shadcn-ui/cn` with npm provenance) instead of `clsx` + `tailwind-merge`. `cn` is only weeks old; watch it for issues.
+
+## ADR-013 — Role is server-owned, chosen once, never changed by users
+Date: 2026-09-25
+Context: Users pick student or MSME. Google sign-in has no role field. Letting clients write the role would allow self-promotion to admin (user decisions 1 and 2, Phase 1 plan).
+Decision: `User.role` is a nullable enum declared to Better Auth with `input: false`, so no auth endpoint or OAuth profile can set it (Better Auth rejects it with 400). The only user-driven write is `assignInitialRole`: `student`/`msme` only, and only while the role is `null`. Email sign-up assigns it right after account creation; a user whose role is still `null` (e.g. first Google sign-in) is held on `/onboarding/role`. Admins are created only by the seed script. Changing a set role is admin-only and not built yet.
+
+## ADR-014 — Email verification required before sign-in
+Date: 2026-09-25
+Context: ADR-006 requires verified emails; user decision 3 blocks unverified users entirely.
+Decision: `requireEmailVerification: true`, `sendOnSignUp` and `sendOnSignIn` (a blocked sign-in re-sends the link), `autoSignInAfterVerification`. Sign-up returns the same "check your inbox" response for new and existing emails (no account enumeration). Email is sent without awaiting inside the Better Auth callback, as its docs advise. Local SMTP is Mailpit via nodemailer; production provider TBD.
+
+## ADR-015 — Route protection in pages, proxy only as an optimisation
+Date: 2026-09-25
+Context: Next.js 16 renamed middleware to `proxy`. Better Auth docs say a cookie check there is not a security boundary.
+Decision: `src/proxy.ts` redirects requests without a session cookie on protected paths. Every protected page and server action calls `requireSession`/`requireRole`, which validate the session against the database. Wrong-role users are redirected to their own home rather than shown a 403.

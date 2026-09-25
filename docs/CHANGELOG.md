@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-25 — Phase 1: Authentication
+Added:
+- Better Auth 1.7.6 with the Prisma adapter: email/password sign-up and sign-in, required email verification (sent via nodemailer to Mailpit locally), Google sign-in when `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set.
+- First migration `init_auth`: `user`, `session`, `account`, `verification` tables and the `Role` enum.
+- Roles student / msme / admin: chosen at sign-up or on `/onboarding/role`, fixed once set, admin only via `npm run db:seed` (ADR-013).
+- Pages: `/sign-up`, `/sign-in`, `/onboarding/role`, `/dashboard`, and placeholder `/student`, `/msme`, `/admin` homes. Home page links to sign-in/up.
+- `src/proxy.ts` session-cookie redirect; server-side `requireSession`/`requireRole` (ADR-015).
+- New env vars: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` (seed only).
+- Tests: role and env unit tests, auth integration tests, Playwright auth flows using Mailpit's API.
+- Dependencies: `better-auth`, `nodemailer`; dev: `@types/nodemailer`, `tsx`. shadcn `Input`, `Label`, `Card`.
+
 ## 2026-09-25 — Phase 0: Foundation
 Added:
 - Next.js 16.3.6 app (TypeScript, App Router, Tailwind 4, ESLint) with a VenturePath placeholder home page.
