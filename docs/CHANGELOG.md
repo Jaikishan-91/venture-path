@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-25 — Phase 6: Applications
+Added:
+- Students apply to a visible listing with a resume (PDF, DOC or DOCX, up to 5 MB) and an optional note. A profile is required. Withdrawing allows applying again; an accepted or rejected application cannot be withdrawn.
+- MSMEs review applicants at `/msme/opportunities/[id]/applicants` and accept or reject. Emails are hidden until acceptance, then both sides see them.
+- The MSME is emailed on a new application; the student is emailed on a decision.
+- Resumes are stored outside the public folder (`uploads/resumes`, git-ignored) and downloaded only by the student or the owning MSME.
+- Students track applications at `/student/applications`.
+
 ## 2026-09-25 — Phase 5: Browse and search
 Added:
 - Public `/opportunities` (search, type, work mode, city, pagination) and `/opportunities/[id]`. Home page and the student dashboard link to them.

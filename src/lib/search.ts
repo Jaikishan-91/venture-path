@@ -117,6 +117,7 @@ export function getVisibleOpportunity(id: string) {
           location: true,
           website: true,
           description: true,
+          user: { select: { email: true } },
         },
       },
     },

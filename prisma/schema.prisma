@@ -42,17 +42,18 @@ enum MsmeStatus {
 }
 
 model StudentProfile {
-  id             String   @id @default(uuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String        @id @default(uuid())
+  userId         String        @unique
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   institution    String
   course         String
   graduationYear Int
   skills         String[]
   bio            String?
   links          String[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  applications   Application[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@map("student_profile")
 }
@@ -181,10 +182,41 @@ model Opportunity {
   embedding     Unsupported("vector(384)")?
   createdAt     DateTime                    @default(now())
   updatedAt     DateTime                    @updatedAt
+  applications  Application[]
 
   @@index([msmeProfileId])
   @@index([status])
   /// Placeholder so Migrate keeps the HNSW index created by hand in the search_embeddings migration.
   @@index([embedding], map: "opportunity_embedding_idx")
   @@map("opportunity")
+}
+
+enum ApplicationStatus {
+  submitted
+  accepted
+  rejected
+  withdrawn
+}
+
+model Application {
+  id               String            @id @default(uuid())
+  opportunityId    String
+  opportunity      Opportunity       @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  studentProfileId String
+  studentProfile   StudentProfile    @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  note             String?
+  /// Original file name, shown in the download link.
+  resumeFileName   String
+  /// Generated storage key. Never taken from the client.
+  resumeStorageKey String
+  status           ApplicationStatus @default(submitted)
+  appliedAt        DateTime          @default(now())
+  decidedAt        DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([opportunityId, studentProfileId])
+  @@index([opportunityId])
+  @@index([studentProfileId])
+  @@map("application")
 }

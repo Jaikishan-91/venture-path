@@ -11,3 +11,4 @@ All implementation plans are stored here. See `AGENTS.md` → Project Operating 
 | 2026-09-25 | [Phase 3 — Admin approval](2026-09-25-phase-3-admin-approval.md) | shipped |
 | 2026-09-25 | [Phase 4 — Opportunities](2026-09-25-phase-4-opportunities.md) | shipped |
 | 2026-09-25 | [Phase 5 — Browse and search](2026-09-25-phase-5-browse-search.md) | shipped |
+| 2026-09-25 | [Phase 6 — Applications](2026-09-25-phase-6-applications.md) | shipped |

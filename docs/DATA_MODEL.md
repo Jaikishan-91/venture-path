@@ -61,7 +61,18 @@ Rules (ADR-020):
 - Visibility rule (Phase 5, `src/lib/search.ts`): a listing is public only when it is `published`, its MSME is `approved`, and its deadline hasn't passed (India time).
 - `embedding vector(384)`: all-MiniLM-L6-v2 of the title, type, skills and description. Written with raw SQL after each save. HNSW cosine index `opportunity_embedding_idx` (created in the migration; the schema's `@@index([embedding])` only stops Migrate from dropping it).
 
-## Planned (Phase 6)
+## Implemented (Phase 6)
+
+`Application` (`application`): one per student per listing (`opportunityId` + `studentProfileId` unique). `note?` (max 1000), `resumeFileName`, `resumeStorageKey` (generated, never from the client), `status` (`submitted` | `accepted` | `rejected` | `withdrawn`), `appliedAt`, `decidedAt?`. Cascade-deletes with the listing or the student profile.
+
+Rules (ADR-022):
+- Apply only with a student profile, and only to a visible listing. A `withdrawn` row can be submitted again; any other status blocks a second application.
+- Accept and reject only from `submitted`, and only by the listing's MSME. Withdraw only from `submitted`, and only by the student.
+- The resume file is readable only by that student and that MSME. Email addresses are shown only when the status is `accepted`.
+
+## Planned
+
+- Nothing required for the MVP. Password reset and admin role changes are later.
 
 - Application. See `plan/2026-09-25-mvp-initial-plan.md`.
 - StudentProfile N–N Opportunity via Application.

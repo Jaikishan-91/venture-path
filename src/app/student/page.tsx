@@ -20,6 +20,12 @@ export default async function StudentHomePage() {
       >
         Browse opportunities
       </Link>
+      <Link
+        href="/student/applications"
+        className={buttonVariants({ variant: "outline", className: "self-start" })}
+      >
+        Your applications
+      </Link>
       {profile ? (
         <Card>
           <CardHeader>

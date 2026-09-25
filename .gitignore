@@ -50,3 +50,6 @@ next-env.d.ts
 
 # Transformers.js model cache
 /.cache/
+
+# Uploaded resumes
+/uploads/

@@ -35,6 +35,9 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `saveStudentProfileAction` | `src/app/student/profile/actions.ts` | `student` | Validates and upserts the signed-in student's profile; redirects to `/student`. |
 | `reviewMsmeAction` | `src/app/admin/msmes/actions.ts` | `admin` | Approves or rejects (reason required) an MSME profile from any status; refused if the profile changed since the page loaded. Emails the MSME. |
 | `saveOpportunityAction` | `src/app/msme/opportunities/actions.ts` | `msme` (approved) | Validates and creates (as draft) or updates the MSME's own listing; redirects to `/msme/opportunities`. |
+| `applyAction` | `src/app/opportunities/[id]/actions.ts` | `student` | Applies (or reapplies after withdrawal) with a resume and optional note. |
+| `withdrawAction` | `src/app/opportunities/[id]/actions.ts` | `student` | Withdraws the student's own submitted application. |
+| `decideAction` | `src/app/msme/opportunities/[id]/applicants/actions.ts` | `msme` | Accepts or rejects a submitted application on the MSME's own listing. |
 | `opportunityStatusAction` | `src/app/msme/opportunities/actions.ts` | `msme` | `publish`, `close`, `reopen` or `delete` (drafts) on the MSME's own listing (ADR-020). |
 | `saveMsmeProfileAction` | `src/app/msme/profile/actions.ts` | `msme` | Validates and saves the signed-in MSME's profile; the status is derived on the server (ADR-016). Redirects to `/msme`, or asks to save again if the status changed concurrently. |
 
@@ -47,7 +50,10 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `/onboarding/role` | Signed in without a role |
 | `/student`, `/msme`, `/admin` | Signed in with that role; other roles are redirected to their own home |
 | `/student/profile`, `/msme/profile` | Signed in with that role; create or edit own profile |
-| `/opportunities`, `/opportunities/[id]` | Public. Search (`q`, `type`, `workMode`, `city`, `page`) and detail. Hidden listings (draft, closed, unapproved MSME, passed deadline) are absent; their detail URL is 404. |
+| `/opportunities`, `/opportunities/[id]` | Public. Search and detail. Students apply here (resume + optional note). |
+| `/student/applications` | Student; own applications and, once accepted, the MSME email. |
+| `/msme/opportunities/[id]/applicants` | Owning MSME; accept or reject. Student email shown only after acceptance. |
+| `GET /api/applications/[id]/resume` | Student owner or owning MSME; 401 signed out, 404 otherwise. |
 | `/msme/opportunities`, `/msme/opportunities/new`, `/msme/opportunities/[id]/edit` | MSME; own listings only (other IDs give 404); forms only for approved MSMEs |
 | `/admin/msmes?status=pending\|approved\|rejected` | Admin; MSME review list (default `pending`, max 100 per status) |
 

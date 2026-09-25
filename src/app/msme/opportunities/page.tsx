@@ -81,6 +81,12 @@ export default async function MsmeOpportunitiesPage() {
                 status={opportunity.status}
                 canEdit={approved}
               />
+              <Link
+                href={`/msme/opportunities/${opportunity.id}/applicants`}
+                className="text-sm underline"
+              >
+                Applicants
+              </Link>
             </CardContent>
           </Card>
         </article>
