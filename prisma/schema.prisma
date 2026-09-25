@@ -16,20 +16,62 @@ enum Role {
 }
 
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id             String          @id
+  name           String
+  email          String
+  emailVerified  Boolean         @default(false)
+  image          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   /// Null until the user picks a role. Written only by application code, never by auth API input.
-  role          Role?
-  sessions      Session[]
-  accounts      Account[]
+  role           Role?
+  sessions       Session[]
+  accounts       Account[]
+  studentProfile StudentProfile?
+  msmeProfile    MsmeProfile?
 
   @@unique([email])
   @@map("user")
+}
+
+enum MsmeStatus {
+  pending
+  approved
+  rejected
+}
+
+model StudentProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution    String
+  course         String
+  graduationYear Int
+  skills         String[]
+  bio            String?
+  links          String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("student_profile")
+}
+
+model MsmeProfile {
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName String
+  description  String
+  industry     String
+  location     String
+  website      String?
+  /// Written only by application code (`src/lib/profiles.ts`, later admin review), never from form input.
+  status       MsmeStatus @default(pending)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([status])
+  @@map("msme_profile")
 }
 
 model Session {

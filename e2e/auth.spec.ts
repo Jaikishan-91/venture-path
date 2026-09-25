@@ -1,17 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-import { clearRole, getVerificationLink, uniqueEmail } from "./helpers";
-
-const PASSWORD = "correct-horse-battery";
-
-async function signUp(page: Page, role: "student" | "msme", email: string) {
-  await page.goto("/sign-up");
-  await page.getByLabel(role === "student" ? "A student" : "An MSME (business)").check();
-  await page.getByLabel("Name").fill(`E2E ${role}`);
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page.getByText("Check your inbox")).toBeVisible();
-}
+import { expect, test } from "@playwright/test";
+import { PASSWORD, clearRole, getVerificationLink, signUp, uniqueEmail } from "./helpers";
 
 test("signed-out users are sent to sign-in", async ({ page }) => {
   await page.goto("/student");

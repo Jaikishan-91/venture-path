@@ -20,7 +20,22 @@ Role rules:
 - Only `assignInitialRole` (`src/lib/user-roles.ts`) writes it from user input: `student` or `msme` only, and only while it is `null`.
 - `admin` is only created by `npm run db:seed`.
 
-## Planned (Phases 2–6)
+## Implemented (Phase 2)
 
-- StudentProfile, MsmeProfile (with approval status), Opportunity (freelance | internship), Application. See `plan/2026-09-25-mvp-initial-plan.md`.
-- User 1–1 StudentProfile or MsmeProfile (by role); MsmeProfile 1–N Opportunity; StudentProfile N–N Opportunity via Application.
+| Model | Table | Notes |
+|-------|-------|-------|
+| `StudentProfile` | `student_profile` | `userId` unique (1–1 with `User`, cascade delete). `institution`, `course`, `graduationYear`, `skills String[]` (lowercase, max 20), `bio?`, `links String[]` (http/https, max 5). The student's name is `User.name`. |
+| `MsmeProfile` | `msme_profile` | `userId` unique (1–1, cascade delete). `businessName`, `description`, `industry`, `location`, `website?` (http/https), `status MsmeStatus` (default `pending`, indexed). |
+
+`MsmeStatus` enum: `pending`, `approved`, `rejected`.
+
+Profile rules (ADR-016):
+- Profiles are optional; writes go through `src/lib/profiles.ts` with the `userId` from the session.
+- `status` is never read from input. Creating a profile sets `pending`. Saving a changed `approved` profile sets `pending`; saving a `rejected` profile sets `pending` (resubmission); an unchanged `approved` save stays `approved`.
+- The status update is conditional on the status that was read, so it can't overwrite a concurrent review decision.
+
+## Planned (Phases 3–6)
+
+- Phase 3 adds review fields to `MsmeProfile` (reviewer, reviewed at, rejection reason).
+- Opportunity (freelance | internship), Application. See `plan/2026-09-25-mvp-initial-plan.md`.
+- MsmeProfile 1–N Opportunity; StudentProfile N–N Opportunity via Application.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-25 — Phase 2: Profiles
+Added:
+- Migration `profiles`: `student_profile`, `msme_profile` tables and the `MsmeStatus` enum (`pending`, `approved`, `rejected`).
+- `/student/profile` and `/msme/profile` create/edit pages; dashboards show the profile or a "complete your profile" prompt, and the MSME's review status.
+- MSME status rules (ADR-016): new profile is pending; editing an approved profile sends it back to pending; saving a rejected profile resubmits it.
+- Validation in `src/lib/profile-schemas.ts` (skills as comma-separated tags, links one per line, http/https only); data access in `src/lib/profiles.ts`.
+- shadcn `Textarea`.
+- Tests: validation and status-rule unit tests, profile integration tests, Playwright profile flows. Shared `signUp` E2E helper moved to `e2e/helpers.ts`.
+
 ## 2026-09-25 — Google sign-in enabled
 Changed:
 - Google OAuth credentials configured locally (B-003 resolved). `client_secret_*.json` git-ignored.

@@ -28,6 +28,8 @@ Next.js → pino → stdout (pretty in development) and pino-loki worker thread 
 | `src/lib/authz.ts` | `getSession`, `requireSession`, `requireRole` (server only). |
 | `src/lib/roles.ts` | Role constants, sign-up role schema, home path per role. |
 | `src/lib/user-roles.ts` | `assignInitialRole` — the only user-driven write to `User.role`. |
+| `src/lib/profile-schemas.ts` | Profile validation (zod) and the MSME status rule `nextMsmeStatus` (pure). |
+| `src/lib/profiles.ts` | Profile reads and writes; derives `MsmeProfile.status` (ADR-016). |
 | `src/lib/email.ts` | `sendEmail` over SMTP. |
 | `src/lib/env.ts` | Validates server environment variables with zod; `getEnv()` caches the result. |
 | `src/lib/db.ts` | `getDb()` — single Prisma client, reused across hot reloads. |

@@ -74,3 +74,8 @@ Decision: `requireEmailVerification: true`, `sendOnSignUp` and `sendOnSignIn` (a
 Date: 2026-09-25
 Context: Next.js 16 renamed middleware to `proxy`. Better Auth docs say a cookie check there is not a security boundary.
 Decision: `src/proxy.ts` redirects requests without a session cookie on protected paths. Every protected page and server action calls `requireSession`/`requireRole`, which validate the session against the database. Wrong-role users are redirected to their own home rather than shown a 403.
+
+## ADR-016 — Optional profiles; MSME approval resets on change
+Date: 2026-09-25
+Context: Phase 2 adds student and MSME profiles and the MSME approval status (user decisions, Phase 2 plan).
+Decision: Profiles are optional; dashboards prompt for one, and later phases require it where needed. `MsmeProfile.status` is server-owned: a new profile is `pending`; saving a changed `approved` profile returns it to `pending` (its listings will be hidden until re-approved); saving a `rejected` profile resubmits it as `pending`. The save updates conditionally on the status it read, so a concurrent admin decision is never overwritten. Skills are free-form tags, lowercased and de-duplicated. Profile links and websites must be `http`/`https` URLs. The student's name stays on `User.name`. Review metadata (reviewer, time, reason) is left to Phase 3.
