@@ -12,10 +12,15 @@ Core Functionality:
 - Detailed scope is being defined — see `docs/REQUIREMENTS.md` and `plan/`.
 
 Technology Stack:
-- Application framework: Next.js (priority choice).
-- Database: PostgreSQL.
-- Logging: Grafana Loki.
+- Language: TypeScript. Package manager: npm.
+- Application framework: Next.js (App Router).
+- Database: PostgreSQL via Prisma ORM.
+- Auth: Better Auth (email/password + Google).
+- UI: Tailwind CSS + shadcn/ui.
+- Logging: pino → Grafana Loki, viewed in Grafana.
+- Testing: Vitest (unit/integration), Playwright (end-to-end).
+- Local environment: Docker Compose. Production hosting: not yet decided.
 - Version control: Git (local repository; remote not yet configured).
-- Other choices (language/TypeScript, ORM, auth, hosting, UI library): not yet decided — record in `docs/DECISIONS.md` when chosen.
+- See `docs/DECISIONS.md` ADR-001 to ADR-009.
 
 Current State: Greenfield. No application code yet. Documentation and agent operating rules initialized on 2026-09-25. Next step: initial plan in `plan/`.

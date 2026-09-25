@@ -1,6 +1,6 @@
 # Data Model
 
-Status: Not yet designed. Candidate entities below come from the high-level requirements and will be finalized in the initial plan.
+Status: Not yet implemented. The current draft is in `plan/2026-09-25-mvp-initial-plan.md` and will be finalized in the Phase 1–2 plans. Roles: student, msme, admin.
 
 Entities (candidate):
 - User (account; role: student | msme)
