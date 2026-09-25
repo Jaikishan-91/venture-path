@@ -23,6 +23,12 @@ npm run dev
 
 Open http://localhost:3000. `GET /api/health` returns `{"status":"ok","db":"ok"}` when the database is reachable.
 
+### Live reload
+
+- Changes in `src/` (pages, components, server actions, API routes, `lib/`) are hot-reloaded by Next.js; the browser updates without a restart.
+- Changes to `prisma/schema.prisma`, `prisma7.config.ts` or `.env` make nodemon regenerate the Prisma client and restart the dev server (`nodemon.json`). Apply schema changes to the database with `npx prisma migrate dev` as usual.
+- Type `rs` and Enter in the dev server terminal to force a restart.
+
 Sign up at `/sign-up`; the verification email lands in Mailpit (http://localhost:8025). Google sign-in appears only when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set.
 
 ## Local services
@@ -43,7 +49,8 @@ To see app logs, open Grafana → Explore → Loki and run `{app="venturepath"}`
 
 | Command                | What it does                                  |
 | ---------------------- | --------------------------------------------- |
-| `npm run dev`          | Start the dev server                          |
+| `npm run dev`          | Start the dev server with live reload         |
+| `npm run dev:next`     | Start `next dev` without nodemon              |
 | `npm run build`        | Production build                              |
 | `npm run lint`         | ESLint                                        |
 | `npm run typecheck`    | Generate route types and run `tsc --noEmit`   |

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-25 — Dev live reload
+Changed:
+- `npm run dev` runs `next dev` under nodemon 3.1.14 (`nodemon.json`), which regenerates the Prisma client and restarts the server when `prisma/schema.prisma`, `prisma7.config.ts` or `.env` changes. `src/` stays on Next.js hot reload. Plain `next dev` is `npm run dev:next`.
+
 ## 2026-09-25 — Phase 2: Profiles
 Added:
 - Migration `profiles`: `student_profile`, `msme_profile` tables and the `MsmeStatus` enum (`pending`, `approved`, `rejected`).

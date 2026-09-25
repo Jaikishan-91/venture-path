@@ -1,0 +1,8 @@
+{
+  "$comment": "Restarts `next dev` only for changes Turbopack can't hot-reload: the Prisma schema/config (the client is cached on globalThis) and .env (parsed once per process). Everything in src/ is hot-reloaded by Next.js itself.",
+  "watch": ["prisma/schema.prisma", "prisma7.config.ts", ".env"],
+  "ext": "prisma,ts,env",
+  "exec": "prisma generate && next dev",
+  "delay": 500,
+  "signal": "SIGTERM"
+}

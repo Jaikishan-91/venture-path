@@ -79,3 +79,8 @@ Decision: `src/proxy.ts` redirects requests without a session cookie on protecte
 Date: 2026-09-25
 Context: Phase 2 adds student and MSME profiles and the MSME approval status (user decisions, Phase 2 plan).
 Decision: Profiles are optional; dashboards prompt for one, and later phases require it where needed. `MsmeProfile.status` is server-owned: a new profile is `pending`; saving a changed `approved` profile returns it to `pending` (its listings will be hidden until re-approved); saving a `rejected` profile resubmits it as `pending`. The save updates conditionally on the status it read, so a concurrent admin decision is never overwritten. Skills are free-form tags, lowercased and de-duplicated. Profile links and websites must be `http`/`https` URLs. The student's name stays on `User.name`. Review metadata (reviewer, time, reason) is left to Phase 3.
+
+## ADR-017 — nodemon only for changes Next.js can't hot-reload
+Date: 2026-09-25
+Context: The user wants UI and backend changes visible live. Next.js already hot-reloads everything in `src/`, but the Prisma client, the Better Auth instance and parsed env are cached per process, so schema and `.env` changes needed a manual restart (seen after the Phase 2 migration).
+Decision: `npm run dev` wraps `prisma generate && next dev` in nodemon, watching only `prisma/schema.prisma`, `prisma7.config.ts` and `.env`. `src/` is not watched by nodemon: restarting on every save would be slower and lose Fast Refresh state.
