@@ -23,6 +23,10 @@ npm run dev
 
 Open http://localhost:3000. `GET /api/health` returns `{"status":"ok","db":"ok"}` when the database is reachable.
 
+### Email
+
+By default all email goes to Mailpit (http://localhost:8025). To send real email through Gmail, set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER` (your Gmail address) and `SMTP_PASSWORD` (a [Google App Password](https://myaccount.google.com/apppasswords); needs 2-Step Verification) in `.env`, then check with `npm run email:test -- you@gmail.com`. Outside production, addresses on `.local`, `.test`, `.example` and `.invalid` domains (used by the tests and the seeded admin) still go to Mailpit.
+
 ### Live reload
 
 - Changes in `src/` (pages, components, server actions, API routes, `lib/`) are hot-reloaded by Next.js; the browser updates without a restart.
@@ -51,6 +55,7 @@ To see app logs, open Grafana → Explore → Loki and run `{app="venturepath"}`
 | ---------------------- | --------------------------------------------- |
 | `npm run dev`          | Start the dev server with live reload         |
 | `npm run dev:next`     | Start `next dev` without nodemon              |
+| `npm run email:test -- you@gmail.com` | Send a test email with the current SMTP settings |
 | `npm run build`        | Production build                              |
 | `npm run lint`         | ESLint                                        |
 | `npm run typecheck`    | Generate route types and run `tsc --noEmit`   |

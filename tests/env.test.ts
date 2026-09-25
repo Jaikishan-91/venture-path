@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { parseEnv } from "@/lib/env";
 
 const valid = {
@@ -42,6 +42,16 @@ describe("parseEnv", () => {
     );
     const env = parseEnv({ ...valid, GOOGLE_CLIENT_ID: "id", GOOGLE_CLIENT_SECRET: "secret" });
     expect(env.GOOGLE_CLIENT_ID).toBe("id");
+  });
+
+  it("requires SMTP_USER and SMTP_PASSWORD together", () => {
+    expect(() => parseEnv({ ...valid, SMTP_USER: "me@gmail.com" })).toThrow(/SMTP_USER/);
+    expect(() => parseEnv({ ...valid, SMTP_PASSWORD: "secret" })).toThrow(/SMTP_USER/);
+    expect(parseEnv({ ...valid, SMTP_USER: "", SMTP_PASSWORD: "" }).SMTP_USER).toBeUndefined();
+  });
+
+  it("rejects an SMTP_SECURE that isn't a boolean", () => {
+    expect(() => parseEnv({ ...valid, SMTP_SECURE: "maybe" })).toThrow(/SMTP_SECURE/);
   });
 
   it("does not include secret values in the error message", () => {

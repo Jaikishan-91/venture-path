@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-25 — Real email over SMTP (Gmail)
+Changed:
+- `src/lib/email.ts` supports SMTP login and TLS: new optional env vars `SMTP_USER`, `SMTP_PASSWORD` (set together), `SMTP_SECURE` (defaults to true on port 465; otherwise STARTTLS is required when logging in), and `MAIL_CATCHER_URL` (default `smtp://localhost:1025`).
+- Outside production, mail to `.local`/`.test`/`.example`/`.invalid` addresses goes to Mailpit even when real SMTP is configured, so E2E tests keep working (ADR-018).
+- `npm run email:test -- <address>` sends a test email and reports which route it used.
+- Local `.env` sends through `smtp.gmail.com:587`; checked by a delivered test email.
+
 ## 2026-09-25 — Dev live reload
 Changed:
 - `npm run dev` runs `next dev` under nodemon 3.1.14 (`nodemon.json`), which regenerates the Prisma client and restarts the server when `prisma/schema.prisma`, `prisma7.config.ts` or `.env` changes. `src/` stays on Next.js hot reload. Plain `next dev` is `npm run dev:next`.

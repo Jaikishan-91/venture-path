@@ -84,3 +84,8 @@ Decision: Profiles are optional; dashboards prompt for one, and later phases req
 Date: 2026-09-25
 Context: The user wants UI and backend changes visible live. Next.js already hot-reloads everything in `src/`, but the Prisma client, the Better Auth instance and parsed env are cached per process, so schema and `.env` changes needed a manual restart (seen after the Phase 2 migration).
 Decision: `npm run dev` wraps `prisma generate && next dev` in nodemon, watching only `prisma/schema.prisma`, `prisma7.config.ts` and `.env`. `src/` is not watched by nodemon: restarting on every save would be slower and lose Fast Refresh state.
+
+## ADR-018 — Generic SMTP with login; test domains stay on the mail catcher
+Date: 2026-09-25
+Context: The user wants real email and chose Gmail SMTP (`smtp.gmail.com`). E2E tests sign up `@e2e.venturepath.local` users and read verification links from Mailpit, and only one `next dev` can run per project, so tests and manual use share one mail configuration.
+Decision: `src/lib/email.ts` stays provider-agnostic nodemailer SMTP, with optional `SMTP_USER`/`SMTP_PASSWORD` and TLS (`secure` on 465, `requireTLS` otherwise when logging in). Outside production, recipients on RFC 2606/6761 reserved domains (`.local`, `.test`, `.example`, `.invalid`) are sent to `MAIL_CATCHER_URL` (Mailpit), since they can never be delivered. Gmail limits: personal accounts send roughly 500 messages a day and Gmail rewrites the From header to the authenticated account unless it is a verified alias, so this is for development, not production. Production provider remains TBD.
