@@ -46,6 +46,10 @@ const listing: OpportunityInput = {
   payPeriod: "month",
   duration: null,
   deadline: null,
+  requirements: null,
+  experienceLevel: null,
+  compensationMin: null,
+  compensationMax: null,
 };
 
 async function createListing(userId: string) {

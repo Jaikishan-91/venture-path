@@ -14,10 +14,16 @@ test("anyone can search and open a listing; hidden listings stay hidden", async 
   await page.goto("/msme/opportunities/new");
   await page.getByLabel("Title").fill("Social media marketing intern");
   await page.getByLabel("Description").fill("Plan Instagram posts and report on engagement.");
-  await page.getByLabel("Skills").fill("canva, instagram");
+  await page.getByRole("textbox", { name: "Skill", exact: true }).fill("canva");
+  await page.getByRole("button", { name: "Add skill" }).click();
+  await page.getByRole("textbox", { name: "Skill 2" }).fill("instagram");
   await page.getByLabel("Work mode").selectOption("hybrid");
   await page.getByLabel("City").fill("Pune");
   await page.getByLabel("Amount (₹)").fill("12000");
+  await page.getByLabel("Requirements (optional)").fill("Must have a portfolio.");
+  await page.getByLabel("Experience level (optional)").selectOption("junior");
+  await page.getByLabel("Compensation min (₹, optional)").fill("10000");
+  await page.getByLabel("Compensation max (₹, optional)").fill("20000");
   await page.getByRole("button", { name: "Save as draft" }).click();
   await page
     .getByRole("article", { name: "Social media marketing intern" })
@@ -47,6 +53,9 @@ test("anyone can search and open a listing; hidden listings stay hidden", async 
   ).toBeVisible();
   await expect(visitor.getByText(business)).toBeVisible();
   await expect(visitor.getByText("Plan Instagram posts")).toBeVisible();
+  await expect(visitor.getByText("Junior")).toBeVisible();
+  await expect(visitor.getByText("₹10,000 – ₹20,000")).toBeVisible();
+  await expect(visitor.getByText("Must have a portfolio.")).toBeVisible();
 
   await visitor.goto(`/opportunities/${draftId}`);
   await expect(

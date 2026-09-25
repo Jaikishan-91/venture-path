@@ -12,7 +12,9 @@ async function createApprovedMsme(page: Page, prefix: string) {
 async function fillListing(page: Page, title: string) {
   await page.getByLabel("Title").fill(title);
   await page.getByLabel("Description").fill("Help us run our social media.");
-  await page.getByLabel("Skills").fill("Canva, Instagram");
+  await page.getByRole("textbox", { name: "Skill", exact: true }).fill("Canva");
+  await page.getByRole("button", { name: "Add skill" }).click();
+  await page.getByRole("textbox", { name: "Skill 2" }).fill("Instagram");
   await page.getByLabel("Work mode").selectOption("hybrid");
   await page.getByLabel("City").fill("Pune");
   await page.getByLabel("Amount (₹)").fill("15000");

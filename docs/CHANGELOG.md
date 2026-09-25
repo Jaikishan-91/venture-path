@@ -1,5 +1,67 @@
 # Changelog
 
+## 2026-09-25 — Careers UI
+
+Restyled the product as a hiring portal: forest-green and cream tokens, Newsreader headlines, a framed public layout, and a sidebar for signed-in student, MSME, and admin pages. Routes, form fields, and existing action labels are unchanged.
+
+## 2026-09-25 — Dockerization
+Added:
+- `Dockerfile` with multi-stage build: Alpine + Node deps, builder stage with `prisma generate` and `next build`, production standalone runner.
+- `next` service in `docker-compose.yml` — builds the app image, exposes port 3000, uses an `hf-cache` volume for the HuggingFace model cache.
+- `.dockerignore`.
+- `next.config.ts` uses `output: "standalone"` for Docker.
+- README updated with full Docker setup instructions and migration/seed commands.
+
+Fixed:
+- Dockerfile uses Node.js 22-alpine (project deps require Node.js >= 22, not 20).
+- `npm ci` now runs after copying `prisma/schema.prisma` so the `postinstall` hook (`prisma generate`) can find the schema.
+- `src/lib/resume-analysis.ts`: fixed invalid `interface` union syntax to `type` alias.
+- `src/lib/llm/provider.ts`: fixed `res.text().slice()` to `(await res.text()).slice()`.
+- `src/lib/llm/prompts.ts`: added `as PromptTemplate[]` cast for `getAllPrompts` return type.
+- `src/lib/resume-analysis.ts`: fixed `LlmMessage` import (moved from `prompts.ts` to `provider.ts`).
+- `src/app/admin/settings/prompt-editor.tsx`: client component for prompt editing. `"use client"` must be the first statement, so it cannot sit inside the server page.
+- Dockerfile runner stays root for `COPY` and `chown`, creates an empty `public/` when the repo has none, and copies the Prisma client from `src/generated/prisma`.
+- Dockerfile copies `pino-loki` and its runtime dependencies into the runner image. Pino loads that transport by package name, so the standalone trace omits it and every request 500s.
+- The `next` service sets `LOKI_URL=http://loki:3100`. The value in `.env` (`localhost:3100`) is for `npm run dev` on the host.
+- The `next` service rewrites `DATABASE_URL`, `SMTP_HOST`, and `MAIL_CATCHER_URL` to the Compose service names. `localhost` inside the app container is the app itself, so Prisma was refusing the connection and `/opportunities` returned 500.
+- `src/app/msme/opportunities/[id]/applicants/actions.ts`: added missing `decideAction` server action.
+- Test files: updated mock opportunity objects with new `requirements`/`experienceLevel`/`compensationMin`/`compensationMax` fields.
+
+## 2026-09-25 — Phase 7: LLM resume analysis
+
+### 1. Environment config
+- Added `LLM_PROVIDER` (`"openai"`, `"azure"`, `"anthropic"`, `""`), `OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `ANTHROPIC_API_KEY` env vars to `.env.example` and `z.env.ts`. No provider configured locally by default — resume analysis is silently skipped.
+
+### 2. LLM provider client
+- `src/lib/llm/provider.ts` exports `createLlmClient()` — returns an OpenAI-compatible client or `null` when unconfigured. Supports OpenAI, Azure OpenAI, and Anthropic (mapped to the OpenAI-compatible Messages API).
+
+### 3. Prompt management
+- `src/lib/llm/prompts.ts` exports `buildPrompt(key, context)` with `resume_analysis` and `job_description` templates, `{{placeholder}}` replacement, and `getPromptContent()` which reads the editable `prompt` table and falls back to a built-in default.
+
+### 4. Resume analysis service
+- `src/lib/resume-analysis.ts` exports `analyzeApplication(applicationId, opportunity)` — checks the LLM client exists, reads and truncates the resume text, builds the prompt, calls the LLM, parses the JSON result, and stores a row in the `analysis` table.
+
+### 5. Application flow wiring
+- Submitting an application triggers background analysis (via `Promise.resolve().then(...)` to avoid awaiting inside the action). If no LLM is configured, analysis is skipped gracefully.
+
+### 6. Admin settings page
+- `/admin/settings` lets admins edit the `resume_analysis` and `job_description` prompt contents. Prompted via the `prompt` table.
+
+### 7. Resume analysis UI
+- `src/app/msme/opportunities/[id]/applicants/resume-analysis.tsx` fetches the analysis and shows a score badge, summary, matched/missing skills, and a "Re-analyze" button (server action) when an LLM is available.
+
+### 8. Opportunity form extensions
+- Added `requirements` (textarea, optional, max 2000 chars), `experienceLevel` (select: entry/junior/mid/senior/lead), and `compensationMin`/`compensationMax` (whole rupees, optional) to the listing form, schema, edit page, and new page.
+
+### 9. Opportunity detail display
+- The browse-side `/opportunities/[id]` page now displays requirements, experience level, and compensation range (₹ formatted) when present.
+
+### 10. Database
+- Migration `phase7_llm_resume_analysis`: `prompt` table, `analysis` table, `ExperienceLevel` enum, `requirements`/`experienceLevel`/`compensationMin`/`compensationMax` columns on `opportunity`. Seed prompts for `resume_analysis` and `job_description`.
+
+### 11. Tests
+- E2E browse spec extended to fill and assert the new optional fields (requirements, experience level, compensation range).
+
 ## 2026-09-25 — Phase 6: Applications
 Added:
 - Students apply to a visible listing with a resume (PDF, DOC or DOCX, up to 5 MB) and an optional note. A profile is required. Withdrawing allows applying again; an accepted or rejected application cannot be withdrawn.

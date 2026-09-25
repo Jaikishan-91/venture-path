@@ -37,6 +37,10 @@ export default async function EditOpportunityPage({ params }: { params: Promise<
             payPeriod: opportunity.payPeriod ?? "month",
             duration: opportunity.duration ?? "",
             deadline: opportunity.deadline?.toISOString().slice(0, 10) ?? "",
+            requirements: opportunity.requirements ?? "",
+            experienceLevel: opportunity.experienceLevel ?? "",
+            compensationMin: opportunity.compensationMin?.toString() ?? "",
+            compensationMax: opportunity.compensationMax?.toString() ?? "",
           }}
         />
       ) : (

@@ -4,10 +4,12 @@ import { notFound } from "next/navigation";
 import { RoleHome } from "@/components/role-home";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { listApplicants } from "@/lib/applications";
+import { listApplicants, listApplicantAnalyses } from "@/lib/applications";
 import { requireRole } from "@/lib/authz";
 import { getOwnOpportunity } from "@/lib/opportunities";
+import { createLlmClient } from "@/lib/llm/provider";
 import { decideAction } from "./actions";
+import { ResumeAnalysis } from "./resume-analysis";
 
 export const metadata: Metadata = { title: "Applicants · VenturePath" };
 
@@ -23,7 +25,15 @@ export default async function ApplicantsPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const opportunity = await getOwnOpportunity(session.user.id, id);
   if (!opportunity) notFound();
-  const applicants = await listApplicants(session.user.id, id);
+  const [applicants, analyses] = await Promise.all([
+    listApplicants(session.user.id, id),
+    listApplicantAnalyses(session.user.id, id),
+  ]);
+
+  const llmClient = createLlmClient();
+  const canReanalyze = llmClient !== null;
+
+  const analysisByApplicationId = new Map(analyses.map((a) => [a.applicationId, a]));
 
   return (
     <RoleHome title={opportunity.title} name={session.user.name}>
@@ -77,6 +87,12 @@ export default async function ApplicantsPage({ params }: { params: Promise<{ id:
               )}
             </CardContent>
           </Card>
+
+          <ResumeAnalysis
+            applicationId={application.id}
+            analysis={analysisByApplicationId.get(application.id) ?? null}
+            canReanalyze={canReanalyze}
+          />
         </article>
       ))}
     </RoleHome>

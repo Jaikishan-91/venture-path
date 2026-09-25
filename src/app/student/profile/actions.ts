@@ -17,6 +17,14 @@ export async function saveStudentProfileAction(
   const values = Object.fromEntries(
     [...formData].filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   );
+  values.skills = formData
+    .getAll("skills")
+    .filter((value): value is string => typeof value === "string")
+    .join(", ");
+  values.links = formData
+    .getAll("links")
+    .filter((value): value is string => typeof value === "string")
+    .join("\n");
 
   const parsed = studentProfileSchema.safeParse(values);
   if (!parsed.success) {

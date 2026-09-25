@@ -44,6 +44,10 @@ function listing(overrides: Partial<OpportunityInput> & { title: string }): Oppo
     payPeriod: "month",
     duration: null,
     deadline: null,
+    requirements: null,
+    experienceLevel: null,
+    compensationMin: null,
+    compensationMax: null,
     ...overrides,
     title: `${overrides.title} ${token}`,
   };

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PublicFrame } from "@/components/public-frame";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,7 +28,7 @@ function Filters({ params, cities }: { params: BrowseParams; cities: string[] })
   const cityOptions =
     cities.includes(params.city ?? "") || !params.city ? cities : [params.city, ...cities];
   return (
-    <form method="get" className="flex flex-col gap-3">
+    <form method="get" className="flex flex-col gap-3 rounded-2xl bg-white p-4 ring-1 ring-[#e2e5e7]">
       <div className="flex flex-col gap-2">
         <Label htmlFor="q">Search</Label>
         <Input
@@ -104,9 +104,10 @@ export default async function OpportunitiesPage({
   ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-12">
+    <PublicFrame>
+      <main className="flex flex-col gap-6 px-6 py-8 md:px-8">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Opportunities</h1>
+        <h1 className="text-3xl font-medium tracking-tight text-[#26594a]">Opportunities</h1>
         <p className="text-sm text-muted-foreground">
           Freelance work and internships from approved MSMEs.
         </p>
@@ -116,25 +117,27 @@ export default async function OpportunitiesPage({
       {results.length === 0 && (
         <p className="text-sm text-muted-foreground">No opportunities match.</p>
       )}
+      {results.length > 0 && (
+      <div className="flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-[#e2e5e7]">
       {results.map((opportunity) => (
-        <Link key={opportunity.id} href={`/opportunities/${opportunity.id}`} className="block">
-          <Card>
-            <CardHeader>
-              <CardTitle>{opportunity.title}</CardTitle>
-              <CardDescription>
-                {opportunity.businessName} · {TYPE_LABELS[opportunity.type]} ·{" "}
-                {formatPay(opportunity)} · {WORK_MODE_LABELS[opportunity.workMode as WorkMode]}
-                {opportunity.city && `, ${opportunity.city}`}
-              </CardDescription>
-            </CardHeader>
-            {opportunity.skills.length > 0 && (
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{opportunity.skills.join(", ")}</p>
-              </CardContent>
-            )}
-          </Card>
+        <Link
+          key={opportunity.id}
+          href={`/opportunities/${opportunity.id}`}
+          className="flex flex-col gap-1 border-b border-[#ecedef] px-5 py-4 transition-colors duration-300 last:border-b-0 hover:bg-[#f7f7f9]"
+        >
+          <span className="font-heading text-lg text-[#1b2a26]">{opportunity.title}</span>
+          <span className="text-sm text-[#4a4d53]">
+            {opportunity.businessName} · {TYPE_LABELS[opportunity.type]} ·{" "}
+            {formatPay(opportunity)} · {WORK_MODE_LABELS[opportunity.workMode as WorkMode]}
+            {opportunity.city && `, ${opportunity.city}`}
+          </span>
+          {opportunity.skills.length > 0 && (
+            <span className="text-sm text-muted-foreground">{opportunity.skills.join(", ")}</span>
+          )}
         </Link>
       ))}
+      </div>
+      )}
 
       {(params.page > 1 || hasMore) && (
         <nav aria-label="Pages" className="flex gap-3">
@@ -156,6 +159,7 @@ export default async function OpportunitiesPage({
           )}
         </nav>
       )}
-    </main>
+      </main>
+    </PublicFrame>
   );
 }

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   experimental: {
     // Resume uploads are capped at 5 MB; leave headroom for the rest of the form.
     serverActions: { bodySizeLimit: "6mb" },

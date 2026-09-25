@@ -1,0 +1,17 @@
+Dockerfile
+.dockerignore
+docker-compose.yml
+.git
+.gitignore
+.gitattributes
+node_modules
+npm-debug.log
+README.md
+docs
+plan
+e2e
+Dockerfile
+.dockerignore
+uploads
+.cache
+*.tsbuildinfo

@@ -12,3 +12,5 @@ All implementation plans are stored here. See `AGENTS.md` → Project Operating 
 | 2026-09-25 | [Phase 4 — Opportunities](2026-09-25-phase-4-opportunities.md) | shipped |
 | 2026-09-25 | [Phase 5 — Browse and search](2026-09-25-phase-5-browse-search.md) | shipped |
 | 2026-09-25 | [Phase 6 — Applications](2026-09-25-phase-6-applications.md) | shipped |
+| 2026-09-25 | [Docker build fix](2026-09-25-docker-build-fix.md) | shipped |
+| 2026-09-25 | [Careers UI](2026-09-25-careers-ui.md) | shipped |

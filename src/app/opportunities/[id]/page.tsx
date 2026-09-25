@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PublicFrame } from "@/components/public-frame";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOwnApplication } from "@/lib/applications";
 import { getSession } from "@/lib/authz";
-import { WORK_MODE_LABELS, formatPay, isDeadlinePassed } from "@/lib/opportunity-schemas";
+import { EXPERIENCE_LEVEL_LABELS, WORK_MODE_LABELS, formatPay, isDeadlinePassed } from "@/lib/opportunity-schemas";
 import { getStudentProfile } from "@/lib/profiles";
 import { getVisibleOpportunity } from "@/lib/search";
 import { withdrawAction } from "./actions";
@@ -37,12 +38,14 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
       : null;
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-12">
-      <Link href="/opportunities" className="text-sm underline">
+    <PublicFrame>
+    <main className="grid gap-8 px-6 py-8 md:grid-cols-[minmax(0,1fr)_320px] md:px-8">
+      <div className="flex flex-col gap-6">
+      <Link href="/opportunities" className="text-sm text-[#26594a] underline">
         All opportunities
       </Link>
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{opportunity.title}</h1>
+        <h1 className="text-3xl font-medium tracking-tight text-[#26594a]">{opportunity.title}</h1>
         <p className="text-sm text-muted-foreground">
           {opportunity.type === "internship" ? "Internship" : "Freelance"} ·{" "}
           {formatPay(opportunity)} · {WORK_MODE_LABELS[opportunity.workMode]}
@@ -72,6 +75,41 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
       )}
       <p className="whitespace-pre-line text-sm">{opportunity.description}</p>
 
+      {opportunity.requirements && (
+        <div className="flex flex-col gap-1">
+          <h2 className="text-sm font-medium">Requirements</h2>
+          <p className="whitespace-pre-line text-sm">{opportunity.requirements}</p>
+        </div>
+      )}
+      <div className="grid gap-2 sm:grid-cols-2 text-sm">
+        {opportunity.experienceLevel && (
+          <p>
+            <span className="font-medium">Experience level:</span>{" "}
+            {EXPERIENCE_LEVEL_LABELS[opportunity.experienceLevel]}
+          </p>
+        )}
+        {(opportunity.compensationMin || opportunity.compensationMax) && (
+          <p>
+            <span className="font-medium">Compensation range:</span>{" "}
+            {opportunity.compensationMin
+              ? new Intl.NumberFormat("en-IN", {
+                  style: "currency",
+                  currency: "INR",
+                  maximumFractionDigits: 0,
+                }).format(opportunity.compensationMin)
+              : "—"}
+            {" – "}
+            {opportunity.compensationMax
+              ? new Intl.NumberFormat("en-IN", {
+                  style: "currency",
+                  currency: "INR",
+                  maximumFractionDigits: 0,
+                }).format(opportunity.compensationMax)
+              : "—"}
+          </p>
+        )}
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>{business.businessName}</CardTitle>
@@ -93,8 +131,9 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
           )}
         </CardContent>
       </Card>
+      </div>
 
-      <section className="flex flex-col gap-3 border-t pt-6">
+      <section className="flex h-fit flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-[#e2e5e7] md:sticky md:top-6">
         <h2 className="text-lg font-medium">Apply</h2>
         {!session && (
           <Link href="/sign-in" className={buttonVariants({ className: "self-start" })}>
@@ -139,5 +178,6 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
         )}
       </section>
     </main>
+    </PublicFrame>
   );
 }

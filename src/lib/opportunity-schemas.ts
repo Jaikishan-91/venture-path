@@ -12,6 +12,17 @@ export type PayType = (typeof PAY_TYPES)[number];
 export const PAY_PERIODS = ["fixed", "month", "hour"] as const;
 export type PayPeriod = (typeof PAY_PERIODS)[number];
 
+export const EXPERIENCE_LEVELS = ["entry", "junior", "mid", "senior", "lead"] as const;
+export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
+
+export const EXPERIENCE_LEVEL_LABELS: Record<ExperienceLevel, string> = {
+  entry: "Entry level",
+  junior: "Junior",
+  mid: "Mid-level",
+  senior: "Senior",
+  lead: "Lead",
+};
+
 export const MAX_OPPORTUNITY_SKILLS = 15;
 export const MAX_PAY_AMOUNT = 10_000_000;
 
@@ -54,6 +65,14 @@ export function formatPay(opportunity: {
   return `${amount} fixed`;
 }
 
+/** Parse a compensation amount string: empty → null, digits → number, else NaN (which zod rejects). */
+function parseCompensation(value: string): number | null {
+  if (!value) return null;
+  return /^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= MAX_PAY_AMOUNT
+    ? Number(value)
+    : NaN;
+}
+
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const isRealDate = (value: string) =>
   DATE_PATTERN.test(value) && new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
@@ -73,6 +92,14 @@ const fields = z.object({
   payPeriod: z.string().default(""),
   duration: optionalText("the duration", 60),
   deadline: z.string().trim().default(""),
+  requirements: optionalText("the requirements", 2000),
+  experienceLevel: z
+    .string()
+    .trim()
+    .transform((value) => value || null)
+    .pipe(z.enum(EXPERIENCE_LEVELS, "Choose an experience level").nullable()),
+  compensationMin: z.string().trim().default(""),
+  compensationMax: z.string().trim().default(""),
 });
 
 export const opportunitySchema = fields.transform((input, ctx) => {
@@ -95,6 +122,15 @@ export const opportunitySchema = fields.transform((input, ctx) => {
     }
     payPeriod = PAY_PERIODS.find((period) => period === input.payPeriod) ?? null;
     if (!payPeriod) issue("payPeriod", "Choose how the pay is counted");
+  }
+
+  const compensationMin = parseCompensation(input.compensationMin);
+  const compensationMax = parseCompensation(input.compensationMax);
+  if (Number.isNaN(compensationMin) || Number.isNaN(compensationMax)) {
+    issue("compensationMin", "Enter compensation amounts as whole rupee values");
+  }
+  if (compensationMin !== null && compensationMax !== null && compensationMin > compensationMax) {
+    issue("compensationMin", "Minimum compensation can't exceed maximum");
   }
 
   let deadline: Date | null = null;
@@ -120,6 +156,10 @@ export const opportunitySchema = fields.transform((input, ctx) => {
     payPeriod,
     duration: input.duration,
     deadline,
+    requirements: input.requirements,
+    experienceLevel: input.experienceLevel,
+    compensationMin: parseCompensation(input.compensationMin),
+    compensationMax: parseCompensation(input.compensationMax),
   };
 });
 export type OpportunityInput = z.output<typeof opportunitySchema>;

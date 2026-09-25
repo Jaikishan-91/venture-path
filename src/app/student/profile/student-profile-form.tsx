@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { RepeatableInputs } from "@/components/repeatable-inputs";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,35 +54,30 @@ export function StudentProfileForm({ initial }: { initial: StudentProfileValues 
           required
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="skills">Skills</Label>
-        <Input
-          id="skills"
-          name="skills"
-          defaultValue={values.skills}
-          aria-describedby="skills-hint"
-        />
-        <p id="skills-hint" className="text-xs text-muted-foreground">
-          Separate with commas, up to {MAX_SKILLS}. For example: react, figma, content writing
-        </p>
-      </div>
+      <RepeatableInputs
+        label="Skills"
+        itemLabel="Skill"
+        name="skills"
+        initial={values.skills}
+        separator=","
+        max={MAX_SKILLS}
+        placeholder="react"
+        hint={`Add up to ${MAX_SKILLS}. For example: react, figma, content writing.`}
+      />
       <div className="flex flex-col gap-2">
         <Label htmlFor="bio">Bio</Label>
         <Textarea id="bio" name="bio" defaultValue={values.bio} maxLength={1000} rows={4} />
       </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="links">Links</Label>
-        <Textarea
-          id="links"
-          name="links"
-          defaultValue={values.links}
-          rows={3}
-          aria-describedby="links-hint"
-        />
-        <p id="links-hint" className="text-xs text-muted-foreground">
-          One per line, up to {MAX_LINKS}: portfolio, GitHub, LinkedIn.
-        </p>
-      </div>
+      <RepeatableInputs
+        label="Links"
+        itemLabel="Link"
+        name="links"
+        initial={values.links}
+        separator={"\n"}
+        max={MAX_LINKS}
+        placeholder="https://"
+        hint={`Add up to ${MAX_LINKS}: portfolio, GitHub, LinkedIn.`}
+      />
       {state.status === "error" && (
         <p role="alert" className="text-sm text-destructive">
           {state.message}

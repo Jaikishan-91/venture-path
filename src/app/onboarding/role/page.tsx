@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { PublicFrame } from "@/components/public-frame";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireSession } from "@/lib/authz";
@@ -13,6 +14,7 @@ export default async function ChooseRolePage() {
   if (isRole(session.user.role)) redirect(homePathFor(session.user.role));
 
   return (
+    <PublicFrame>
     <main className="flex flex-1 items-center justify-center px-6 py-16">
       <Card className="w-full max-w-sm">
         <CardHeader>
@@ -31,5 +33,6 @@ export default async function ChooseRolePage() {
         </CardContent>
       </Card>
     </main>
+    </PublicFrame>
   );
 }

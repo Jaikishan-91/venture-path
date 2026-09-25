@@ -47,7 +47,31 @@ services:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
 
+  next:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: .env
+    environment:
+      # .env uses localhost for `npm run dev` on the host. Inside this network, use service names.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-venturepath}:${POSTGRES_PASSWORD:-venturepath}@postgres:5432/${POSTGRES_DB:-venturepath}
+      LOKI_URL: http://loki:3100
+      SMTP_HOST: mailpit
+      MAIL_CATCHER_URL: smtp://mailpit:1025
+    depends_on:
+      - postgres
+      - loki
+      - mailpit
+    volumes:
+      # Cache for HuggingFace transformers model
+      - hf-cache:/app/.cache/models
+    restart: unless-stopped
+
 volumes:
   postgres-data:
   loki-data:
   grafana-data:
+  hf-cache:

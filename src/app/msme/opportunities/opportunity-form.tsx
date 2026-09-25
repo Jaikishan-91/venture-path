@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { startTransition, useActionState, useState } from "react";
+import { RepeatableInputs } from "@/components/repeatable-inputs";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  EXPERIENCE_LEVEL_LABELS,
+  EXPERIENCE_LEVELS,
   MAX_OPPORTUNITY_SKILLS,
   PAY_PERIOD_LABELS,
   PAY_PERIODS,
@@ -28,6 +31,10 @@ export type OpportunityValues = {
   payPeriod: string;
   duration: string;
   deadline: string;
+  requirements: string;
+  experienceLevel: string;
+  compensationMin: string;
+  compensationMax: string;
 };
 
 const selectClass =
@@ -101,18 +108,16 @@ export function OpportunityForm({
           rows={6}
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="skills">Skills</Label>
-        <Input
-          id="skills"
-          name="skills"
-          defaultValue={values.skills}
-          aria-describedby="skills-hint"
-        />
-        <p id="skills-hint" className="text-xs text-muted-foreground">
-          Separate with commas, up to {MAX_OPPORTUNITY_SKILLS}.
-        </p>
-      </div>
+      <RepeatableInputs
+        label="Skills"
+        itemLabel="Skill"
+        name="skills"
+        initial={values.skills}
+        separator=","
+        max={MAX_OPPORTUNITY_SKILLS}
+        placeholder="canva"
+        hint={`Add up to ${MAX_OPPORTUNITY_SKILLS}.`}
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="workMode">Work mode</Label>
@@ -215,6 +220,64 @@ export function OpportunityForm({
             type="date"
             min={minDeadline}
             defaultValue={values.deadline}
+          />
+        </div>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="requirements">Requirements (optional)</Label>
+        <Textarea
+          id="requirements"
+          name="requirements"
+          defaultValue={values.requirements}
+          maxLength={2000}
+          rows={3}
+          placeholder="e.g. Must have a portfolio, 2+ years experience..."
+        />
+        <p id="requirements-hint" className="text-xs text-muted-foreground">
+          Optional. Shown to applicants and used in AI analysis.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="experienceLevel">Experience level (optional)</Label>
+        <select
+          id="experienceLevel"
+          name="experienceLevel"
+          defaultValue={values.experienceLevel || ""}
+          className={selectClass}
+        >
+          <option value="">Choose…</option>
+          {EXPERIENCE_LEVELS.map((level) => (
+            <option key={level} value={level}>
+              {EXPERIENCE_LEVEL_LABELS[level]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="compensationMin">Compensation min (₹, optional)</Label>
+          <Input
+            id="compensationMin"
+            name="compensationMin"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            defaultValue={values.compensationMin}
+            placeholder="e.g. 20000"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="compensationMax">Compensation max (₹, optional)</Label>
+          <Input
+            id="compensationMax"
+            name="compensationMax"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            defaultValue={values.compensationMax}
+            placeholder="e.g. 50000"
           />
         </div>
       </div>

@@ -10,14 +10,18 @@ test("student creates and edits a profile", async ({ page }) => {
   await page.getByLabel("Institution").fill("IIT Delhi");
   await page.getByLabel("Course").fill("B.Tech CSE");
   await page.getByLabel("Graduation year").fill("2027");
-  await page.getByLabel("Skills").fill("React, TypeScript, react");
-  await page.getByLabel("Links").fill("javascript:alert(1)");
+  await page.getByRole("textbox", { name: "Skill", exact: true }).fill("React");
+  await page.getByRole("button", { name: "Add skill" }).click();
+  await page.getByRole("textbox", { name: "Skill 2" }).fill("TypeScript");
+  await page.getByRole("button", { name: "Add skill" }).click();
+  await page.getByRole("textbox", { name: "Skill 3" }).fill("react");
+  await page.getByRole("textbox", { name: "Link", exact: true }).fill("javascript:alert(1)");
   await page.getByRole("button", { name: "Save profile" }).click();
 
   await expect(page.getByRole("alert").filter({ hasText: "full web addresses" })).toBeVisible();
   await expect(page.getByLabel("Institution")).toHaveValue("IIT Delhi");
 
-  await page.getByLabel("Links").fill("https://github.com/someone");
+  await page.getByRole("textbox", { name: "Link", exact: true }).fill("https://github.com/someone");
   await page.getByRole("button", { name: "Save profile" }).click();
 
   await expect(page).toHaveURL(/\/student$/);
@@ -28,7 +32,8 @@ test("student creates and edits a profile", async ({ page }) => {
 
   await page.getByRole("link", { name: "Edit profile" }).click();
   await expect(page).toHaveURL(/\/student\/profile$/);
-  await expect(page.getByRole("textbox", { name: "Skills" })).toHaveValue("react, typescript");
+  await expect(page.getByRole("textbox", { name: "Skill", exact: true })).toHaveValue("react");
+  await expect(page.getByRole("textbox", { name: "Skill 2" })).toHaveValue("typescript");
   await page.getByLabel("Course").fill("M.Tech CSE");
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(page.getByText("M.Tech CSE, IIT Delhi · Class of 2027")).toBeVisible();

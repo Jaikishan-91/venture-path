@@ -30,6 +30,10 @@ export default async function NewOpportunityPage() {
             payPeriod: "month",
             duration: "",
             deadline: "",
+            requirements: "",
+            experienceLevel: "",
+            compensationMin: "",
+            compensationMax: "",
           }}
         />
       ) : (

@@ -31,6 +31,10 @@ export async function saveOpportunityAction(
   const values = Object.fromEntries(
     [...formData].filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   );
+  values.skills = formData
+    .getAll("skills")
+    .filter((value): value is string => typeof value === "string")
+    .join(", ");
 
   const parsed = opportunitySchema.safeParse(values);
   if (!parsed.success) {

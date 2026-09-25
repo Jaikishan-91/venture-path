@@ -49,6 +49,24 @@ All service ports bind to `127.0.0.1` only.
 
 To see app logs, open Grafana → Explore → Loki and run `{app="venturepath"}`.
 
+### Full Docker setup
+
+For a fully containerized setup (no local Node.js needed):
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+The app builds as a standalone Next.js server. The `hf-cache` volume persists the HuggingFace model between container restarts. Database migrations must still be applied once:
+
+```bash
+docker compose run --rm next npx prisma migrate deploy
+docker compose run --rm next npm run db:seed
+```
+
+For active development, prefer the `npm run dev` workflow above — it provides hot reload without rebuilding the image.
+
 ## Scripts
 
 | Command                | What it does                                  |

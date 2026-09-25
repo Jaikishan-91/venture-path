@@ -5,6 +5,7 @@ import { getEnv } from "./env";
 import { getLogger } from "./logger";
 import { visibleOpportunityWhere } from "./search";
 import { deleteResume, saveResume, type ResumeExtension } from "./resumes";
+import { analyzeResume } from "./resume-analysis";
 
 export const MAX_NOTE_LENGTH = 1000;
 
@@ -60,6 +61,10 @@ export async function applyToOpportunity(
         "application submitted",
       );
       void notifyMsme(created.id);
+      // Analyze the resume in the background. Never awaited — a failure does not block the flow.
+      void analyzeResume(created.id).catch((err: unknown) =>
+        getLogger().error({ applicationId: created.id, err }, "resume analysis failed"),
+      );
       return { ok: true, id: created.id };
     }
 
@@ -77,6 +82,9 @@ export async function applyToOpportunity(
       "application resubmitted",
     );
     void notifyMsme(existing.id);
+    void analyzeResume(existing.id).catch((err: unknown) =>
+      getLogger().error({ applicationId: existing.id, err }, "resume analysis failed"),
+    );
     return { ok: true, id: existing.id };
   } catch (err) {
     await deleteResume(storageKey);
@@ -218,6 +226,29 @@ export function listApplicants(msmeUserId: string, opportunityId: string) {
       },
     },
     orderBy: { appliedAt: "desc" },
+  });
+}
+
+/** Fetch all resume analyses for the listings owned by `msmeUserId`. */
+export function listApplicantAnalyses(msmeUserId: string, opportunityId: string) {
+  return getDb().analysis.findMany({
+    where: {
+      application: {
+        opportunity: { msmeProfile: { userId: msmeUserId } },
+        opportunityId,
+      },
+    },
+    select: {
+      id: true,
+      score: true,
+      summary: true,
+      matchedSkills: true,
+      missingSkills: true,
+      model: true,
+      createdAt: true,
+      applicationId: true,
+    },
+    orderBy: { score: "desc" },
   });
 }
 
