@@ -13,6 +13,8 @@ Current:
 - Phase 7 (AI resume analysis) committed 2026-09-25, hardened and shipped 2026-09-26: `plan/2026-09-25-phase-7-openai-resume-analysis.md`, `plan/2026-09-26-phase-7-hardening.md`.
 - Organisation/user rename and per-role sign-in pages shipped 2026-09-26: `plan/2026-09-26-rename-and-role-auth.md`.
 - Toast notifications and live Docker development shipped 2026-09-26: `plan/2026-09-26-toasts-and-docker-dev.md`.
+- Role dashboards and navigation shipped 2026-09-26: `plan/2026-09-26-role-dashboards.md`.
+- Resume library, AI skills, recommendations and screening questions shipped 2026-09-26: `plan/2026-09-26-resume-library-and-screening.md`.
 
 Next (MVP phases, in order):
 - None. MVP phases 0–6 are shipped. Later: password reset, admin role changes.
@@ -20,5 +22,6 @@ Next (MVP phases, in order):
 Later:
 - Responsive review of every page on mobile and tablet (NFR-4).
 - Password reset.
+- Dashboards (after FR-7): trend charts over time, counts on nav links (e.g. pending reviews), "viewed by organisation" application status, per-user dashboard customisation, CSV export for admins.
 - Admin role changes.
 - TBD after MVP scope is agreed.

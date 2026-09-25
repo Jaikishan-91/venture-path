@@ -35,12 +35,15 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `chooseRole` | `src/app/onboarding/role/actions.ts` | session | Sets the role of a user who has none. Never overwrites a role. |
 | `saveUserProfileAction` | `src/app/user/profile/actions.ts` | `user` | Validates and upserts the signed-in user's profile; redirects to `/user`. |
 | `reviewOrganisationAction` | `src/app/admin/organisations/actions.ts` | `admin` | Approves or rejects (reason required) an organisation profile from any status; refused if the profile changed since the page loaded. Emails the organisation. |
-| `saveOpportunityAction` | `src/app/organisation/opportunities/actions.ts` | `organisation` (approved) | Validates and creates (as draft) or updates the organisation's own listing; redirects to `/organisation/opportunities`. |
-| `applyAction` | `src/app/opportunities/[id]/actions.ts` | `user` | Applies (or reapplies after withdrawal) with a resume and optional note. |
+| `saveOpportunityAction` | `src/app/organisation/opportunities/actions.ts` | `organisation` (approved) | Validates and creates (as draft) or updates the organisation's own listing and its screening questions (max 8, 5–300 characters). Questions are ignored when locked, and refused (`questions_locked`) if they changed after someone applied. A new listing is then sent to the listing assist (ADR-032); if it added skills or questions the organisation lands on the edit page to review them, otherwise on `/organisation/opportunities`. |
+| `assistOpportunityAction` | `src/app/organisation/opportunities/actions.ts` | `organisation` | "Suggest with AI" on the edit page: merges AI skills into the organisation's own listing and drafts questions when it has none and nobody has applied. |
+| `applyAction` | `src/app/opportunities/[id]/actions.ts` | `user` | Applies (or reapplies after withdrawal) with a library resume (`resumeChoice=<id>`) or a new upload (`resumeChoice=upload`, added to the library), one `answer:<questionId>` per screening question (all required, max 2000 characters), and an optional note. |
+| `uploadResumeAction` | `src/app/user/resumes/actions.ts` | `user` | Adds a resume (PDF, DOC, DOCX, max 5 MB) to the user's library, max 5 (ADR-031). Skills are extracted in the background. |
+| `manageResumeAction` | `src/app/user/resumes/actions.ts` | `user` | `intent=rename`, `delete` or `retry` (skill extraction) on the user's own library resume. Delete keeps the file while an application uses it. |
 | `withdrawAction` | `src/app/opportunities/[id]/actions.ts` | `user` | Withdraws the user's own submitted application. |
 | `decideAction` | `src/app/organisation/opportunities/[id]/applicants/actions.ts` | `organisation` | Accepts or rejects a submitted application on the organisation's own listing. |
-| `reanalyzeAction` | `src/app/organisation/opportunities/[id]/applicants/actions.ts` | `organisation` | Runs resume analysis again for an application on the organisation's own listing (ADR-024). Errors if no LLM is configured or the resume has no readable text. |
-| `savePromptAction` | `src/app/admin/settings/actions.ts` | `admin` | Saves an LLM prompt template (`resume_analysis`, `job_description`; max 10,000 characters). |
+| `reanalyzeAction` | `src/app/organisation/opportunities/[id]/applicants/actions.ts` | `organisation` | Runs the screening analysis (resume and answers) again for an application on the organisation's own listing (ADR-024, ADR-033). Errors if no LLM is configured or nothing could be scored. |
+| `savePromptAction` | `src/app/admin/settings/actions.ts` | `admin` | Saves an LLM prompt template (`resume_analysis`, `listing_assist`, `resume_skills`, `answer_scoring`, `job_description`; max 10,000 characters). |
 | `opportunityStatusAction` | `src/app/organisation/opportunities/actions.ts` | `organisation` | `publish`, `close`, `reopen` or `delete` (drafts) on the organisation's own listing (ADR-020). |
 | `saveOrganisationProfileAction` | `src/app/organisation/profile/actions.ts` | `organisation` | Validates and saves the signed-in organisation's profile; the status is derived on the server (ADR-016). Redirects to `/organisation`, or asks to save again if the status changed concurrently. |
 
@@ -57,11 +60,14 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `/onboarding/role` | Signed in without a role |
 | `/user`, `/organisation`, `/admin` | Signed in with that role; other roles are redirected to their own home |
 | `/user/profile`, `/organisation/profile` | Signed in with that role; create or edit own profile |
-| `/opportunities`, `/opportunities/[id]` | Public. Search and detail. Users apply here (resume + optional note). |
-| `/user/applications` | User; own applications and, once accepted, the organisation email. |
-| `/organisation/opportunities/[id]/applicants` | Owning organisation; accept or reject, and see each resume analysis (score, summary, matched and missing skills). User email shown only after acceptance. |
+| `/opportunities`, `/opportunities/[id]` | Public. Search and detail. Users apply here (library resume or upload, answers to the screening questions, optional note). |
+| `/user/applications` | User; own applications and, once accepted, the organisation email. Never shows scores. |
+| `/user/resumes` | User; resume library (upload, rename, delete, retry skill extraction) with extracted skills. |
+| `/user/recommendations` | User; up to 30 recommended listings with match % and matched skills (ADR-033). |
+| `/organisation/opportunities/[id]/applicants?minScore=50\|70\|85&applied=24h\|7d\|30d\|custom&from=&to=&sort=score\|newest\|oldest` | Owning organisation; accept or reject, and see each applicant's overall, resume and answer scores, answers with per-answer scores, summary, and matched and missing skills. Filters by minimum overall score and apply time (India-time days for `custom`); invalid values fall back to defaults. User email shown only after acceptance. |
 | `/admin/settings` | Admin; edit LLM prompt templates. |
 | `GET /api/applications/[id]/resume` | User owner or owning organisation; 401 signed out, 404 otherwise. |
+| `GET /api/resumes/[id]` | The user who owns the library resume; 401 signed out, 404 otherwise. |
 | `/organisation/opportunities`, `/organisation/opportunities/new`, `/organisation/opportunities/[id]/edit` | Organisation; own listings only (other IDs give 404); forms only for approved organisations |
 | `/admin/organisations?status=pending\|approved\|rejected` | Admin; organisation review list (default `pending`, max 100 per status) |
 

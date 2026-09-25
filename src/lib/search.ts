@@ -36,7 +36,7 @@ export type OpportunitySummary = {
  * Visibility rule for anything shown outside the owning organisation: published, organisation approved,
  * deadline (last day to apply, India time) not passed. Mirrored in `visibleOpportunityWhere`.
  */
-function visibleSql(today: string) {
+export function visibleSql(today: string) {
   return Prisma.sql`o.status = 'published' AND m.status = 'approved'
     AND (o.deadline IS NULL OR o.deadline >= ${today}::date)`;
 }

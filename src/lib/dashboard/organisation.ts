@@ -150,8 +150,8 @@ export async function getOrganisationDashboard(
       _count: { _all: true },
     }),
     db.analysis.aggregate({
-      _avg: { score: true },
-      _count: { _all: true },
+      _avg: { overallScore: true },
+      _count: { overallScore: true },
       where: { application: { opportunity: ownedBy } },
     }),
     db.opportunity.findMany({
@@ -175,7 +175,7 @@ export async function getOrganisationDashboard(
         appliedAt: true,
         opportunity: { select: { id: true, title: true } },
         userProfile: { select: { user: { select: { name: true } } } },
-        analysis: { select: { score: true } },
+        analysis: { select: { overallScore: true } },
       },
     }),
     db.opportunity.findMany({
@@ -210,8 +210,11 @@ export async function getOrganisationDashboard(
     listingCounts,
     applicantCounts,
     avgScore: {
-      average: avgScoreAgg._count._all === 0 ? null : Math.round(avgScoreAgg._avg.score ?? 0),
-      count: avgScoreAgg._count._all,
+      average:
+        avgScoreAgg._count.overallScore === 0
+          ? null
+          : Math.round(avgScoreAgg._avg.overallScore ?? 0),
+      count: avgScoreAgg._count.overallScore,
     },
     listings: mergedListings,
     // Prisma loads relations in a second query; an applicant deleted in between comes back without one.
@@ -226,7 +229,7 @@ export async function getOrganisationDashboard(
         opportunityTitle: application.opportunity.title,
         appliedAt: application.appliedAt,
         status: application.status as ApplicationStatus,
-        score: application.analysis?.score ?? null,
+        score: application.analysis?.overallScore ?? null,
       })),
     closingSoon: closingSoon.map((opportunity) => ({
       id: opportunity.id,

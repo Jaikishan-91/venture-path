@@ -18,4 +18,5 @@ All implementation plans are stored here. See `AGENTS.md` → Project Operating 
 | 2026-09-26 | [Phase 7 hardening](2026-09-26-phase-7-hardening.md) | shipped |
 | 2026-09-26 | [Rename and per-role sign-in](2026-09-26-rename-and-role-auth.md) | shipped |
 | 2026-09-26 | [Toasts and Docker dev](2026-09-26-toasts-and-docker-dev.md) | shipped |
-| 2026-09-26 | [Resume library, AI skills, recommendations and screening](2026-09-26-resume-library-and-screening.md) | proposed |
+| 2026-09-26 | [Role dashboards and navbars](2026-09-26-role-dashboards.md) | shipped |
+| 2026-09-26 | [Resume library, AI skills, recommendations and screening](2026-09-26-resume-library-and-screening.md) | shipped |

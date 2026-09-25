@@ -148,7 +148,7 @@ export async function getAdminDashboard(now = new Date()): Promise<AdminDashboar
     db.opportunity.count({ where: { createdAt: { gte: since30 } } }),
     db.application.count({ where: { appliedAt: { gte: since7 } } }),
     db.application.count({ where: { appliedAt: { gte: since30 } } }),
-    db.analysis.aggregate({ _count: { _all: true }, _avg: { score: true } }),
+    db.analysis.aggregate({ _count: { _all: true }, _avg: { overallScore: true } }),
   ]);
 
   const roleCounts = fillCounts(
@@ -238,7 +238,8 @@ export async function getAdminDashboard(now = new Date()): Promise<AdminDashboar
     },
     ai: {
       analysisCount: analysisAgg._count._all,
-      averageScore: analysisAgg._avg.score === null ? null : Math.round(analysisAgg._avg.score),
+      averageScore:
+        analysisAgg._avg.overallScore === null ? null : Math.round(analysisAgg._avg.overallScore),
       provider: { kind: llmConfig.kind, model: llmConfig.model },
     },
   };

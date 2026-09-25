@@ -23,4 +23,4 @@ Technology Stack:
 - Version control: Git (local repository; remote not yet configured).
 - See `docs/DECISIONS.md` ADR-001 to ADR-015.
 
-Current State (2026-09-26): MVP phases 0–6 shipped (auth, profiles, admin approval of organisations, listings, public browse with semantic search, applications with resumes and emails), plus Phase 7: optional AI resume analysis with admin-editable prompts, and a careers-portal UI. Runs locally with Docker Compose; see `README.md`. Production hosting is not decided.
+Current State (2026-09-26): MVP phases 0–6 shipped (auth, profiles, admin approval of organisations, listings, public browse with semantic search, applications with resumes and emails), plus Phase 7: optional AI resume analysis with admin-editable prompts, and a careers-portal UI. Since then: role dashboards, a resume library with AI skill extraction, AI-assisted listings with screening questions, skill-based recommendations, and combined resume and answer scores with applicant filters. Runs locally with Docker Compose; see `README.md`. Production hosting is not decided.

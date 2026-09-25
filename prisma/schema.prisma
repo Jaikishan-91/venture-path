@@ -53,6 +53,7 @@ model UserProfile {
   bio            String?
   links          String[]
   applications   Application[]
+  resumes        Resume[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -194,11 +195,14 @@ model Opportunity {
   status                OpportunityStatus           @default(draft)
   publishedAt           DateTime?
   closedAt              DateTime?
+  /// Last time the AI extracted skills / drafted questions for this listing (`src/lib/listing-assist.ts`).
+  aiAssistedAt          DateTime?
   /// all-MiniLM-L6-v2 embedding of the listing text; written with raw SQL (`src/lib/search.ts`).
   embedding             Unsupported("vector(384)")?
   createdAt             DateTime                    @default(now())
   updatedAt             DateTime                    @updatedAt
   applications          Application[]
+  questions             OpportunityQuestion[]
 
   @@index([organisationProfileId])
   @@index([status])
@@ -215,26 +219,31 @@ enum ApplicationStatus {
 }
 
 model Application {
-  id               String            @id @default(uuid())
+  id               String              @id @default(uuid())
   opportunityId    String
-  opportunity      Opportunity       @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  opportunity      Opportunity         @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   userProfileId    String
-  userProfile      UserProfile       @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  userProfile      UserProfile         @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
   note             String?
   /// Original file name, shown in the download link.
   resumeFileName   String
-  /// Generated storage key. Never taken from the client.
+  /// Generated storage key. Never taken from the client. Snapshot of the resume used; may be shared with a library `Resume`.
   resumeStorageKey String
-  status           ApplicationStatus @default(submitted)
-  appliedAt        DateTime          @default(now())
+  /// Library resume chosen for this application. Null for applications made before the library existed, or after that resume was deleted.
+  resumeId         String?
+  resume           Resume?             @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  status           ApplicationStatus   @default(submitted)
+  appliedAt        DateTime            @default(now())
   decidedAt        DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  analysis         Analysis?         @relation("ApplicationAnalysis")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  analysis         Analysis?           @relation("ApplicationAnalysis")
+  answers          ApplicationAnswer[]
 
   @@unique([opportunityId, userProfileId])
   @@index([opportunityId])
   @@index([userProfileId])
+  @@index([resumeId])
   @@map("application")
 }
 
@@ -252,18 +261,88 @@ model Prompt {
   @@map("prompt")
 }
 
-/// AI-generated resume analysis stored per application.
+/// AI-generated screening result stored per application: resume fit, answer quality and the combined score.
 model Analysis {
-  id            String      @id @default(uuid())
-  applicationId String      @unique
-  application   Application @relation("ApplicationAnalysis", fields: [applicationId], references: [id], onDelete: Cascade)
-  /// Fit score 0–100.
-  score         Int
-  summary       String?
-  matchedSkills String[]    @default([])
-  missingSkills String[]    @default([])
-  model         String?
-  createdAt     DateTime    @default(now())
+  id             String      @id @default(uuid())
+  applicationId  String      @unique
+  application    Application @relation("ApplicationAnalysis", fields: [applicationId], references: [id], onDelete: Cascade)
+  /// Resume fit score 0–100. Null when the resume couldn't be analysed.
+  resumeScore    Int?
+  summary        String?
+  matchedSkills  String[]    @default([])
+  missingSkills  String[]    @default([])
+  /// Overall answer score 0–100. Null when the listing has no questions or scoring failed.
+  answersScore   Int?
+  answersSummary String?
+  /// Weighted combination computed in code (`combineScores`), never by the LLM.
+  overallScore   Int?
+  model          String?
+  createdAt      DateTime    @default(now())
 
+  @@index([overallScore])
   @@map("analysis")
+}
+
+enum ResumeSkillsStatus {
+  pending
+  done
+  failed
+  skipped
+}
+
+/// A resume in a user's library (max 5). Skills are extracted once, after upload.
+model Resume {
+  id            String             @id @default(uuid())
+  userProfileId String
+  userProfile   UserProfile        @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  /// Display name; starts as the uploaded file name and can be renamed.
+  fileName      String
+  /// Generated storage key. Never taken from the client.
+  storageKey    String             @unique
+  /// Normalised skills extracted by the LLM (`src/lib/skills.ts`).
+  skills        String[]           @default([])
+  skillsStatus  ResumeSkillsStatus @default(pending)
+  skillsModel   String?
+  applications  Application[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([userProfileId])
+  @@map("resume")
+}
+
+enum QuestionSource {
+  ai
+  organisation
+}
+
+/// Screening question on a listing. Locked once the listing has any application.
+model OpportunityQuestion {
+  id            String              @id @default(uuid())
+  opportunityId String
+  opportunity   Opportunity         @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  position      Int
+  prompt        String
+  source        QuestionSource
+  answers       ApplicationAnswer[]
+  createdAt     DateTime            @default(now())
+
+  @@unique([opportunityId, position])
+  @@map("opportunity_question")
+}
+
+/// A user's answer to one screening question, with the AI's per-answer score.
+model ApplicationAnswer {
+  id            String              @id @default(uuid())
+  applicationId String
+  application   Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  questionId    String
+  question      OpportunityQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer        String
+  score         Int?
+  feedback      String?
+
+  @@unique([applicationId, questionId])
+  @@index([questionId])
+  @@map("application_answer")
 }

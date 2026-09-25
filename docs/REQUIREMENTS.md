@@ -32,6 +32,14 @@ Out of MVP: in-app messaging, contracts/milestones, payments, reviews/ratings.
 - FR-4: Users can find (browse/search) freelance work and internships.
 - FR-5: Only organisations create listings in the MVP. Users create a profile and apply to opportunities (ADR-005). User service listings and a browsable user directory are out of MVP scope.
 - FR-6: Users and organisations have separate sign-in and sign-up pages; the admin has a sign-in page only (admins are created by the seed script). Each sign-in page accepts only its own account type (ADR-026).
+- FR-7 (2026-09-26): Each role has a dashboard as its home page, with role-specific navigation.
+  - User: application counts (total, under review, accepted, not selected), an "Explore jobs" call to action with jobs new this week, profile completeness, recommended jobs from their skills (latest jobs as a fallback), jobs closing within 7 days, and recent applications.
+  - Organisation: approval status, listing counts by status, applicant counts, average AI match score, a per-listing applicant table, recent applicants, and own listings closing within 7 days.
+  - Admin: counts of users, organisations, listings and applications; the 5 oldest pending organisations; breakdowns by role and status; growth over 7 and 30 days; AI analysis count, average score and provider.
+- FR-8 (2026-09-26): A user keeps up to 5 resumes in a library and picks one (or uploads a new one) for each application. The LLM extracts skills from each uploaded resume (ADR-031).
+- FR-9 (2026-09-26): When an organisation creates a listing, the LLM extracts its required skills and drafts screening questions; the organisation edits them before publishing. Questions lock once someone applies (ADR-032).
+- FR-10 (2026-09-26): Jobs are recommended to users from their resume skills (profile skills as a fallback) matched against each listing's required skills (ADR-033).
+- FR-11 (2026-09-26): Applying requires answering every screening question. The LLM scores the resume against the listing's skills and requirements and scores the answers; organisations see resume, answer and overall scores and filter applicants by minimum score and apply time. Users never see scores (ADR-033).
 - TBD: application flow, messaging, verification of users/organisations, payments, reviews/ratings, notifications.
 
 ## Non-Functional Requirements

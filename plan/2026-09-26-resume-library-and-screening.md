@@ -1,6 +1,6 @@
 # Implementation Plan — Resume library, AI skills, recommendations and screening
 
-Status: proposed
+Status: shipped
 Date: 2026-09-26
 
 ## Objective
@@ -109,7 +109,7 @@ File rule: a stored file is deleted only when no `Resume` row and no `Applicatio
 - Integration: new `tests/resume-library.test.ts`, `tests/listing-assist.test.ts`, `tests/answer-scoring.test.ts`, `tests/recommendations.test.ts`. Update `tests/applications.test.ts`, `tests/resume-analysis.test.ts`, `tests/opportunities.test.ts`, `tests/opportunity-schemas.test.ts`, `tests/dashboard-*.test.ts`.
 - E2E: new `e2e/resumes.spec.ts`. Update `e2e/applications.spec.ts`, `e2e/opportunities.spec.ts`, `e2e/helpers.ts`.
 
-**Docs:** `DATA_MODEL.md`, `ARCHITECTURE.md`, `API.md`, `DECISIONS.md` (ADR-029 resume library and file references, ADR-030 listing assist and screening questions, ADR-031 matching and scoring), `REQUIREMENTS.md` (FR-7 to FR-10), `CHANGELOG.md`, `ROADMAP.md`, `BLOCKERS.md`, `plan/README.md`.
+**Docs:** `DATA_MODEL.md`, `ARCHITECTURE.md`, `API.md`, `DECISIONS.md` (ADR-031 resume library and file references, ADR-032 listing assist and screening questions, ADR-033 matching and scoring), `REQUIREMENTS.md` (FR-8 to FR-11), `CHANGELOG.md`, `ROADMAP.md`, `BLOCKERS.md`, `plan/README.md`.
 
 No new dependencies. No infrastructure change.
 
@@ -230,3 +230,53 @@ Revert the commits and roll back the migration with a down SQL written alongside
 - rename `resumeScore` back to `score` (null → 0 is not acceptable, so rows with a null resume score are deleted).
 
 Uploaded library files stay on disk, unreferenced.
+
+## Outcome (2026-09-26)
+
+Approved by the product owner ("do it"). Step 0 done: the pending shipped work was committed first (`546a966`).
+
+Deviations from the plan:
+- ADR and FR numbers are ADR-031 to ADR-033 and FR-8 to FR-11: a parallel session took ADR-029, ADR-030 and FR-7 for the dashboards. ADR-033 supersedes ADR-030.
+- `application_answer.questionId` cascades instead of Restrict, so deleting a listing can't be blocked by answers; the lock is enforced in code.
+- The listing assist is called from the server action, not inside `createOpportunity`, so the listing library stays free of LLM calls.
+- Recommendation coverage is computed in code over up to 300 visible listings (ordered by similarity), not by SQL array intersection, so skill aliases apply to both sides.
+- New `src/lib/background.ts` (`runInBackground` / `settleBackground`). Tests needed a way to wait for background analysis and extraction, which otherwise raced with the stubbed LLM.
+- Only "Resumes" was added to the user nav. The phone tab bar got short labels ("Jobs", "Applied") so five links fit at 320px.
+
+Found and fixed during implementation and review:
+- `asData` tag stripping used `` inside a template literal (a backspace), so injected closing tags were not removed. It was caught by a unit test and now uses `String.raw`.
+- The resume cap used Serializable isolation, which made different users' concurrent uploads fail. It now uses a row lock on the profile.
+- Long resume names overflowed the apply card; the apply panel is no longer sticky when it has questions (its end would be unreachable).
+- On phones the date-range inputs rendered below the filter buttons.
+- When the listing assist threw, the organisation got a plain success toast; it now says AI was unavailable.
+
+Rollback SQL (Prisma has no down migrations; run by hand, then delete the migration row):
+
+```sql
+ALTER TABLE application DROP COLUMN "resumeId";
+DROP TABLE application_answer, opportunity_question, resume;
+DROP TYPE "ResumeSkillsStatus"; DROP TYPE "QuestionSource";
+ALTER TABLE opportunity DROP COLUMN "aiAssistedAt";
+DELETE FROM analysis WHERE "resumeScore" IS NULL;
+ALTER TABLE analysis DROP COLUMN "answersScore", DROP COLUMN "answersSummary", DROP COLUMN "overallScore";
+ALTER TABLE analysis RENAME COLUMN "resumeScore" TO score;
+ALTER TABLE analysis ALTER COLUMN score SET NOT NULL;
+DELETE FROM "_prisma_migrations" WHERE migration_name = '20260926020000_resume_library_screening';
+```
+
+## Verification (2026-09-26)
+
+Environment: Docker Compose services (Postgres on 127.0.0.1:5432, Mailpit, Loki) and the `next-dev` container on :3000. The LLM is disabled locally (`LLM_PROVIDER=enabled` is invalid), which is what the e2e specs expect.
+
+- `prisma migrate dev`: applied. `prisma migrate diff` from the database to the schema: empty.
+- `npm run typecheck`, `npm run lint`: pass.
+- `npm test`: 27 files, 256 tests, passed 3 consecutive full runs. New: `skills`, `applicant-filters`, `screening-parsers` (unit), `screening` (integration against Postgres, stubbed `fetch`, mocked embeddings).
+- `npm run build`: pass. Its 4 "dynamic filesystem access" warnings come from the existing `readResume` and also appear without these changes.
+- Playwright, full suite with 2 workers: 39/39 pass twice, including the new `e2e/screening.spec.ts`.
+- Responsive: screenshots at 375, 768 and 1280 px of the new listing form, the resume library, recommendations, the apply form and the applicants page, reviewed by eye. `scrollWidth > clientWidth` was false on every page and width.
+
+Not verified:
+- A real LLM (all AI paths use stubbed replies), so the new prompts are untuned.
+- Recommendation quality with real embeddings (the integration test mocks them).
+- The production Docker image (`docker compose build next`).
+- A real concurrent-apply race against a question edit.

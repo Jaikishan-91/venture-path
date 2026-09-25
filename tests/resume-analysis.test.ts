@@ -5,11 +5,16 @@ import path from "node:path";
 import { crc32, deflateRawSync } from "node:zlib";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { applyToOpportunity } from "@/lib/applications";
+import { settleBackground } from "@/lib/background";
 import { getDb } from "@/lib/db";
 import { clearLlmConfigCache } from "@/lib/llm/config";
 import { changeOpportunityStatus, createOpportunity } from "@/lib/opportunities";
 import type { OpportunityInput } from "@/lib/opportunity-schemas";
-import { analyzeResume, extractResumeText, reanalyzeForOrganisation } from "@/lib/resume-analysis";
+import {
+  analyzeApplication,
+  extractResumeText,
+  reanalyzeForOrganisation,
+} from "@/lib/resume-analysis";
 
 const EMAIL_DOMAIN = "resume-analysis-test.venturepath.local";
 
@@ -138,6 +143,7 @@ async function applicationWithPdf(text: string) {
     note: "",
   });
   if (!applied.ok) throw new Error(applied.reason);
+  await settleBackground();
   return { organisationId: organisation.id, applicationId: applied.id };
 }
 
@@ -197,18 +203,21 @@ describe("extractResumeText", () => {
   });
 });
 
-describe("analyzeResume", () => {
+describe("analyzeApplication (resume only)", () => {
   it("reports no_llm when the provider is disabled", async () => {
     const { applicationId } = await applicationWithPdf("React developer");
-    expect(await analyzeResume(applicationId)).toEqual({ ok: false, reason: "no_llm" });
+    expect(await analyzeApplication(applicationId)).toEqual({ ok: false, reason: "no_llm" });
   });
 
   it("stores the analysis, then replaces it on re-analysis", async () => {
     const { organisationId, applicationId } = await applicationWithPdf("React developer");
 
     const fetchMock = stubLlm({ score: 81.4, summary: "Strong", matchedSkills: ["react"] });
-    const first = await analyzeResume(applicationId);
-    expect(first).toMatchObject({ ok: true, analysis: { score: 81, model: "test-model" } });
+    const first = await analyzeApplication(applicationId);
+    expect(first).toMatchObject({
+      ok: true,
+      analysis: { resumeScore: 81, overallScore: 81, model: "test-model" },
+    });
 
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("http://llm.test/v1/chat/completions");
@@ -221,7 +230,10 @@ describe("analyzeResume", () => {
 
     stubLlm({ score: 50, summary: "Retry", missingSkills: ["sql"] });
     const second = await reanalyzeForOrganisation(organisationId, applicationId);
-    expect(second).toMatchObject({ ok: true, analysis: { score: 50, missingSkills: ["sql"] } });
+    expect(second).toMatchObject({
+      ok: true,
+      analysis: { resumeScore: 50, overallScore: 50, missingSkills: ["sql"] },
+    });
     expect(await getDb().analysis.count({ where: { applicationId } })).toBe(1);
   });
 
@@ -244,7 +256,7 @@ describe("analyzeResume", () => {
     );
     Object.assign(process.env, { LLM_PROVIDER: "openai", LLM_BASE_URL: "http://llm.test/v1" });
     clearLlmConfigCache();
-    expect(await analyzeResume(applicationId)).toEqual({ ok: false, reason: "parse_error" });
+    expect(await analyzeApplication(applicationId)).toEqual({ ok: false, reason: "parse_error" });
     expect(await getDb().analysis.count({ where: { applicationId } })).toBe(0);
   });
 });

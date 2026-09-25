@@ -262,18 +262,14 @@ describe("getUserDashboard: closing soon window", () => {
 describe("getUserDashboard: fallback recommendations", () => {
   it("falls back to the latest listings, excluding ones the user already applied to", async () => {
     vi.resetModules();
-    vi.doMock("@/lib/search", async () => {
-      const actual = await vi.importActual<typeof import("@/lib/search")>("@/lib/search");
-      return {
-        ...actual,
-        searchOpportunities: vi.fn().mockRejectedValue(new Error("embedding unavailable")),
-      };
-    });
+    vi.doMock("@/lib/recommendations", () => ({
+      recommendOpportunities: vi.fn().mockRejectedValue(new Error("embedding unavailable")),
+    }));
     const { getUserDashboard: getUserDashboardMocked } = await import("@/lib/dashboard/user");
 
     const organisation = await createUser("organisation");
     const user = await createUser("user");
-    // Skills present, so the (mocked, failing) search path is taken before falling back.
+    // Skills present, so the (mocked, failing) recommendation path is taken before falling back.
     await createUserProfile(user.id, { skills: ["React"] });
 
     // Published last, so it would top the "latest" list if it weren't excluded. Other listings are
@@ -285,7 +281,7 @@ describe("getUserDashboard: fallback recommendations", () => {
     expect(dashboard.recommendedTitle).toBe("Latest opportunities");
     expect(dashboard.recommended.map((o) => o.id)).not.toContain(applied);
 
-    vi.doUnmock("@/lib/search");
+    vi.doUnmock("@/lib/recommendations");
     vi.resetModules();
   });
 

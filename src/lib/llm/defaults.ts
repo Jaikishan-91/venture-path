@@ -13,6 +13,31 @@ Experience level: {{experienceLevel}}
 Resume:
 {{resumeText}}`,
 
+  listing_assist: `You help an organisation prepare a job listing. From the listing below:
+1. List the concrete skills a candidate needs (tools, languages, methods, domain knowledge). Short names, at most {{maxSkills}}. Include the skills the organisation already listed if they are relevant.
+2. Write {{questionCount}} short screening questions a candidate answers in writing when applying. Each must be answerable in a few sentences and reveal real experience with this role's requirements. No yes/no questions.
+
+Return JSON only: {"skills": ["..."], "questions": ["..."]}
+
+{{listing}}`,
+
+  resume_skills: `Extract the candidate's skills from the resume below: tools, programming languages, frameworks, methods and domain knowledge they show evidence of. Short names (e.g. "react", "sql", "social media marketing"), at most {{maxSkills}}, most important first. Do not invent skills that are not in the resume.
+
+Return JSON only: {"skills": ["..."]}
+
+{{resumeText}}`,
+
+  answer_scoring: `You are screening written answers to a job listing's questions. Score each answer from 0 to 100 for relevance, specificity, and evidence of the skills and requirements below. Empty, off-topic or copied-question answers score low. Also give an overall score (0-100) and a 1-2 sentence summary.
+
+Job: {{title}}
+Skills required: {{skills}}
+Requirements: {{requirements}}
+Experience level: {{experienceLevel}}
+
+{{answers}}
+
+Return JSON only: {"answers": [{"questionId": "...", "score": 0, "feedback": "one sentence"}], "score": 0, "summary": "..."}`,
+
   job_description: `You are a hiring manager. Write a detailed, well-structured job description in markdown. Incorporate the title, type, description, skills, requirements and experience level.
 
 Title: {{title}}

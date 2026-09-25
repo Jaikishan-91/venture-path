@@ -2,6 +2,7 @@
 
 import {
   Briefcase,
+  FileStack,
   FileText,
   LayoutDashboard,
   type LucideIcon,
@@ -15,14 +16,16 @@ import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/sign-out-button";
 import type { Role } from "@/lib/roles";
 
-type NavItem = { href: string; label: string; icon: LucideIcon };
+/** `short` replaces `label` in the phone tab bar, where five full labels don't fit at 320px. */
+type NavItem = { href: string; label: string; short?: string; icon: LucideIcon };
 
 /** One entry per link; add a link to a role's nav by adding a line here. */
 const NAV: Record<Role, NavItem[]> = {
   user: [
     { href: "/user", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/opportunities", label: "Explore jobs", icon: Search },
-    { href: "/user/applications", label: "Applications", icon: FileText },
+    { href: "/opportunities", label: "Explore jobs", short: "Jobs", icon: Search },
+    { href: "/user/applications", label: "Applications", short: "Applied", icon: FileText },
+    { href: "/user/resumes", label: "Resumes", icon: FileStack },
     { href: "/user/profile", label: "Profile", icon: UserRound },
   ],
   organisation: [
@@ -112,7 +115,7 @@ export function AppSidebar({ role, name }: { role: Role; name: string }) {
           className="grid gap-1 px-2 py-2"
           style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
         >
-          {items.map(({ href, label, icon: Icon }) => (
+          {items.map(({ href, label, short, icon: Icon }) => (
             <Link
               key={href}
               href={href}
@@ -124,7 +127,7 @@ export function AppSidebar({ role, name }: { role: Role; name: string }) {
               }`}
             >
               <Icon className="size-4" aria-hidden="true" />
-              <span className="w-full truncate text-center">{label}</span>
+              <span className="w-full truncate text-center">{short ?? label}</span>
             </Link>
           ))}
         </nav>

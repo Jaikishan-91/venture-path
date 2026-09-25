@@ -163,3 +163,70 @@ export const opportunitySchema = fields.transform((input, ctx) => {
   };
 });
 export type OpportunityInput = z.output<typeof opportunitySchema>;
+
+/** Screening questions (ADR-032). The AI drafts them; the organisation edits before anyone applies. */
+export const MAX_QUESTIONS = 8;
+export const MIN_QUESTION_LENGTH = 5;
+export const MAX_QUESTION_LENGTH = 300;
+export const MAX_ANSWER_LENGTH = 2000;
+export const QUESTION_SOURCES = ["ai", "organisation"] as const;
+export type QuestionSource = (typeof QUESTION_SOURCES)[number];
+export type QuestionInput = { prompt: string; source: QuestionSource };
+
+/**
+ * Questions from the listing form's repeated `questions` field; blanks and duplicates dropped.
+ * A question is `ai` only when it is unchanged from a stored AI draft (`aiDrafts`); an edited
+ * or new one is the organisation's. Returns an error message or the list.
+ */
+export function parseQuestions(
+  prompts: string[],
+  aiDrafts: readonly string[] = [],
+): { ok: true; questions: QuestionInput[] } | { ok: false; message: string } {
+  const questions: QuestionInput[] = [];
+  const seen = new Set<string>();
+  for (const raw of prompts) {
+    const prompt = raw.replace(/\s+/g, " ").trim();
+    if (!prompt) continue;
+    if (prompt.length < MIN_QUESTION_LENGTH) {
+      return { ok: false, message: `Use at least ${MIN_QUESTION_LENGTH} characters per question` };
+    }
+    if (prompt.length > MAX_QUESTION_LENGTH) {
+      return { ok: false, message: `Keep each question under ${MAX_QUESTION_LENGTH} characters` };
+    }
+    if (seen.has(prompt.toLowerCase())) continue;
+    seen.add(prompt.toLowerCase());
+    questions.push({ prompt, source: aiDrafts.includes(prompt) ? "ai" : "organisation" });
+  }
+  if (questions.length > MAX_QUESTIONS) {
+    return { ok: false, message: `Add at most ${MAX_QUESTIONS} questions` };
+  }
+  return { ok: true, questions };
+}
+
+/**
+ * Answers from the apply form (`answer:<questionId>` fields) checked against the listing's
+ * questions: every question answered, nothing extra, lengths within limits.
+ */
+export function parseAnswers(
+  questionIds: readonly string[],
+  entries: Iterable<[string, FormDataEntryValue]>,
+): { ok: true; answers: Record<string, string> } | { ok: false; message: string } {
+  const given = new Map<string, string>();
+  for (const [name, value] of entries) {
+    if (!name.startsWith("answer:") || typeof value !== "string") continue;
+    given.set(name.slice("answer:".length), value.trim());
+  }
+  const answers: Record<string, string> = {};
+  for (const id of questionIds) {
+    const answer = given.get(id);
+    if (!answer) return { ok: false, message: "Answer every question" };
+    if (answer.length > MAX_ANSWER_LENGTH) {
+      return { ok: false, message: `Keep each answer under ${MAX_ANSWER_LENGTH} characters` };
+    }
+    answers[id] = answer;
+  }
+  if ([...given.keys()].some((id) => !questionIds.includes(id))) {
+    return { ok: false, message: "The questions changed. Reload the page." };
+  }
+  return { ok: true, answers };
+}

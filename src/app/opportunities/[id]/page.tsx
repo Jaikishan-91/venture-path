@@ -12,7 +12,9 @@ import {
   formatPay,
   isDeadlinePassed,
 } from "@/lib/opportunity-schemas";
+import { listQuestions } from "@/lib/opportunities";
 import { getUserProfile } from "@/lib/profiles";
+import { listResumes, MAX_LIBRARY_RESUMES } from "@/lib/resume-library";
 import { getVisibleOpportunity } from "@/lib/search";
 import { withdrawAction } from "./actions";
 import { ApplyForm } from "./apply-form";
@@ -37,6 +39,18 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
     session?.user.role === "user" ? await getOwnApplication(session.user.id, opportunity.id) : null;
   const profile =
     session?.user.role === "user" && !application ? await getUserProfile(session.user.id) : null;
+  const canApply = (profile !== null && !application) || application?.status === "withdrawn";
+  const [questions, resumes] = canApply
+    ? await Promise.all([listQuestions(opportunity.id), listResumes(session!.user.id)])
+    : [[], []];
+  const applyForm = (
+    <ApplyForm
+      opportunityId={opportunity.id}
+      questions={questions}
+      resumes={resumes.map((resume) => ({ id: resume.id, fileName: resume.fileName }))}
+      canUpload={resumes.length < MAX_LIBRARY_RESUMES}
+    />
+  );
 
   return (
     <PublicFrame>
@@ -136,7 +150,12 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
           </Card>
         </div>
 
-        <section className="flex h-fit flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-[#e2e5e7] md:sticky md:top-6">
+        <section
+          className={`flex h-fit min-w-0 flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-[#e2e5e7] ${
+            // A tall form (screening questions) can't be sticky: its end would be unreachable.
+            questions.length === 0 ? "md:sticky md:top-6" : ""
+          }`}
+        >
           <h2 className="text-lg font-medium">Apply</h2>
           {!session && (
             <Link href="/sign-in" className={buttonVariants({ className: "self-start" })}>
@@ -151,10 +170,8 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
               Create your profile to apply
             </Link>
           )}
-          {session?.user.role === "user" && !application && profile && (
-            <ApplyForm opportunityId={opportunity.id} />
-          )}
-          {application?.status === "withdrawn" && <ApplyForm opportunityId={opportunity.id} />}
+          {session?.user.role === "user" && !application && profile && applyForm}
+          {application?.status === "withdrawn" && applyForm}
           {application && application.status !== "withdrawn" && (
             <p className="text-sm">
               Your application is{" "}

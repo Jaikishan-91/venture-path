@@ -18,6 +18,7 @@ import {
   WORK_MODES,
 } from "@/lib/opportunity-schemas";
 import { saveOpportunityAction, type OpportunityFormState } from "./actions";
+import { QuestionsEditor, type QuestionValue } from "./questions-editor";
 
 export type OpportunityValues = {
   id: string;
@@ -44,9 +45,16 @@ const selectClass =
 export function OpportunityForm({
   initial: values,
   minDeadline,
+  questions,
+  questionsLocked = false,
+  aiEnabled,
 }: {
   initial: OpportunityValues;
   minDeadline: string;
+  questions: QuestionValue[];
+  questionsLocked?: boolean;
+  /** Whether saving a new listing asks the AI for skills and questions. */
+  aiEnabled: boolean;
 }) {
   const [state, action, pending] = useActionState<OpportunityFormState, FormData>(
     saveOpportunityAction,
@@ -283,9 +291,24 @@ export function OpportunityForm({
           />
         </div>
       </div>
-      <div className="flex gap-3">
+      <QuestionsEditor initial={questions} locked={questionsLocked} />
+      {!values.id && aiEnabled && (
+        <p className="text-xs text-muted-foreground">
+          When you save, AI adds the skills this listing needs and, if you wrote no questions,
+          drafts a few. You can review them before publishing.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : values.id ? "Save changes" : "Save as draft"}
+          {pending
+            ? values.id
+              ? "Saving…"
+              : aiEnabled
+                ? "Saving and asking AI…"
+                : "Saving…"
+            : values.id
+              ? "Save changes"
+              : "Save as draft"}
         </Button>
         <Link href="/organisation/opportunities" className={buttonVariants({ variant: "outline" })}>
           Cancel

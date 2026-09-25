@@ -4,11 +4,8 @@ import { getDb } from "@/lib/db";
 import { getLogger } from "@/lib/logger";
 import type { WorkMode } from "@/lib/opportunity-schemas";
 import { getUserProfile } from "@/lib/profiles";
-import {
-  searchOpportunities,
-  visibleOpportunityWhere,
-  type OpportunitySummary,
-} from "@/lib/search";
+import { recommendOpportunities } from "@/lib/recommendations";
+import { visibleOpportunityWhere } from "@/lib/search";
 import { daysAgo, indiaDateRange } from "./dates";
 import type { ApplicationStatus } from "./statuses";
 
@@ -43,6 +40,8 @@ export type OpportunityCard = {
   workMode: WorkMode;
   city: string | null;
   deadline: Date | null;
+  /** Skill match 0–100, only on recommendations. */
+  match?: number;
 };
 
 export type RecentApplication = {
@@ -123,35 +122,32 @@ const RECENT_APPLICATIONS_TAKE = 5;
 const NEW_THIS_WEEK_DAYS = 7;
 const CLOSING_SOON_DAYS = 7;
 
-/** Recommended (from the profile's skills) or, on empty/failed search, the latest listings. */
+/**
+ * Recommended by skills (ADR-033: resume skills, else profile skills) or, when there are none or
+ * the ranking fails, the latest listings. Applied-to listings are excluded either way.
+ */
 async function getRecommended(
-  profile: UserProfile | null,
+  userId: string,
   appliedIds: Set<string>,
 ): Promise<{ title: string; items: OpportunityCard[] }> {
-  const skills = profile?.skills ?? [];
-  if (skills.length > 0) {
-    try {
-      const { results } = await searchOpportunities({
-        q: skills.slice(0, 10).join(", "),
-        type: null,
-        workMode: null,
-        city: null,
-        page: 1,
-      });
-      const items = excludeApplied(results, appliedIds, RECOMMENDED_TAKE).map(
-        (opportunity: OpportunitySummary): OpportunityCard => ({
-          id: opportunity.id,
-          title: opportunity.title,
-          businessName: opportunity.businessName,
-          workMode: opportunity.workMode,
-          city: opportunity.city,
-          deadline: opportunity.deadline,
-        }),
-      );
-      if (items.length > 0) return { title: "Recommended for you", items };
-    } catch (err) {
-      getLogger().warn({ err }, "recommended opportunities search failed; falling back to latest");
+  try {
+    const { items } = await recommendOpportunities(userId, RECOMMENDED_TAKE);
+    if (items.length > 0) {
+      return {
+        title: "Recommended for you",
+        items: items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          businessName: item.businessName,
+          workMode: item.workMode,
+          city: item.city,
+          deadline: item.deadline,
+          match: item.match,
+        })),
+      };
     }
+  } catch (err) {
+    getLogger().warn({ err }, "recommended opportunities failed; falling back to latest");
   }
 
   const latest = await getDb().opportunity.findMany({
@@ -227,7 +223,7 @@ export async function getUserDashboard(userId: string, now = new Date()): Promis
     ]);
 
   const appliedIds = new Set(appliedRows.map((row) => row.opportunityId));
-  const { title: recommendedTitle, items: recommended } = await getRecommended(profile, appliedIds);
+  const { title: recommendedTitle, items: recommended } = await getRecommended(userId, appliedIds);
 
   return {
     newThisWeek,

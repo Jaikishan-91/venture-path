@@ -205,8 +205,12 @@ describe("getOrganisationDashboard", () => {
     const b = await createApplicant("Scored B");
     const appA = await createApplication(listing.id, a.userProfile!.id);
     const appB = await createApplication(listing.id, b.userProfile!.id);
-    await getDb().analysis.create({ data: { applicationId: appA.id, score: 70 } });
-    await getDb().analysis.create({ data: { applicationId: appB.id, score: 81 } });
+    await getDb().analysis.create({
+      data: { applicationId: appA.id, resumeScore: 70, overallScore: 70 },
+    });
+    await getDb().analysis.create({
+      data: { applicationId: appB.id, resumeScore: 81, overallScore: 81 },
+    });
 
     const withScores = await getOrganisationDashboard(org.userId);
     expect(withScores.avgScore).toEqual({ average: 76, count: 2 });

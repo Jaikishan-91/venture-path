@@ -4,7 +4,9 @@ import { RoleHome } from "@/components/role-home";
 import { requireRole } from "@/lib/authz";
 import { getOwnOpportunity } from "@/lib/opportunities";
 import { todayInIndia } from "@/lib/opportunity-schemas";
+import { createLlmClient } from "@/lib/llm/provider";
 import { getOrganisationProfile } from "@/lib/profiles";
+import { AiSuggest } from "../../ai-suggest";
 import { NotApproved } from "../../not-approved";
 import { OpportunityForm } from "../../opportunity-form";
 
@@ -18,31 +20,50 @@ export default async function EditOpportunityPage({ params }: { params: Promise<
     getOwnOpportunity(session.user.id, id),
   ]);
   if (!opportunity) notFound();
+  const aiEnabled = createLlmClient() !== null;
 
   return (
     <RoleHome title="Edit listing" name={session.user.name}>
       {profile?.status === "approved" ? (
-        <OpportunityForm
-          minDeadline={todayInIndia()}
-          initial={{
-            id: opportunity.id,
-            type: opportunity.type,
-            title: opportunity.title,
-            description: opportunity.description,
-            skills: opportunity.skills.join(", "),
-            workMode: opportunity.workMode,
-            city: opportunity.city ?? "",
-            payType: opportunity.payType,
-            payAmount: opportunity.payAmount?.toString() ?? "",
-            payPeriod: opportunity.payPeriod ?? "month",
-            duration: opportunity.duration ?? "",
-            deadline: opportunity.deadline?.toISOString().slice(0, 10) ?? "",
-            requirements: opportunity.requirements ?? "",
-            experienceLevel: opportunity.experienceLevel ?? "",
-            compensationMin: opportunity.compensationMin?.toString() ?? "",
-            compensationMax: opportunity.compensationMax?.toString() ?? "",
-          }}
-        />
+        <>
+          {aiEnabled && (
+            <AiSuggest
+              id={opportunity.id}
+              canDraftQuestions={
+                opportunity.questions.length === 0 && opportunity._count.applications === 0
+              }
+            />
+          )}
+          <OpportunityForm
+            // Remount after an AI suggestion or save so the form shows the stored values.
+            key={opportunity.updatedAt.getTime()}
+            minDeadline={todayInIndia()}
+            aiEnabled={aiEnabled}
+            questions={opportunity.questions.map((question) => ({
+              prompt: question.prompt,
+              source: question.source,
+            }))}
+            questionsLocked={opportunity._count.applications > 0}
+            initial={{
+              id: opportunity.id,
+              type: opportunity.type,
+              title: opportunity.title,
+              description: opportunity.description,
+              skills: opportunity.skills.join(", "),
+              workMode: opportunity.workMode,
+              city: opportunity.city ?? "",
+              payType: opportunity.payType,
+              payAmount: opportunity.payAmount?.toString() ?? "",
+              payPeriod: opportunity.payPeriod ?? "month",
+              duration: opportunity.duration ?? "",
+              deadline: opportunity.deadline?.toISOString().slice(0, 10) ?? "",
+              requirements: opportunity.requirements ?? "",
+              experienceLevel: opportunity.experienceLevel ?? "",
+              compensationMin: opportunity.compensationMin?.toString() ?? "",
+              compensationMax: opportunity.compensationMax?.toString() ?? "",
+            }}
+          />
+        </>
       ) : (
         <NotApproved />
       )}

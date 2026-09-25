@@ -1,5 +1,49 @@
 # Changelog
 
+## 2026-09-26 — Resume library, AI skills, recommendations and screening questions
+
+Added:
+- Resume library at `/user/resumes`: up to 5 resumes, rename, delete, owner-only download (`/api/resumes/[id]`), skills extracted by the LLM in the background with a retry (FR-8, ADR-031). "Resumes" in the user nav.
+- Listing assist: on create (and with "Suggest with AI" on the edit page), the LLM adds required skills and drafts screening questions for the organisation to edit (FR-9, ADR-032). Question editor on the listing form; questions lock after the first application.
+- Apply form: pick a library resume or upload one, and answer every question.
+- Screening: the resume and the answers are scored separately and combined (60/40) into an overall score; per-answer scores and feedback (FR-11, ADR-033).
+- Applicants page: filters for minimum overall score and apply time (24 h, 7 d, 30 d, date range), sort by score, newest or oldest; shows scores ("-" when missing) and answers.
+- Recommendations from resume skills (profile skills as a fallback), with match % on the dashboard and a full list at `/user/recommendations` (FR-10, ADR-033; replaces ADR-030's search-based recommendations).
+- Admin-editable prompts `listing_assist`, `resume_skills`, `answer_scoring`.
+- Migration `resume_library_screening`. Tests: `tests/skills.test.ts`, `tests/applicant-filters.test.ts`, `tests/screening-parsers.test.ts`, `tests/screening.test.ts`; e2e `e2e/screening.spec.ts`.
+
+Changed:
+- `Analysis.score` is now `resumeScore` (nullable), with `answersScore` and `overallScore`. Dashboards' average AI score uses the overall score.
+- The phone tab bar uses short labels ("Jobs", "Applied") so five user links fit.
+- Background work (emails, analysis, skill extraction) runs through `runInBackground`.
+
+Fixed during implementation and review:
+- Tag stripping for LLM input used `\b` inside a template literal (a backspace), so no tag was stripped; now uses `String.raw`.
+- Serializable isolation for the resume cap made different users' uploads fail with write conflicts; replaced by a row lock on the profile.
+- A long resume name overflowed the apply card (fieldset `min-width`); the apply panel is no longer sticky when it has questions.
+
+## 2026-09-26 — Role dashboards and navigation
+
+Added:
+- Dashboards for users, organisations and admins (FR-7, ADR-029). Built by three parallel subagents and reviewed by the parent session.
+  - User: application counts, an "Explore jobs" call to action with jobs new this week, profile completeness, recommended jobs from their skills (ADR-030), jobs closing soon, recent applications.
+  - Organisation: listing counts by status, applicant counts including "Not selected", average AI match score, per-listing applicant table (cards on phones), recent applicants, listings closing soon.
+  - Admin: headline counts, review queue preview, breakdowns by role and status, 7/30-day growth, AI analysis stats (provider and model only, never the key or URL).
+- `src/lib/dashboard/`, `src/components/dashboard/`.
+- Tests: `tests/dashboard-{user,organisation,admin,dates}.test.ts`, `tests/app-sidebar.test.ts`; e2e `e2e/dashboard-{user,organisation,admin}.spec.ts` with 375px no-overflow checks.
+
+Changed:
+- Navigation: icons, the account name and role above Sign out, "Explore jobs" in the user nav. On phones the nav is a tab bar where every link fits, instead of a sideways-scrolling row.
+- The current nav link is the most specific match for the path.
+- "New listing" on the organisation dashboard shows only for approved organisations, as on the listings page.
+
+Fixed during review:
+- Admin tile hints read "2 pendings" and "2 publisheds".
+- The review-queue date used the server's locale, and application dates on the user dashboard were shown in UTC. Both now use India time (`en-IN`).
+- A "New listing" nav link would have offered listing creation to pending organisations; it was removed.
+- The user dashboard had dropped the profile's skills and links; they are back.
+- Dashboards no longer crash when an owner row is deleted while the page loads.
+
 ## 2026-09-26 — Toast notifications; live Docker development
 
 Added:

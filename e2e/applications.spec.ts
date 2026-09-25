@@ -45,7 +45,7 @@ test("user applies with a resume; organisation accepts and both see contact emai
     await user.getByRole("button", { name: "Save profile" }).click();
     await user.goto("/opportunities?q=Campus+ambassador");
     await user.getByRole("link", { name: /Campus ambassador/ }).click();
-    await user.getByLabel("Resume").setInputFiles(resume);
+    await user.getByLabel("Resume file").setInputFiles(resume);
     await user.getByLabel("Note (optional)").fill("I run the college club.");
     await user.getByRole("button", { name: "Apply" }).click();
     await expect(user.getByText("waiting for a decision")).toBeVisible();

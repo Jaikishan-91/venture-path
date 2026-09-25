@@ -110,4 +110,27 @@ Fix small issues myself. Send larger ones back with `SendMessage` to the same ag
 ## Verification summary
 Unit and integration: the three `tests/dashboard-*.test.ts` files plus `dashboard-dates` and the full `npm test`. E2E: three new specs plus the full existing Playwright suite. Visual: screenshots at 375px and 1280px per role. Static: typecheck and lint clean.
 
-## 
+## Outcome (2026-09-26)
+
+Deviations from the plan:
+- The organisation nav has no "New listing" link. It duplicated the listings page button and offered creation to pending organisations, which the app deliberately hides.
+- On phones the nav is a tab bar, not a scrolling row: in the scrolling row, links were hidden off-screen at 375px.
+- The organisation dashboard has 8 tiles (adds "Not selected" and puts the AI score in the grid) for even rows.
+- `StatGrid` is a named group (`role="group"`, "Summary") so tests can scope tile assertions.
+
+Parent review of the subagents' work:
+- Admin: fixed the "N pendings" / "N publisheds" hints, locale-less dates, an e2e spec that would hit a strict-mode violation (tile labels repeated in the Growth table), the Growth table's 280px minimum width clipping on phones, and a crash when a pending organisation's owner is deleted mid-query.
+- Organisation: lowercase page title; "New listing" now shows only when approved.
+- User: application dates in UTC (now India time); a duplicate "Explore jobs" link name that broke the e2e click; restored the "Complete your profile" heading, skills and links that existing e2e specs depend on; accent tile only when accepted > 0; the same deleted-owner guard.
+- Shared: one `ApplicationStatus` definition (`src/lib/dashboard/statuses.ts`) instead of three copies.
+- Test flakiness from the shared database: global-delta assertions replaced with invariants or a far-future `now`. User fixtures insert listings directly instead of computing embeddings, whose native runtime crashed a test worker when several loaded at once.
+
+## Verification (2026-09-26)
+
+- `npm run typecheck`, `npm run lint`: pass.
+- `npm test`: 23 files, 199 tests. Passed 3/3 consecutive runs after the last change, and 8/8 in an earlier stability pass. The baseline suite without the new files passed 5/5.
+- Playwright, full suite against the Docker dev server (2 workers): 38/38 pass, including the three dashboard specs.
+- Screenshots at 375px and 1280px for all three dashboards, reviewed by eye.
+- Not verified: tablet width (768px) screenshots, and dashboards with real data volumes (only empty or test fixtures).
+- Side effect: running Prettier over `src/` reformatted 11 unrelated files that already had uncommitted changes (formatting only).
+

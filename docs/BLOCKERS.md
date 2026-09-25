@@ -13,6 +13,10 @@ Known Limitations (not blocking):
 - No password reset yet (not in the Phase 1 plan). Consequence: if someone signs up with another person's email and never verifies it, the real owner can't use Google with that email (Better Auth refuses to link to an unverified local account) and can't sign up again. The squatter still can't sign in. Password reset will give the owner a way back.
 - Google OAuth client is for local development only (origin and redirect URI `http://localhost:3000`). The downloaded `client_secret_*.json` in the repo root is git-ignored; its values are copied into `.env`, so the file can be deleted.
 - Resume analysis needs `LLM_PROVIDER=openai` and a reachable endpoint; the tests use a stubbed `fetch`, so a real model has not been exercised by the test suite. Scanned (image-only) PDFs have no text and can't be analysed. Legacy DOC extraction is a rough scan of printable text.
+- Screening (ADR-031 to ADR-033) makes 1–2 LLM calls per listing created, resume uploaded and application sent. There is no rate limit: a user can upload, delete and re-upload to repeat skill extraction. Only stubbed LLM replies are tested; the prompts have not been tuned against a real model.
+- Recommendation weights (0.7 coverage, 0.3 similarity) and the 0.25 threshold are heuristics tuned on test data. The skill alias map is small.
+- Question lock: an application created in the same instant as a question edit can be refused ("questions changed", reload) rather than locking the edit; no answers are ever attached to a deleted question.
+- The local `.env` has `LLM_PROVIDER=enabled`, which is invalid and therefore treated as disabled; set `openai` plus `LLM_BASE_URL` to turn on the AI features.
 - `LLM_FALLBACK_MODEL` is read but not used. The `job_description` prompt is editable but no feature uses it yet.
 - Running the whole Playwright suite in parallel on a cold dev server can time out (route compilation plus the embedding model load). Every spec passes when re-run, or with `--workers=1`.
 - An invalid or expired verification link redirects to `/dashboard`, which sends signed-out users to `/sign-in` without explaining why.

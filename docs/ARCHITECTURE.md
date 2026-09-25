@@ -12,7 +12,8 @@ Components:
 - **Email** — nodemailer over SMTP (`src/lib/email.ts`). Any SMTP server with optional login (Gmail configured locally); Mailpit by default. Outside production, reserved test domains always go to Mailpit (ADR-018). Production provider not chosen.
 - **Database (PostgreSQL 18 + Prisma 7)** — system of record. The Docker image is `pgvector/pgvector` (Postgres 18 with pgvector). Prisma uses the `@prisma/adapter-pg` driver adapter; schema changes go through Prisma Migrate. See `docs/DATA_MODEL.md`.
 - **Search** — public listing search in `src/lib/search.ts`: filters plus hybrid ranking (pgvector cosine similarity and keyword matches). Embeddings come from a local model in `src/lib/embeddings.ts` (ADR-021).
-- **AI resume analysis (optional)** — `src/lib/llm/` calls any OpenAI-compatible chat endpoint when `LLM_PROVIDER=openai` (ADR-023). `src/lib/resume-analysis.ts` extracts resume text (PDF via `unpdf`, DOCX, DOC), scores it against the listing, and stores one `Analysis` per application (ADR-024). Prompts are editable at `/admin/settings`.
+- **AI resume analysis (optional)** — `src/lib/llm/` calls any OpenAI-compatible chat endpoint when `LLM_PROVIDER=openai` (ADR-023). `src/lib/resume-analysis.ts` extracts resume text (PDF via `unpdf`, DOCX, DOC) and scores each application: the resume against the listing, and the screening answers (`src/lib/answer-scoring.ts`), combined into one `Analysis` per application (ADR-024, ADR-033). Prompts are editable at `/admin/settings`.
+- **Resume library, listing assist and recommendations** — `src/lib/resume-library.ts` stores up to 5 resumes per user and extracts their skills (ADR-031). `src/lib/listing-assist.ts` adds AI skills and draft screening questions to listings (ADR-032). `src/lib/recommendations.ts` ranks visible listings by skill coverage plus embedding similarity (ADR-033). Everything degrades to non-AI behaviour when no LLM is configured.
 - **Logging (pino → pino-loki → Loki → Grafana)** — structured JSON logs with labels `app`, `env`, `level`. Secrets are redacted by path.
 - **Local dev services (Docker Compose)** — Postgres, Loki, Grafana (Loki data source provisioned) and Mailpit. The app itself runs on the host (`npm run dev`), in Docker with live code sync (`npm run docker:dev`, profile `dev`), or as the production image (`npm run docker:prod`, profile `prod`) (ADR-028).
 
@@ -40,6 +41,17 @@ Next.js → pino → stdout (pretty in development) and pino-loki worker thread 
 | `src/lib/llm/` | LLM config (`config.ts`), OpenAI-compatible client (`provider.ts`), prompt templates and defaults (`prompts.ts`, `defaults.ts`). |
 | `src/lib/resume-analysis.ts` | Resume text extraction and analysis; `reanalyzeForOrganisation` checks listing ownership. |
 | `src/lib/prompts.ts` | `updatePrompt` (admin). |
+| `src/lib/skills.ts` | Skill normalisation, coverage, match and combined-score maths (pure). |
+| `src/lib/resume-library.ts` | Resume library (cap, ownership, file references), skill extraction, `candidateSkills`. |
+| `src/lib/listing-assist.ts` | AI skills and draft questions for a listing. |
+| `src/lib/answer-scoring.ts` | Scores screening answers in one LLM call. |
+| `src/lib/recommendations.ts` | Skill-based job recommendations. |
+| `src/lib/applicant-filters.ts` | Applicants page filter parsing (pure). |
+| `src/lib/llm/json.ts` | JSON reply parsing and `asData` tag wrapping for LLM input. |
+| `src/lib/background.ts` | `runInBackground` (logged, never thrown) and `settleBackground` for tests. |
+| `src/lib/dashboard/` | Dashboard data per role (`user.ts`, `organisation.ts`, `admin.ts`), plus `dates.ts` (7/30-day windows, India-date ranges) and `statuses.ts` (ADR-029). |
+| `src/components/dashboard/` | Dashboard UI: `StatTile`, `StatGrid`, `DashboardSection`/`EmptyState`, `BarList`, `StatusPill`. |
+| `src/components/app-sidebar.tsx` | Role navigation: a sidebar from `md`, a tab bar on phones. Links are listed in `NAV`. |
 | `src/lib/env.ts` | Validates server environment variables with zod; `getEnv()` caches the result. |
 | `src/lib/db.ts` | `getDb()` — single Prisma client, reused across hot reloads. |
 | `src/lib/logger.ts` | `getLogger()` — single pino logger with redaction and transports. |
@@ -50,6 +62,13 @@ Next.js → pino → stdout (pretty in development) and pino-loki worker thread 
 | `docker-compose.yml`, `docker/` | Local services and Grafana provisioning. |
 | `tests/` | Vitest unit and integration tests. |
 | `e2e/` | Playwright end-to-end tests. |
+
+## Adding a dashboard stat or nav link
+
+1. Add the query to the role's `get<Role>Dashboard` in `src/lib/dashboard/<role>.ts`, inside its `Promise.all`, scoped like the others, and add the field to the returned type.
+2. Render it on the role's page (`src/app/<role>/page.tsx`) with a `StatTile` in the `StatGrid` (keep rows of four), or in a `DashboardSection`.
+3. Test it in `tests/dashboard-<role>.test.ts`. The test database is shared by files running in parallel: assert on your own fixtures or on invariants, not global totals.
+4. Nav links: add one line to `NAV` in `src/components/app-sidebar.tsx`. Keep a role to 4–5 links so the phone tab bar fits at 320px.
 
 ## Local ports (all bound to 127.0.0.1)
 

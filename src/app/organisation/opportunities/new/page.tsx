@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { RoleHome } from "@/components/role-home";
 import { requireRole } from "@/lib/authz";
 import { todayInIndia } from "@/lib/opportunity-schemas";
+import { createLlmClient } from "@/lib/llm/provider";
 import { getOrganisationProfile } from "@/lib/profiles";
 import { NotApproved } from "../not-approved";
 import { OpportunityForm } from "../opportunity-form";
@@ -17,6 +18,8 @@ export default async function NewOpportunityPage() {
       {profile?.status === "approved" ? (
         <OpportunityForm
           minDeadline={todayInIndia()}
+          questions={[]}
+          aiEnabled={createLlmClient() !== null}
           initial={{
             id: "",
             type: "internship",

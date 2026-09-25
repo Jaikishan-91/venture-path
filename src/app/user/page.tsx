@@ -33,6 +33,9 @@ function JobCard({ opportunity, applied }: { opportunity: OpportunityCard; appli
         {opportunity.city && `, ${opportunity.city}`}
       </p>
       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#4a4d53]">
+        {opportunity.match !== undefined && (
+          <span className="font-medium text-[#26594a]">{opportunity.match}% match</span>
+        )}
         {opportunity.deadline && <span>Apply by {formatDeadline(opportunity.deadline)}</span>}
         {applied && <span className="font-medium text-[#26594a]">Applied</span>}
       </div>
@@ -161,7 +164,10 @@ export default async function UserHomePage() {
       </DashboardSection>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <DashboardSection title={dashboard.recommendedTitle}>
+        <DashboardSection
+          title={dashboard.recommendedTitle}
+          action={{ href: "/user/recommendations", label: "View all" }}
+        >
           {dashboard.recommended.length > 0 ? (
             <ul className="flex flex-col gap-2.5">
               {dashboard.recommended.map((opportunity) => (

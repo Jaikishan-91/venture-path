@@ -82,6 +82,26 @@ Rules (ADR-022):
 ` into newlines in unedited rows. |
 | `Analysis` | `analysis` | One per application (`applicationId` unique, cascade delete). `score Int` 0–100, `summary?`, `matchedSkills String[]`, `missingSkills String[]`, `model?`, `createdAt` (time of the last run). Upserted by `src/lib/resume-analysis.ts` (ADR-024). |
 
+## Implemented (resume library and screening, 2026-09-26)
+
+Migration `resume_library_screening`.
+
+| Model | Table | Notes |
+|-------|-------|-------|
+| `Resume` | `resume` | A user's library resume, max 5 per `UserProfile` (cascade). `fileName` (display, renamable), `storageKey` (unique, generated), `skills String[]` (normalised, max 30), `skillsStatus` (`ResumeSkillsStatus`: `pending` \| `done` \| `failed` \| `skipped`), `skillsModel?`. |
+| `OpportunityQuestion` | `opportunity_question` | Screening question of a listing (cascade). `position` (unique per listing), `prompt` (5–300), `source` (`QuestionSource`: `ai` \| `organisation`). |
+| `ApplicationAnswer` | `application_answer` | One per application and question (unique pair; cascades from both). `answer` (1–2000), `score Int?` 0–100 and `feedback?` from the LLM. |
+
+Changes to existing models:
+- `Application.resumeId?` → `Resume` (SetNull). `resumeFileName` / `resumeStorageKey` remain the snapshot used for download; the key may be shared with a library resume.
+- `Opportunity.aiAssistedAt?`: last listing assist.
+- `Analysis.score` renamed in place to `resumeScore` and made nullable; new `answersScore?`, `answersSummary?`, `overallScore?` (indexed). Existing rows got `overallScore = resumeScore`.
+
+Rules (ADR-031 to ADR-033):
+- A resume file is deleted only when no `resume` and no `application` row references its key.
+- Questions lock once the listing has any application (any status).
+- `overallScore` is computed in code: 60% resume + 40% answers, or whichever exists.
+
 ## Planned
 
 - Nothing required for the MVP. Password reset and admin role changes are later.
