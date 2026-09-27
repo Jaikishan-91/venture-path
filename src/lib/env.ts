@@ -21,10 +21,17 @@ const envSchema = z
     EMAIL_FROM: z.string().min(1).default("VenturePath <no-reply@venturepath.local>"),
     GOOGLE_CLIENT_ID: z.preprocess(emptyToUndefined, z.string().optional()),
     GOOGLE_CLIENT_SECRET: z.preprocess(emptyToUndefined, z.string().optional()),
+    /** Refresh token of the platform Google account that owns interview events (ADR-035). */
+    GOOGLE_CALENDAR_REFRESH_TOKEN: z.preprocess(emptyToUndefined, z.string().optional()),
+    GOOGLE_CALENDAR_ID: z.preprocess(emptyToUndefined, z.string().min(1).default("primary")),
   })
   .refine((env) => !env.GOOGLE_CLIENT_ID === !env.GOOGLE_CLIENT_SECRET, {
     path: ["GOOGLE_CLIENT_ID"],
     message: "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together",
+  })
+  .refine((env) => !env.GOOGLE_CALENDAR_REFRESH_TOKEN || Boolean(env.GOOGLE_CLIENT_ID), {
+    path: ["GOOGLE_CALENDAR_REFRESH_TOKEN"],
+    message: "GOOGLE_CALENDAR_REFRESH_TOKEN needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET",
   })
   .refine((env) => !env.SMTP_USER === !env.SMTP_PASSWORD, {
     path: ["SMTP_USER"],

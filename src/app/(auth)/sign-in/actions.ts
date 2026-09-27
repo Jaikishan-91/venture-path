@@ -15,6 +15,7 @@ const ACCOUNT_NAMES: Record<Role, string> = {
   user: "a user",
   organisation: "an organisation",
   admin: "an admin",
+  hiring_manager: "a hiring manager",
 };
 
 export async function signInAs(
@@ -29,9 +30,16 @@ export async function signInAs(
     return { status: "error", message: "Enter your email and password." };
   }
 
+  const inviteField = formData.get("invite");
+  // Invite tokens are base64url; anything else is ignored so it never reaches the redirect URL.
+  const inviteToken =
+    typeof inviteField === "string" && /^[A-Za-z0-9_-]{20,100}$/.test(inviteField)
+      ? inviteField
+      : undefined;
+
   let result: RoleSignInResult;
   try {
-    result = await signInWithRole(expected, email, password, await headers());
+    result = await signInWithRole(expected, email, password, await headers(), inviteToken);
   } catch (err) {
     getLogger().error({ err, expected }, "sign-in failed");
     return { status: "error", message: "Something went wrong. Please try again." };
@@ -49,6 +57,9 @@ export async function signInAs(
   }
   if (result.reason === "invalid")
     return { status: "error", message: "Invalid email or password." };
+  if (result.reason === "continue_invite") {
+    redirect(`/invite/${result.inviteToken}`);
+  }
 
   // Wrong role: the session row is already deleted; drop the cookies set by this sign-in too.
   const { authCookies } = await getAuth().$context;
@@ -61,7 +72,9 @@ export async function signInAs(
     status: "error",
     message: actual
       ? `This is ${ACCOUNT_NAMES[actual]} account. Sign in on the ${actual} sign-in page.`
-      : `This page is only for admin accounts.`,
+      : expected === "hiring_manager"
+        ? "This account doesn't have hiring manager access. Use the invite link from your organisation."
+        : `This page is only for admin accounts.`,
     signInPath: actual ? SIGN_IN_PATHS[actual] : undefined,
   };
 }

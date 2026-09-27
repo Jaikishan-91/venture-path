@@ -5,10 +5,12 @@ import { requireRole } from "@/lib/authz";
 import { getOwnOpportunity } from "@/lib/opportunities";
 import { todayInIndia } from "@/lib/opportunity-schemas";
 import { createLlmClient } from "@/lib/llm/provider";
+import { getPipeline, listPipelineSources } from "@/lib/pipelines";
 import { getOrganisationProfile } from "@/lib/profiles";
 import { AiSuggest } from "../../ai-suggest";
 import { NotApproved } from "../../not-approved";
 import { OpportunityForm } from "../../opportunity-form";
+import { PipelineEditor } from "../../pipeline-editor";
 
 export const metadata: Metadata = { title: "Edit listing · VenturePath" };
 
@@ -21,6 +23,13 @@ export default async function EditOpportunityPage({ params }: { params: Promise<
   ]);
   if (!opportunity) notFound();
   const aiEnabled = createLlmClient() !== null;
+  const isApproved = profile?.status === "approved";
+  const pipeline = isApproved
+    ? ((await getPipeline(session.user.id, opportunity.id)) ?? { stages: [], version: "0:" })
+    : null;
+  const pipelineSources = isApproved
+    ? await listPipelineSources(session.user.id, opportunity.id)
+    : [];
 
   return (
     <RoleHome title="Edit listing" name={session.user.name}>
@@ -63,6 +72,15 @@ export default async function EditOpportunityPage({ params }: { params: Promise<
               compensationMax: opportunity.compensationMax?.toString() ?? "",
             }}
           />
+          {pipeline && (
+            <PipelineEditor
+              opportunityId={opportunity.id}
+              initialStages={pipeline.stages}
+              initialVersion={pipeline.version}
+              aiEnabled={aiEnabled}
+              sources={pipelineSources}
+            />
+          )}
         </>
       ) : (
         <NotApproved />

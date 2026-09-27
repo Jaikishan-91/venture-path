@@ -102,6 +102,28 @@ Rules (ADR-031 to ADR-033):
 - Questions lock once the listing has any application (any status).
 - `overallScore` is computed in code: 60% resume + 40% answers, or whichever exists.
 
+## Implemented (hiring pipelines and interviews, 2026-09-26)
+
+Migration `hiring_pipelines` (additive only). ADR-035 to ADR-037.
+
+| Model | Table | Notes |
+|-------|-------|-------|
+| `PipelineStage` | `pipeline_stage` | Stage of a listing's pipeline (cascade). `position` (unique per listing, 0..n-1), `name` (1–60), `kind` (`StageKind`: `interview` \| `test` \| `assignment` \| `other`), `instructions?` (≤1000), `externalUrl?` (http/https), `durationMinutes?` (15–480), `source` (`QuestionSource`). |
+| `StageEvent` | `stage_event` | History of pipeline moves: `applicationId` (cascade), `stageId` (Restrict), `outcome` (`passed` \| `failed` \| `moved`), `actorUserId?` (SetNull), `note?`. |
+| `OrganisationMember` | `organisation_member` | A hiring manager of an organisation (cascade). `userId?` unique (one organisation per account; SetNull), `email` (lowercased; unique per organisation), `name`, `status` (`invited` \| `active` \| `deactivated`), `inviteTokenHash?` (SHA-256, unique, cleared on accept), `inviteExpiresAt?`, `invitedAt`, `acceptedAt?`, `deactivatedAt?`. |
+| `ScheduledEvent` | `scheduled_event` | An interview or test slot for one application at one stage. `startsAt` (UTC), `durationMinutes`, `status` (`scheduled` \| `cancelled` \| `completed`), `googleEventId?`, `meetUrl?`, `calendarSync` (`pending` \| `synced` \| `failed` \| `disabled`), `calendarError?`, `createdById?`. Stage is Restrict, application cascades. |
+| `EventInterviewer` | `event_interviewer` | Interviewers of an event (composite key; cascades from both): the organisation owner or active hiring managers. |
+| `InterviewFeedback` | `interview_feedback` | One per event and interviewer (unique pair): `rating` 1–5, `recommendation` (`pass` \| `fail` \| `unsure`), `notes` (1–2000). Never shown to candidates. |
+
+Changes to existing models:
+- `Role` gains `hiring_manager`.
+- `Application.currentStageId?` → `PipelineStage` (Restrict, indexed). Null = "Applied".
+- `Opportunity.pipelineAssistedAt?`: last AI pipeline suggestion.
+
+Rules:
+- A stage that is reached (current candidates, history or scheduled events) can't be deleted or change kind or relative order, both in code and through the Restrict foreign keys.
+- Invite tokens are never stored; only their hash.
+
 ## Planned
 
 - Nothing required for the MVP. Password reset and admin role changes are later.

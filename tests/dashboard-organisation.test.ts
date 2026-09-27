@@ -92,6 +92,29 @@ async function createApplication(
   });
 }
 
+async function createStage(opportunityId: string) {
+  return getDb().pipelineStage.create({
+    data: {
+      opportunityId,
+      position: 0,
+      name: "Interview 1",
+      kind: "interview",
+      source: "organisation",
+    },
+  });
+}
+
+async function createScheduledEvent(
+  applicationId: string,
+  stageId: string,
+  startsAt: Date,
+  status: "scheduled" | "cancelled" = "scheduled",
+) {
+  return getDb().scheduledEvent.create({
+    data: { applicationId, stageId, startsAt, durationMinutes: 30, status },
+  });
+}
+
 afterAll(async () => {
   await getDb().user.deleteMany({ where: { email: { endsWith: `@${EMAIL_DOMAIN}` } } });
   await getDb().$disconnect();
@@ -245,5 +268,43 @@ describe("getOrganisationDashboard", () => {
     const dashboard = await getOrganisationDashboard(org.userId, now);
     const ids = dashboard.closingSoon.map((listing) => listing.id);
     expect(ids).toEqual([inToday.id, inDay7.id]);
+  });
+
+  it("counts non-cancelled interviews starting in the next 7 days, excluding other organisations and cancelled events", async () => {
+    const now = new Date("2026-09-26T04:00:00Z");
+    const org = await createApprovedOrganisation();
+    const listing = await createListing(org.id, { status: "published" });
+    const stage = await createStage(listing.id);
+    const applicant = await createApplicant();
+    const application = await createApplication(listing.id, applicant.userProfile!.id);
+
+    await createScheduledEvent(application.id, stage.id, new Date("2026-09-27T00:00:00Z"));
+    await createScheduledEvent(application.id, stage.id, new Date("2026-10-02T00:00:00Z"));
+    // Outside the 7-day window.
+    await createScheduledEvent(application.id, stage.id, new Date("2026-10-05T00:00:00Z"));
+    // Cancelled: never counted.
+    await createScheduledEvent(
+      application.id,
+      stage.id,
+      new Date("2026-09-28T00:00:00Z"),
+      "cancelled",
+    );
+
+    const other = await createApprovedOrganisation();
+    const otherListing = await createListing(other.id, { status: "published" });
+    const otherStage = await createStage(otherListing.id);
+    const otherApplicant = await createApplicant();
+    const otherApplication = await createApplication(
+      otherListing.id,
+      otherApplicant.userProfile!.id,
+    );
+    await createScheduledEvent(
+      otherApplication.id,
+      otherStage.id,
+      new Date("2026-09-27T00:00:00Z"),
+    );
+
+    const dashboard = await getOrganisationDashboard(org.userId, now);
+    expect(dashboard.upcomingInterviews).toBe(2);
   });
 });

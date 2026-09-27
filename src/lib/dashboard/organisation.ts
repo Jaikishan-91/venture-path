@@ -9,6 +9,7 @@ export type { ApplicationStatus };
 const LISTINGS_LIMIT = 20;
 const RECENT_APPLICANTS_LIMIT = 5;
 const CLOSING_SOON_DAYS = 7;
+const UPCOMING_INTERVIEWS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type ListingCounts = { published: number; drafts: number; closed: number };
 export type ApplicantCounts = {
@@ -53,6 +54,8 @@ export type OrganisationDashboard = {
   listings: OrganisationListingRow[];
   recentApplicants: OrganisationRecentApplicant[];
   closingSoon: OrganisationClosingSoon[];
+  /** Non-cancelled interviews scheduled to start in the next 7 days, across all of this organisation's listings. */
+  upcomingInterviews: number;
 };
 
 /** Reduces an `opportunity.groupBy(["status"])` result into zero-filled listing counts. Pure, for tests. */
@@ -138,6 +141,7 @@ export async function getOrganisationDashboard(
     applicantCountRows,
     recentApplicants,
     closingSoon,
+    upcomingInterviews,
   ] = await Promise.all([
     db.opportunity.groupBy({
       by: ["status"],
@@ -182,6 +186,13 @@ export async function getOrganisationDashboard(
       where: { ...ownedBy, status: "published", deadline: { gte: from, lte: to } },
       orderBy: { deadline: "asc" },
       select: { id: true, title: true, deadline: true },
+    }),
+    db.scheduledEvent.count({
+      where: {
+        status: { not: "cancelled" },
+        startsAt: { gte: now, lt: new Date(now.getTime() + UPCOMING_INTERVIEWS_MS) },
+        application: { opportunity: ownedBy },
+      },
     }),
   ]);
 
@@ -237,5 +248,6 @@ export async function getOrganisationDashboard(
       // Filtered on a non-null deadline range above.
       deadline: opportunity.deadline as Date,
     })),
+    upcomingInterviews,
   };
 }

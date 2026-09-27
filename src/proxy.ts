@@ -19,5 +19,6 @@ export const config = {
     "/user/:path*",
     "/organisation/:path*",
     "/admin/:path*",
+    "/hiring-manager/:path*",
   ],
 };

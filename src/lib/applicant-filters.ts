@@ -25,6 +25,8 @@ export type ApplicantFilters = {
   from: string | null;
   to: string | null;
   sort: ApplicantSort;
+  /** `null` = all stages, `"applied"` = not yet in any stage, otherwise a `PipelineStage` id. */
+  stage: string | "applied" | null;
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -37,6 +39,14 @@ const validDate = (value: string) =>
   DATE_PATTERN.test(value) && new Date(`${value}T00:00:00Z`).toISOString().startsWith(value)
     ? value
     : null;
+
+// Stage ids are `PipelineStage.id` (`@default(uuid())`); anything else (including "all") means
+// no stage filter, so a stale or tampered link degrades to "show everything" instead of erroring.
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const validStage = (value: string): string | "applied" | null => {
+  if (value === "applied") return "applied";
+  return UUID_PATTERN.test(value) ? value : null;
+};
 
 /** Invalid or unknown values fall back to defaults, so shared URLs never error. */
 export function parseApplicantFilters(params: SearchParams): ApplicantFilters {
@@ -53,6 +63,7 @@ export function parseApplicantFilters(params: SearchParams): ApplicantFilters {
     from: window === "custom" ? from : null,
     to: window === "custom" ? to : null,
     sort: APPLICANT_SORTS.find((value) => value === sort) ?? "score",
+    stage: validStage(first(params.stage)),
   };
 }
 
@@ -81,4 +92,4 @@ export function appliedRange(
 
 /** True when any filter narrows the list (sort alone does not). */
 export const isFiltered = (filters: ApplicantFilters) =>
-  filters.minScore !== null || filters.applied !== null;
+  filters.minScore !== null || filters.applied !== null || filters.stage !== null;

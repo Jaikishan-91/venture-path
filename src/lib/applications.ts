@@ -6,9 +6,12 @@ import { getEnv } from "./env";
 import { getLogger } from "./logger";
 import { visibleOpportunityWhere } from "./search";
 import { appliedRange, parseApplicantFilters, type ApplicantFilters } from "./applicant-filters";
+import { cancelFutureEventsForApplication } from "./scheduling";
 import type { ResumeExtension } from "./resumes";
 import { analyzeApplication } from "./resume-analysis";
 import { addResume, deleteStoredFileIfUnreferenced } from "./resume-library";
+
+type TxClient = Prisma.TransactionClient | ReturnType<typeof getDb>;
 
 export const MAX_NOTE_LENGTH = 1000;
 
@@ -165,7 +168,37 @@ export async function withdrawApplication(
   });
   if (count === 0) return { ok: false, reason: "invalid_state" };
   getLogger().info({ userId: applicantUserId, applicationId }, "application withdrawn");
+  runInBackground("cancel future events", { applicationId }, () =>
+    cancelFutureEventsForApplication(applicationId),
+  );
   return { ok: true };
+}
+
+/**
+ * Marks a `submitted` application decided, conditional on `where` (which the caller composes for
+ * its own optimistic-concurrency check), inside a transaction it controls. Internal helper shared
+ * by `decideApplication` and `pipeline-progress.ts` (ADR-037: pipeline wraps accept/reject), so
+ * the decision write and its StageEvent (when any) commit together. Returns the row count updated
+ * (0 or 1); callers decide what a miss means (`invalid_state` vs `stale`).
+ */
+export async function decideApplicationTx(
+  tx: TxClient,
+  where: Prisma.ApplicationWhereInput,
+  decision: "accepted" | "rejected",
+): Promise<number> {
+  const { count } = await tx.application.updateMany({
+    where: { ...where, status: "submitted" },
+    data: { status: decision, decidedAt: new Date() },
+  });
+  return count;
+}
+
+/** The acceptance/rejection email, shared by `decideApplication` and `pipeline-progress.ts`. */
+export async function notifyApplicationDecision(
+  applicationId: string,
+  decision: "accepted" | "rejected",
+): Promise<void> {
+  await notifyUser(applicationId, decision);
 }
 
 export async function decideApplication(
@@ -173,21 +206,21 @@ export async function decideApplication(
   applicationId: string,
   decision: "accepted" | "rejected",
 ): Promise<DecisionResult> {
-  const { count } = await getDb().application.updateMany({
-    where: {
-      id: applicationId,
-      status: "submitted",
-      opportunity: { organisationProfile: { userId: organisationUserId } },
-    },
-    data: { status: decision, decidedAt: new Date() },
-  });
+  const count = await decideApplicationTx(
+    getDb(),
+    { id: applicationId, opportunity: { organisationProfile: { userId: organisationUserId } } },
+    decision,
+  );
   if (count === 0) return { ok: false, reason: "invalid_state" };
   getLogger().info(
     { userId: organisationUserId, applicationId, status: decision },
     "application decided",
   );
   runInBackground("application decision email", { applicationId }, () =>
-    notifyUser(applicationId, decision),
+    notifyApplicationDecision(applicationId, decision),
+  );
+  runInBackground("cancel future events", { applicationId }, () =>
+    cancelFutureEventsForApplication(applicationId),
   );
   return { ok: true };
 }
@@ -268,8 +301,10 @@ export function listUserApplications(applicantUserId: string) {
           organisationProfile: {
             select: { businessName: true, user: { select: { email: true } } },
           },
+          _count: { select: { stages: true } },
         },
       },
+      currentStage: { select: { name: true } },
     },
     orderBy: { appliedAt: "desc" },
   });
@@ -296,6 +331,11 @@ export async function listApplicants(
     opportunityId,
     opportunity: { organisationProfile: { userId: organisationUserId } },
     ...(range ? { appliedAt: range } : {}),
+    ...(filters.stage === "applied"
+      ? { currentStageId: null }
+      : filters.stage
+        ? { currentStageId: filters.stage }
+        : {}),
   };
   const where: Prisma.ApplicationWhereInput =
     filters.minScore === null

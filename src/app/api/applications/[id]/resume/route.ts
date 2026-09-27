@@ -1,12 +1,18 @@
 import { getSession } from "@/lib/authz";
 import { getResumeForUser } from "@/lib/applications";
+import { canHiringManagerReadResume, getApplicationResumeFile } from "@/lib/hm-interviews";
 import { readResume, resumeExtension, RESUME_TYPES } from "@/lib/resumes";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return new Response("Sign in required", { status: 401 });
 
-  const application = await getResumeForUser(session.user.id, (await params).id);
+  const applicationId = (await params).id;
+  let application = await getResumeForUser(session.user.id, applicationId);
+  if (!application && session.user.role === "hiring_manager") {
+    const allowed = await canHiringManagerReadResume(session.user.id, applicationId);
+    if (allowed) application = await getApplicationResumeFile(applicationId);
+  }
   if (!application) return new Response("Not found", { status: 404 });
 
   const bytes = await readResume(application.resumeStorageKey);

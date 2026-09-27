@@ -4,10 +4,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { SIGN_IN_PATHS, type SignupRole } from "@/lib/roles";
+import { SIGN_IN_PATHS, type GoogleContinueRole } from "@/lib/roles";
 
 /** Google sign-in for one role's page; `/auth/continue` checks or assigns the role afterwards. */
-export function GoogleButton({ role }: { role: SignupRole }) {
+export function GoogleButton({ role }: { role: GoogleContinueRole }) {
   const [pending, setPending] = useState(false);
 
   async function onClick() {

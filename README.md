@@ -27,6 +27,15 @@ Open http://localhost:3000. `GET /api/health` returns `{"status":"ok","db":"ok"}
 
 By default all email goes to Mailpit (http://localhost:8025). To send real email through Gmail, set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER` (your Gmail address) and `SMTP_PASSWORD` (a [Google App Password](https://myaccount.google.com/apppasswords); needs 2-Step Verification) in `.env`, then check with `npm run email:test -- you@gmail.com`. Outside production, addresses on `.local`, `.test`, `.example` and `.invalid` domains (used by the tests and the seeded admin) still go to Mailpit.
 
+### Google Calendar and Meet (optional)
+
+Scheduled interviews get a Google Calendar invite and a Meet link from one platform Google account (a dedicated Gmail account is fine). Without it, scheduling still works and emails are sent without Meet links.
+
+1. In the Google Cloud project of the OAuth client, enable the Google Calendar API.
+2. On the OAuth consent screen, add the scope `https://www.googleapis.com/auth/calendar.events`. Either add the platform account as a test user (refresh tokens then expire after 7 days) or publish the app "In production" (recommended; unverified is fine, Google shows a one-time warning).
+3. Add `http://localhost:53682/oauth2callback` to the client's Authorized redirect URIs.
+4. Run `npm run google:calendar-token`, sign in as the platform account, and put the printed token in `.env` as `GOOGLE_CALENDAR_REFRESH_TOKEN`.
+
 ### Live reload
 
 - Changes in `src/` (pages, components, server actions, API routes, `lib/`) are hot-reloaded by Next.js; the browser updates without a restart.
@@ -87,6 +96,7 @@ The app builds as a standalone Next.js server; code changes need a rebuild. The 
 | `npm run dev:next`     | Start `next dev` without nodemon              |
 | `npm run email:test -- you@gmail.com` | Send a test email with the current SMTP settings |
 | `npm run embeddings:backfill` | Embed listings that have no embedding yet |
+| `npm run google:calendar-token` | Get the Google Calendar refresh token for interview invites |
 | `npm run build`        | Production build                              |
 | `npm run lint`         | ESLint                                        |
 | `npm run typecheck`    | Generate route types and run `tsc --noEmit`   |

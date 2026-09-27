@@ -13,6 +13,8 @@ enum Role {
   user
   organisation
   admin
+  /// Employee of one organisation, invited by email (ADR-036). Written only by `acceptInvite`.
+  hiring_manager
 }
 
 model User {
@@ -31,6 +33,12 @@ model User {
   organisationProfile OrganisationProfile?  @relation("OrganisationOwner")
   organisationReviews OrganisationProfile[] @relation("OrganisationReviewer")
   updatedPrompts      Prompt[]              @relation("PromptUpdatedBy")
+  /// Set when this account is a hiring manager of an organisation.
+  organisationMember  OrganisationMember?
+  stageEvents         StageEvent[]
+  createdEvents       ScheduledEvent[]      @relation("ScheduledEventCreatedBy")
+  interviewerOf       EventInterviewer[]
+  interviewFeedback   InterviewFeedback[]
 
   @@unique([email])
   @@map("user")
@@ -61,24 +69,25 @@ model UserProfile {
 }
 
 model OrganisationProfile {
-  id              String             @id @default(uuid())
-  userId          String             @unique
-  user            User               @relation("OrganisationOwner", fields: [userId], references: [id], onDelete: Cascade)
+  id              String               @id @default(uuid())
+  userId          String               @unique
+  user            User                 @relation("OrganisationOwner", fields: [userId], references: [id], onDelete: Cascade)
   businessName    String
   description     String
   industry        String
   location        String
   website         String?
   /// Written only by application code (`src/lib/profiles.ts`, later admin review), never from form input.
-  status          OrganisationStatus @default(pending)
+  status          OrganisationStatus   @default(pending)
   /// Last admin decision. Kept as history when an edit sends the profile back to pending.
   reviewedById    String?
-  reviewedBy      User?              @relation("OrganisationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedBy      User?                @relation("OrganisationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt      DateTime?
   rejectionReason String?
   opportunities   Opportunity[]
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  members         OrganisationMember[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
   @@index([status])
   @@map("organisation_profile")
@@ -203,6 +212,10 @@ model Opportunity {
   updatedAt             DateTime                    @updatedAt
   applications          Application[]
   questions             OpportunityQuestion[]
+  /// Hiring pipeline, ordered by `position`. Empty = no pipeline (plain accept/reject) (ADR-037).
+  stages                PipelineStage[]
+  /// Last time the AI suggested a pipeline for this listing (`src/lib/pipeline-assist.ts`).
+  pipelineAssistedAt    DateTime?
 
   @@index([organisationProfileId])
   @@index([status])
@@ -239,11 +252,17 @@ model Application {
   updatedAt        DateTime            @updatedAt
   analysis         Analysis?           @relation("ApplicationAnalysis")
   answers          ApplicationAnswer[]
+  /// Pipeline stage the candidate is in. Null = "Applied" (not yet in any stage) (ADR-037).
+  currentStageId   String?
+  currentStage     PipelineStage?      @relation("ApplicationCurrentStage", fields: [currentStageId], references: [id], onDelete: Restrict)
+  stageEvents      StageEvent[]
+  scheduledEvents  ScheduledEvent[]
 
   @@unique([opportunityId, userProfileId])
   @@index([opportunityId])
   @@index([userProfileId])
   @@index([resumeId])
+  @@index([currentStageId])
   @@map("application")
 }
 
@@ -345,4 +364,168 @@ model ApplicationAnswer {
   @@unique([applicationId, questionId])
   @@index([questionId])
   @@map("application_answer")
+}
+
+enum StageKind {
+  interview
+  test
+  assignment
+  other
+}
+
+/// One step of a listing's hiring pipeline (ADR-037).
+model PipelineStage {
+  id              String           @id @default(uuid())
+  opportunityId   String
+  opportunity     Opportunity      @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  position        Int
+  name            String
+  kind            StageKind
+  /// Shown to the candidate (e.g. what to prepare).
+  instructions    String?
+  /// Optional external link (e.g. a coding test), http/https only.
+  externalUrl     String?
+  /// Default length when this stage is scheduled.
+  durationMinutes Int?
+  source          QuestionSource
+  applications    Application[]    @relation("ApplicationCurrentStage")
+  stageEvents     StageEvent[]
+  scheduledEvents ScheduledEvent[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([opportunityId, position])
+  @@map("pipeline_stage")
+}
+
+enum StageOutcome {
+  passed
+  failed
+  moved
+}
+
+/// History of a candidate's pipeline moves. A stage with history can't be deleted.
+model StageEvent {
+  id            String        @id @default(uuid())
+  applicationId String
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageId       String
+  stage         PipelineStage @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  outcome       StageOutcome
+  actorUserId   String?
+  actor         User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  note          String?
+  createdAt     DateTime      @default(now())
+
+  @@index([applicationId])
+  @@index([stageId])
+  @@map("stage_event")
+}
+
+enum MemberStatus {
+  invited
+  active
+  deactivated
+}
+
+/// A hiring manager of an organisation, from invite to deactivation (ADR-036).
+model OrganisationMember {
+  id                    String              @id @default(uuid())
+  organisationProfileId String
+  organisationProfile   OrganisationProfile @relation(fields: [organisationProfileId], references: [id], onDelete: Cascade)
+  /// Null until the invite is accepted. One account is a member of at most one organisation.
+  userId                String?             @unique
+  user                  User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Lowercased invite address; the accepting account must have this email.
+  email                 String
+  name                  String
+  status                MemberStatus        @default(invited)
+  /// SHA-256 (hex) of the invite token. The token itself is never stored. Cleared on accept or revoke.
+  inviteTokenHash       String?             @unique
+  inviteExpiresAt       DateTime?
+  invitedAt             DateTime            @default(now())
+  acceptedAt            DateTime?
+  deactivatedAt         DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@unique([organisationProfileId, email])
+  @@map("organisation_member")
+}
+
+enum ScheduleStatus {
+  scheduled
+  cancelled
+  completed
+}
+
+enum CalendarSync {
+  pending
+  synced
+  failed
+  disabled
+}
+
+/// A scheduled interview or test slot for one candidate at one stage.
+model ScheduledEvent {
+  id              String              @id @default(uuid())
+  applicationId   String
+  application     Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageId         String
+  stage           PipelineStage       @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  startsAt        DateTime
+  durationMinutes Int
+  status          ScheduleStatus      @default(scheduled)
+  /// Google Calendar event on the platform calendar (ADR-035).
+  googleEventId   String?
+  /// Google Meet link; interviews only. Null when Calendar is disabled or sync failed.
+  meetUrl         String?
+  calendarSync    CalendarSync        @default(pending)
+  calendarError   String?
+  createdById     String?
+  createdBy       User?               @relation("ScheduledEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  interviewers    EventInterviewer[]
+  feedback        InterviewFeedback[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([applicationId])
+  @@index([stageId])
+  @@index([startsAt])
+  @@map("scheduled_event")
+}
+
+/// An interviewer on a scheduled event: an active hiring manager or the organisation owner.
+model EventInterviewer {
+  scheduledEventId String
+  scheduledEvent   ScheduledEvent @relation(fields: [scheduledEventId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([scheduledEventId, userId])
+  @@index([userId])
+  @@map("event_interviewer")
+}
+
+enum Recommendation {
+  pass
+  fail
+  unsure
+}
+
+/// One interviewer's feedback on one scheduled event. Never shown to the candidate.
+model InterviewFeedback {
+  id                String         @id @default(uuid())
+  scheduledEventId  String
+  scheduledEvent    ScheduledEvent @relation(fields: [scheduledEventId], references: [id], onDelete: Cascade)
+  interviewerUserId String
+  interviewer       User           @relation(fields: [interviewerUserId], references: [id], onDelete: Cascade)
+  rating            Int
+  recommendation    Recommendation
+  notes             String
+  submittedAt       DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([scheduledEventId, interviewerUserId])
+  @@map("interview_feedback")
 }

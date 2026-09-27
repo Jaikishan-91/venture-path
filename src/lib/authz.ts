@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAuth, type Session } from "./auth";
 import { ONBOARDING_PATH, isRole, type Role } from "./roles";
+import { getActiveMembership } from "./team";
 
 export async function getSession(): Promise<Session | null> {
   return getAuth().api.getSession({ headers: await headers() });
@@ -21,4 +22,15 @@ export async function requireRole(...allowed: Role[]): Promise<Session & { user:
   if (!isRole(role)) redirect(ONBOARDING_PATH);
   if (!allowed.includes(role)) redirect("/dashboard");
   return session as Session & { user: { role: Role } };
+}
+
+/**
+ * A hiring manager whose membership is currently active (ADR-036). A deactivated or otherwise
+ * missing membership never reaches the hiring-manager area, even with the right role.
+ */
+export async function requireActiveHiringManager() {
+  const session = await requireRole("hiring_manager");
+  const membership = await getActiveMembership(session.user.id);
+  if (!membership) redirect("/hiring-manager/inactive");
+  return { session, membership };
 }

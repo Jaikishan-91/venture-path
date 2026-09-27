@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { settleBackground } from "@/lib/background";
 import {
   applyToOpportunity,
   decideApplication,
@@ -148,5 +149,41 @@ describe("applications", () => {
       ok: false,
       reason: "invalid_state",
     });
+  });
+
+  it("cancels future scheduled events when an application is decided", async () => {
+    const organisation = await createUser("organisation");
+    const user = await createUser("user");
+    const opportunityId = await publishedListing(organisation.id);
+    const applied = await applyToOpportunity(user.id, opportunityId, { ...resume, note: "" });
+    if (!applied.ok) throw new Error("apply failed");
+
+    const stage = await getDb().pipelineStage.create({
+      data: {
+        opportunityId,
+        position: 0,
+        name: "Screen",
+        kind: "interview",
+        source: "organisation",
+      },
+    });
+    await getDb().application.update({
+      where: { id: applied.id },
+      data: { currentStageId: stage.id },
+    });
+    const event = await getDb().scheduledEvent.create({
+      data: {
+        applicationId: applied.id,
+        stageId: stage.id,
+        startsAt: new Date(Date.now() + 3_600_000),
+        durationMinutes: 30,
+      },
+    });
+
+    expect(await decideApplication(organisation.id, applied.id, "rejected")).toEqual({ ok: true });
+    await settleBackground();
+
+    const cancelled = await getDb().scheduledEvent.findUniqueOrThrow({ where: { id: event.id } });
+    expect(cancelled.status).toBe("cancelled");
   });
 });

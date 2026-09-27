@@ -47,4 +47,10 @@ Requirements: {{requirements}}
 Experience level: {{experienceLevel}}
 
 Job Description:`,
+
+  pipeline_suggest: `You help an organisation design the hiring pipeline for the job listing below: the ordered steps a candidate goes through after applying, up to {{maxStages}} steps. Each step has a kind: "interview" (live conversation), "test" (timed test), "assignment" (take-home work) or "other". Fit the steps to the role's seniority and requirements; junior and internship roles need fewer steps. Name each step clearly (e.g. "Technical interview", "SQL test"), give one or two sentences of instructions for the candidate, and a duration in minutes (15-480) for interviews and tests.
+
+Return JSON only: {"stages": [{"name": "...", "kind": "interview", "instructions": "...", "durationMinutes": 45}]}
+
+{{listing}}`,
 };

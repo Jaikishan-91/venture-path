@@ -8,9 +8,14 @@ import { isFiltered, parseApplicantFilters } from "@/lib/applicant-filters";
 import { listApplicants } from "@/lib/applications";
 import { requireRole } from "@/lib/authz";
 import { getOwnOpportunity } from "@/lib/opportunities";
+import { getOrderedStages } from "@/lib/pipelines";
+import { listInterviewerOptions } from "@/lib/team";
+import { listFeedbackForApplications, type FeedbackView } from "@/lib/interview-feedback";
+import { listEventsForApplications, type ScheduledEventView } from "@/lib/scheduling";
 import { createLlmClient } from "@/lib/llm/provider";
 import { decideAction } from "./actions";
 import { ApplicantFilters } from "./applicant-filters";
+import { PipelinePanel } from "./pipeline-panel";
 import { ResumeAnalysis } from "./resume-analysis";
 
 export const metadata: Metadata = { title: "Applicants · VenturePath" };
@@ -41,7 +46,22 @@ export default async function ApplicantsPage({
   const opportunity = await getOwnOpportunity(session.user.id, id);
   if (!opportunity) notFound();
   const filters = parseApplicantFilters(await searchParams);
-  const { applicants, unscored } = await listApplicants(session.user.id, id, filters);
+  const [{ applicants, unscored }, stages, interviewerOptions] = await Promise.all([
+    listApplicants(session.user.id, id, filters),
+    getOrderedStages(id),
+    listInterviewerOptions(session.user.id),
+  ]);
+  const hasPipeline = stages.length > 0;
+  const applicationIds = applicants.map((application) => application.id);
+  const [eventsByApplication, feedbackByApplication]: [
+    Map<string, ScheduledEventView[]>,
+    Record<string, FeedbackView[]>,
+  ] = hasPipeline
+    ? await Promise.all([
+        listEventsForApplications(session.user.id, applicationIds),
+        listFeedbackForApplications(session.user.id, applicationIds),
+      ])
+    : [new Map(), {}];
   const canReanalyze = createLlmClient() !== null;
   const basePath = `/organisation/opportunities/${id}/applicants`;
 
@@ -51,7 +71,11 @@ export default async function ApplicantsPage({
         Your listings
       </Link>
       {opportunity._count.applications > 0 && (
-        <ApplicantFilters filters={filters} basePath={basePath} />
+        <ApplicantFilters
+          filters={filters}
+          basePath={basePath}
+          stages={stages.map((stage) => ({ id: stage.id, name: stage.name }))}
+        />
       )}
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {opportunity._count.applications === 0
@@ -87,6 +111,17 @@ export default async function ApplicantsPage({
               <a href={`/api/applications/${application.id}/resume`} className="underline">
                 Download {application.resumeFileName}
               </a>
+              {hasPipeline && (
+                <PipelinePanel
+                  applicationId={application.id}
+                  status={application.status}
+                  currentStageId={application.currentStageId}
+                  stages={stages}
+                  events={eventsByApplication.get(application.id) ?? []}
+                  feedback={feedbackByApplication[application.id] ?? []}
+                  interviewerOptions={interviewerOptions}
+                />
+              )}
               {application.status === "submitted" && (
                 <div className="flex gap-2">
                   <form action={decideAction}>

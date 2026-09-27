@@ -19,6 +19,7 @@
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "email:test": "tsx scripts/send-test-email.ts",
+    "google:calendar-token": "tsx scripts/google-calendar-token.ts",
     "embeddings:backfill": "tsx scripts/backfill-embeddings.ts",
     "docker:dev": "docker compose --profile dev up --build --watch next-dev",
     "docker:prod": "docker compose --profile prod up -d --build next",

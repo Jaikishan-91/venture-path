@@ -43,7 +43,13 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `withdrawAction` | `src/app/opportunities/[id]/actions.ts` | `user` | Withdraws the user's own submitted application. |
 | `decideAction` | `src/app/organisation/opportunities/[id]/applicants/actions.ts` | `organisation` | Accepts or rejects a submitted application on the organisation's own listing. |
 | `reanalyzeAction` | `src/app/organisation/opportunities/[id]/applicants/actions.ts` | `organisation` | Runs the screening analysis (resume and answers) again for an application on the organisation's own listing (ADR-024, ADR-033). Errors if no LLM is configured or nothing could be scored. |
-| `savePromptAction` | `src/app/admin/settings/actions.ts` | `admin` | Saves an LLM prompt template (`resume_analysis`, `listing_assist`, `resume_skills`, `answer_scoring`, `job_description`; max 10,000 characters). |
+| `savePipelineAction`, `suggestPipelineAction`, `copyPipelineTemplateAction` | `src/app/organisation/opportunities/pipeline-actions.ts` | `organisation` | Save the listing's pipeline (approved organisations; stale and soft-lock checks, ADR-037); get AI stage suggestions or another listing's stages for the editor (not saved). |
+| `advanceAction`, `failAction`, `moveAction` | `src/app/organisation/opportunities/[id]/applicants/actions.ts` | `organisation` | Move a submitted candidate to the next stage (accepting after the last), reject them at their stage, or move them to any stage; refused if the stage changed since the page loaded. |
+| `scheduleAction`, `rescheduleAction`, `cancelEventAction`, `retrySyncAction` | same file | `organisation` | Schedule an interview or test for the candidate's current stage (India time, owner and/or active hiring managers), change or cancel it, or retry the Google Calendar sync (ADR-035). |
+| `inviteMemberAction`, `memberAction`, `reinviteAction` | `src/app/organisation/team/actions.ts` | `organisation` | Invite a hiring manager; resend, revoke or deactivate; invite a deactivated one again (ADR-036). |
+| `signUpForInviteAction`, `acceptInviteAction` | `src/app/invite/[token]/actions.ts` | public / signed in | Create an account for the invited email (verification returns to the invite); accept the invite. |
+| `submitFeedbackAction` | `src/app/hiring-manager/interviews/[id]/actions.ts` | `hiring_manager` | Save or update own feedback on an assigned interview after its start time. |
+| `savePromptAction` | `src/app/admin/settings/actions.ts` | `admin` | Saves an LLM prompt template (`resume_analysis`, `listing_assist`, `resume_skills`, `answer_scoring`, `job_description`, `pipeline_suggest`; max 10,000 characters). |
 | `opportunityStatusAction` | `src/app/organisation/opportunities/actions.ts` | `organisation` | `publish`, `close`, `reopen` or `delete` (drafts) on the organisation's own listing (ADR-020). |
 | `saveOrganisationProfileAction` | `src/app/organisation/profile/actions.ts` | `organisation` | Validates and saves the signed-in organisation's profile; the status is derived on the server (ADR-016). Redirects to `/organisation`, or asks to save again if the status changed concurrently. |
 
@@ -54,7 +60,9 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `/`, `/sign-in`, `/sign-up` | Public. User sign-in and sign-up (signed-in users are sent to `/dashboard`). |
 | `/organisation/sign-in`, `/organisation/sign-up` | Public. Organisation sign-in and sign-up. |
 | `/admin/sign-in` | Public. Admin sign-in (email and password only; no sign-up). |
-| `GET /auth/continue?as=user\|organisation` | After Google sign-in: gives a new account that role; signs out an account of another role and returns to that sign-in page with `?error=wrong-role`. |
+| `/hiring-manager/sign-in` | Public. Hiring manager sign-in (password or Google; no sign-up). `?invite=<token>` continues to the invite after sign-in. |
+| `/invite/[token]` | Public. Shows a valid invite; sign up, sign in or accept (ADR-036). |
+| `GET /auth/continue?as=user\|organisation\|hiring_manager` | After Google sign-in: gives a new account that role (never `hiring_manager`, which only an invite grants); signs out an account of another role and returns to that sign-in page with `?error=wrong-role`. |
 | `/student/*`, `/msme/*`, `/admin/msmes` | Permanent redirects to `/user/*`, `/organisation/*`, `/admin/organisations` (ADR-025). |
 | `/dashboard` | Signed in; redirects to the user's home |
 | `/onboarding/role` | Signed in without a role |
@@ -66,9 +74,12 @@ Better Auth 1.7.6 handler (`src/app/api/auth/[...all]/route.ts`). The UI uses it
 | `/user/recommendations` | User; up to 30 recommended listings with match % and matched skills (ADR-033). |
 | `/organisation/opportunities/[id]/applicants?minScore=50\|70\|85&applied=24h\|7d\|30d\|custom&from=&to=&sort=score\|newest\|oldest` | Owning organisation; accept or reject, and see each applicant's overall, resume and answer scores, answers with per-answer scores, summary, and matched and missing skills. Filters by minimum overall score and apply time (India-time days for `custom`); invalid values fall back to defaults. User email shown only after acceptance. |
 | `/admin/settings` | Admin; edit LLM prompt templates. |
-| `GET /api/applications/[id]/resume` | User owner or owning organisation; 401 signed out, 404 otherwise. |
+| `/organisation/team` | Organisation; invite and manage hiring managers. |
+| `/hiring-manager`, `/hiring-manager/interviews?scope=upcoming\|past`, `/hiring-manager/interviews/[id]` | Active hiring manager; only interviews they are assigned to in their organisation (others give 404). |
+| `/hiring-manager/inactive` | Hiring manager without an active membership. |
+| `GET /api/applications/[id]/resume` | User owner, owning organisation, or an active hiring manager assigned to a non-cancelled interview for that application; 401 signed out, 404 otherwise. |
 | `GET /api/resumes/[id]` | The user who owns the library resume; 401 signed out, 404 otherwise. |
 | `/organisation/opportunities`, `/organisation/opportunities/new`, `/organisation/opportunities/[id]/edit` | Organisation; own listings only (other IDs give 404); forms only for approved organisations |
 | `/admin/organisations?status=pending\|approved\|rejected` | Admin; organisation review list (default `pending`, max 100 per status) |
 
-`src/proxy.ts` redirects requests without a session cookie to the sign-in page of that area (`/organisation/*` → `/organisation/sign-in`, `/admin/*` → `/admin/sign-in`, otherwise `/sign-in`); the sign-in and sign-up pages themselves pass through. It is only an optimisation; each page checks the session and role on the server (`src/lib/authz.ts`).
+`src/proxy.ts` redirects requests without a session cookie to the sign-in page of that area (`/organisation/*` → `/organisation/sign-in`, `/admin/*` → `/admin/sign-in`, `/hiring-manager/*` → `/hiring-manager/sign-in`, otherwise `/sign-in`); the sign-in and sign-up pages themselves pass through. It is only an optimisation; each page checks the session and role on the server (`src/lib/authz.ts`).

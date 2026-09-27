@@ -7,13 +7,15 @@ A TypeScript Next.js 16 (App Router, Turbopack) web application backed by Postgr
 
 Components:
 - **Web app (Next.js App Router)** — UI (Tailwind 4 + shadcn/ui) and server logic (route handlers and server actions).
-- **Auth (Better Auth 1.7.6)** — email/password with required email verification, Google sign-in when configured, database sessions via the Prisma adapter. Roles user / organisation / admin (ADR-013 to ADR-015; renamed from student / MSME by ADR-025). Each role has its own sign-in page, and users and organisations have their own sign-up pages (ADR-026).
+- **Auth (Better Auth 1.7.6)** — email/password with required email verification, Google sign-in when configured, database sessions via the Prisma adapter. Roles user / organisation / admin / hiring_manager (ADR-013 to ADR-015; renamed from student / MSME by ADR-025; hiring managers by invite only, ADR-036). Each role has its own sign-in page, and users and organisations have their own sign-up pages (ADR-026).
 - **Access control** — `src/proxy.ts` does an optimistic session-cookie redirect; the real checks are `requireSession` / `requireRole` in `src/lib/authz.ts`, called by every protected page and action.
 - **Email** — nodemailer over SMTP (`src/lib/email.ts`). Any SMTP server with optional login (Gmail configured locally); Mailpit by default. Outside production, reserved test domains always go to Mailpit (ADR-018). Production provider not chosen.
 - **Database (PostgreSQL 18 + Prisma 7)** — system of record. The Docker image is `pgvector/pgvector` (Postgres 18 with pgvector). Prisma uses the `@prisma/adapter-pg` driver adapter; schema changes go through Prisma Migrate. See `docs/DATA_MODEL.md`.
 - **Search** — public listing search in `src/lib/search.ts`: filters plus hybrid ranking (pgvector cosine similarity and keyword matches). Embeddings come from a local model in `src/lib/embeddings.ts` (ADR-021).
 - **AI resume analysis (optional)** — `src/lib/llm/` calls any OpenAI-compatible chat endpoint when `LLM_PROVIDER=openai` (ADR-023). `src/lib/resume-analysis.ts` extracts resume text (PDF via `unpdf`, DOCX, DOC) and scores each application: the resume against the listing, and the screening answers (`src/lib/answer-scoring.ts`), combined into one `Analysis` per application (ADR-024, ADR-033). Prompts are editable at `/admin/settings`.
 - **Resume library, listing assist and recommendations** — `src/lib/resume-library.ts` stores up to 5 resumes per user and extracts their skills (ADR-031). `src/lib/listing-assist.ts` adds AI skills and draft screening questions to listings (ADR-032). `src/lib/recommendations.ts` ranks visible listings by skill coverage plus embedding similarity (ADR-033). Everything degrades to non-AI behaviour when no LLM is configured.
+- **Hiring pipelines and interviews** — `src/lib/pipelines.ts` (stages, soft lock), `pipeline-assist.ts` (AI suggestions), `pipeline-progress.ts` (advance, fail, move), `scheduling.ts` (events, emails, calendar sync), `team.ts` (hiring manager invites), `hm-interviews.ts` and `interview-feedback.ts` (hiring manager access and feedback). Shared types and limits in `src/lib/hiring/` (ADR-035 to ADR-037).
+- **Google Calendar (optional)** — `src/lib/google-calendar.ts` creates, updates and cancels events with Meet links on the platform account's calendar through the REST API, when `GOOGLE_CALENDAR_REFRESH_TOKEN` is set (ADR-035).
 - **Logging (pino → pino-loki → Loki → Grafana)** — structured JSON logs with labels `app`, `env`, `level`. Secrets are redacted by path.
 - **Local dev services (Docker Compose)** — Postgres, Loki, Grafana (Loki data source provisioned) and Mailpit. The app itself runs on the host (`npm run dev`), in Docker with live code sync (`npm run docker:dev`, profile `dev`), or as the production image (`npm run docker:prod`, profile `prod`) (ADR-028).
 
@@ -49,9 +51,14 @@ Next.js → pino → stdout (pretty in development) and pino-loki worker thread 
 | `src/lib/applicant-filters.ts` | Applicants page filter parsing (pure). |
 | `src/lib/llm/json.ts` | JSON reply parsing and `asData` tag wrapping for LLM input. |
 | `src/lib/background.ts` | `runInBackground` (logged, never thrown) and `settleBackground` for tests. |
-| `src/lib/dashboard/` | Dashboard data per role (`user.ts`, `organisation.ts`, `admin.ts`), plus `dates.ts` (7/30-day windows, India-date ranges) and `statuses.ts` (ADR-029). |
+| `src/lib/dashboard/` | Dashboard data per role (`user.ts`, `organisation.ts`, `admin.ts`, `hiring-manager.ts`), plus `dates.ts` (7/30-day windows, India-date ranges) and `statuses.ts` (ADR-029). |
 | `src/components/dashboard/` | Dashboard UI: `StatTile`, `StatGrid`, `DashboardSection`/`EmptyState`, `BarList`, `StatusPill`. |
 | `src/components/app-sidebar.tsx` | Role navigation: a sidebar from `md`, a tab bar on phones. Links are listed in `NAV`. |
+| `src/lib/hiring/` | `types.ts` (contract, limits, labels) and `time.ts` (India-time conversion and formatting). |
+| `src/lib/pipelines.ts`, `pipeline-schemas.ts`, `pipeline-assist.ts`, `pipeline-progress.ts` | Pipeline storage and soft lock, validation, AI suggestions, candidate progression. |
+| `src/lib/scheduling.ts`, `scheduling-schemas.ts`, `google-calendar.ts` | Scheduled events, their emails, and Google Calendar sync. |
+| `src/lib/team.ts`, `team-schemas.ts` | Hiring manager invites and membership; `requireActiveHiringManager` is in `authz.ts`. |
+| `src/lib/hm-interviews.ts`, `interview-feedback.ts`, `feedback-schemas.ts` | What a hiring manager can see (one rule, ADR-036) and feedback. `src/components/hiring/feedback-list.tsx` shows feedback to the organisation. |
 | `src/lib/env.ts` | Validates server environment variables with zod; `getEnv()` caches the result. |
 | `src/lib/db.ts` | `getDb()` — single Prisma client, reused across hot reloads. |
 | `src/lib/logger.ts` | `getLogger()` — single pino logger with redaction and transports. |

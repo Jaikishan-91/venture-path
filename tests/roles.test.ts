@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   ONBOARDING_PATH,
+  googleContinueRoleSchema,
   homePathFor,
   isAuthPage,
+  isGoogleContinueRole,
   isRole,
   signInPathForArea,
   signupRoleSchema,
@@ -26,6 +28,7 @@ describe("homePathFor", () => {
     expect(homePathFor("user")).toBe("/user");
     expect(homePathFor("organisation")).toBe("/organisation");
     expect(homePathFor("admin")).toBe("/admin");
+    expect(homePathFor("hiring_manager")).toBe("/hiring-manager");
   });
 
   it("sends users without a role to onboarding", () => {
@@ -47,6 +50,8 @@ describe("signInPathForArea", () => {
     expect(signInPathForArea("/organisation")).toBe("/organisation/sign-in");
     expect(signInPathForArea("/organisation/opportunities/new")).toBe("/organisation/sign-in");
     expect(signInPathForArea("/admin/settings")).toBe("/admin/sign-in");
+    expect(signInPathForArea("/hiring-manager")).toBe("/hiring-manager/sign-in");
+    expect(signInPathForArea("/hiring-manager/interviews")).toBe("/hiring-manager/sign-in");
     expect(signInPathForArea("/user/applications")).toBe("/sign-in");
     expect(signInPathForArea("/dashboard")).toBe("/sign-in");
     expect(signInPathForArea("/organisations-fake")).toBe("/sign-in");
@@ -58,7 +63,30 @@ describe("isAuthPage", () => {
     expect(isAuthPage("/organisation/sign-in")).toBe(true);
     expect(isAuthPage("/organisation/sign-up")).toBe(true);
     expect(isAuthPage("/admin/sign-in")).toBe(true);
+    expect(isAuthPage("/hiring-manager/sign-in")).toBe(true);
     expect(isAuthPage("/organisation/profile")).toBe(false);
     expect(isAuthPage("/admin/sign-in/extra")).toBe(false);
+  });
+});
+
+describe("googleContinueRoleSchema", () => {
+  it("accepts user, organisation and hiring_manager", () => {
+    expect(googleContinueRoleSchema.parse("user")).toBe("user");
+    expect(googleContinueRoleSchema.parse("organisation")).toBe("organisation");
+    expect(googleContinueRoleSchema.parse("hiring_manager")).toBe("hiring_manager");
+  });
+
+  it("rejects admin and unknown values", () => {
+    expect(googleContinueRoleSchema.safeParse("admin").success).toBe(false);
+    expect(googleContinueRoleSchema.safeParse("owner").success).toBe(false);
+  });
+});
+
+describe("isGoogleContinueRole", () => {
+  it("recognises user, organisation and hiring_manager but not admin", () => {
+    expect(isGoogleContinueRole("user")).toBe(true);
+    expect(isGoogleContinueRole("organisation")).toBe(true);
+    expect(isGoogleContinueRole("hiring_manager")).toBe(true);
+    expect(isGoogleContinueRole("admin")).toBe(false);
   });
 });

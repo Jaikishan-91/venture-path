@@ -16,6 +16,8 @@ Current:
 - Role dashboards and navigation shipped 2026-09-26: `plan/2026-09-26-role-dashboards.md`.
 - Resume library, AI skills, recommendations and screening questions shipped 2026-09-26: `plan/2026-09-26-resume-library-and-screening.md`.
 
+- Hiring pipelines, interview scheduling with Google Meet, and hiring managers shipped 2026-09-26: `plan/2026-09-26-hiring-pipelines-and-interviews.md`.
+
 Next (MVP phases, in order):
 - None. MVP phases 0–6 are shipped. Later: password reset, admin role changes.
 
@@ -24,4 +26,6 @@ Later:
 - Password reset.
 - Dashboards (after FR-7): trend charts over time, counts on nav links (e.g. pending reviews), "viewed by organisation" application status, per-user dashboard customisation, CSV export for admins.
 - Admin role changes.
+- AI Hiring Manager (shown as coming soon, ADR-036).
+- Per-organisation Google Calendar connection; candidate self-booking from offered slots; on-platform tests.
 - TBD after MVP scope is agreed.

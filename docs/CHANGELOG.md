@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-26 — Hiring pipelines, interviews and hiring managers
+
+Added:
+- Hiring pipeline editor on the listing edit page: up to 10 stages (interview, test, assignment, other) with instructions, a link and a duration; copy from another listing; "Suggest with AI" from the job description (prompt `pipeline_suggest`); stages lock once reached (FR-12, ADR-037).
+- Applicants page: current stage, stage filter, Advance / Move / Reject, scheduling in India time with interviewers, reschedule, cancel, calendar status with retry, and interviewers' feedback (FR-13).
+- Google Calendar events with Meet links for interviews from one platform Google account; invites and VenturePath emails to the candidate and interviewers; `npm run google:calendar-token` (ADR-035). Without a refresh token, scheduling works without Meet links.
+- Hiring managers: invites at `/organisation/team`, invite page `/invite/[token]`, sign-in at `/hiring-manager/sign-in`, dashboard and interviews at `/hiring-manager`, feedback form, resume download for assigned interviews (FR-14, ADR-036). "AI Hiring Manager" shown as coming soon.
+- Users see their current stage and upcoming interviews (with Meet link) at `/user/applications`.
+- Organisation dashboard: "Interviews next 7 days".
+- Migration `hiring_pipelines`. Env `GOOGLE_CALENDAR_REFRESH_TOKEN`, `GOOGLE_CALENDAR_ID`.
+- Tests: `tests/{pipeline-schemas,pipelines,pipeline-assist,pipeline-progress,scheduling,scheduling-schemas,google-calendar,team,team-schemas,hm-interviews,interview-feedback,feedback-schemas,dashboard-hiring-manager,resume-access,hiring-time}.test.ts`; e2e `e2e/pipeline.spec.ts`, `e2e/hiring-manager.spec.ts`.
+
+Changed:
+- `decideApplication` shares its update and emails with the pipeline; accepting, rejecting or withdrawing cancels the application's future interviews.
+- Organisation nav gains "Team".
+
+Fixed during implementation and review:
+- Accepting an invite could activate a membership without the role if the account's role changed meanwhile; the role write is now conditional and aborts the accept.
+- Moving a candidate off a stage left that stage's future interviews scheduled; they are now cancelled.
+
+## 2026-09-26 — Real LLM calls enabled; Docker recovery
+
+Fixed:
+- AI features were silently off: `.env` had an invalid `LLM_PROVIDER`, a non-OpenAI-compatible Ollama URL and a retired model. Now `openai` / `https://ollama.com/v1` / `gemma4:31b`, the fastest and most token-efficient model on the key's free plan (ADR-034: 0.92 s and ~86 output tokens against 3.67 s and ~195 for `gpt-oss:20b`), verified with a live call through `createLlmClient` and `parseAnalysisOutput`. `.env.example` has an Ollama Cloud example.
+
 ## 2026-09-26 — Resume library, AI skills, recommendations and screening questions
 
 Added:

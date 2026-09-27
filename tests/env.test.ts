@@ -44,6 +44,26 @@ describe("parseEnv", () => {
     expect(env.GOOGLE_CLIENT_ID).toBe("id");
   });
 
+  it("requires GOOGLE_CALENDAR_REFRESH_TOKEN to have client id/secret", () => {
+    expect(() => parseEnv({ ...valid, GOOGLE_CALENDAR_REFRESH_TOKEN: "rt" })).toThrow(
+      /GOOGLE_CALENDAR_REFRESH_TOKEN/,
+    );
+    const env = parseEnv({
+      ...valid,
+      GOOGLE_CLIENT_ID: "id",
+      GOOGLE_CLIENT_SECRET: "secret",
+      GOOGLE_CALENDAR_REFRESH_TOKEN: "rt",
+    });
+    expect(env.GOOGLE_CALENDAR_REFRESH_TOKEN).toBe("rt");
+  });
+
+  it("defaults GOOGLE_CALENDAR_ID to primary", () => {
+    expect(parseEnv(valid).GOOGLE_CALENDAR_ID).toBe("primary");
+    expect(parseEnv({ ...valid, GOOGLE_CALENDAR_ID: "team@example.com" }).GOOGLE_CALENDAR_ID).toBe(
+      "team@example.com",
+    );
+  });
+
   it("requires SMTP_USER and SMTP_PASSWORD together", () => {
     expect(() => parseEnv({ ...valid, SMTP_USER: "me@gmail.com" })).toThrow(/SMTP_USER/);
     expect(() => parseEnv({ ...valid, SMTP_PASSWORD: "secret" })).toThrow(/SMTP_USER/);

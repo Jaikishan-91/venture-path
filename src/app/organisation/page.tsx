@@ -115,6 +115,11 @@ export default async function OrganisationHomePage() {
             />
             <StatTile label="Accepted" value={dashboard.applicantCounts.accepted} />
             <StatTile label="Not selected" value={dashboard.applicantCounts.notSelected} />
+            <StatTile
+              label="Interviews next 7 days"
+              value={dashboard.upcomingInterviews}
+              tone={dashboard.upcomingInterviews > 0 ? "accent" : "default"}
+            />
           </StatGrid>
 
           <DashboardSection

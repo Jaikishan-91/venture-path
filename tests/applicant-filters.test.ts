@@ -9,6 +9,7 @@ describe("parseApplicantFilters", () => {
       from: null,
       to: null,
       sort: "score",
+      stage: null,
     });
   });
 
@@ -19,13 +20,23 @@ describe("parseApplicantFilters", () => {
       from: null,
       to: null,
       sort: "oldest",
+      stage: null,
     });
   });
 
   it("ignores unknown or invalid values instead of failing", () => {
     expect(
       parseApplicantFilters({ minScore: "42", applied: "1y", sort: "name", from: "2026-02-30" }),
-    ).toEqual({ minScore: null, applied: null, from: null, to: null, sort: "score" });
+    ).toEqual({ minScore: null, applied: null, from: null, to: null, sort: "score", stage: null });
+  });
+
+  it("accepts a stage id or 'applied', and treats anything else as no filter", () => {
+    expect(parseApplicantFilters({ stage: "applied" }).stage).toBe("applied");
+    const uuid = "11111111-1111-1111-1111-111111111111";
+    expect(parseApplicantFilters({ stage: uuid }).stage).toBe(uuid);
+    expect(parseApplicantFilters({ stage: "all" }).stage).toBeNull();
+    expect(parseApplicantFilters({ stage: "not-a-uuid" }).stage).toBeNull();
+    expect(parseApplicantFilters({}).stage).toBeNull();
   });
 
   it("keeps dates only for a custom range, swapping a reversed one", () => {
@@ -76,5 +87,9 @@ describe("isFiltered", () => {
   it("is false for sort alone", () => {
     expect(isFiltered(parseApplicantFilters({ sort: "newest" }))).toBe(false);
     expect(isFiltered(parseApplicantFilters({ minScore: "50" }))).toBe(true);
+  });
+
+  it("is true when a stage filter is set", () => {
+    expect(isFiltered(parseApplicantFilters({ stage: "applied" }))).toBe(true);
   });
 });

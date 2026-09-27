@@ -17,8 +17,19 @@ import {
 const selectClass =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-base md:text-sm dark:bg-input/30";
 
+export type StageFilterOption = { id: string; name: string };
+
 /** GET form, so a filtered list has a shareable URL and works without JavaScript. */
-export function ApplicantFilters({ filters, basePath }: { filters: Filters; basePath: string }) {
+export function ApplicantFilters({
+  filters,
+  basePath,
+  stages = [],
+}: {
+  filters: Filters;
+  basePath: string;
+  /** Pipeline stages of this listing, in order. Omitted (or empty) for listings without one. */
+  stages?: StageFilterOption[];
+}) {
   const [applied, setApplied] = useState(filters.applied ?? "");
 
   return (
@@ -61,6 +72,25 @@ export function ApplicantFilters({ filters, basePath }: { filters: Filters; base
           ))}
         </select>
       </div>
+      {stages.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="stage">Stage</Label>
+          <select
+            id="stage"
+            name="stage"
+            defaultValue={filters.stage ?? "all"}
+            className={selectClass}
+          >
+            <option value="all">All stages</option>
+            <option value="applied">Applied</option>
+            {stages.map((stage) => (
+              <option key={stage.id} value={stage.id}>
+                {stage.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="sort">Sort by</Label>
         <select id="sort" name="sort" defaultValue={filters.sort} className={selectClass}>

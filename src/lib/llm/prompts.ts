@@ -20,6 +20,7 @@ export const PROMPT_KEYS = [
   "resume_skills",
   "answer_scoring",
   "job_description",
+  "pipeline_suggest",
 ] as const;
 export type PromptKey = (typeof PROMPT_KEYS)[number];
 
@@ -50,6 +51,10 @@ export const DEFAULT_PROMPT_TEMPLATES: Record<PromptKey, { name: string; content
   job_description: {
     name: "Job Description Prompt",
     content: DEFAULT_PROMPTS.job_description,
+  },
+  pipeline_suggest: {
+    name: "Hiring pipeline suggestion",
+    content: DEFAULT_PROMPTS.pipeline_suggest,
   },
 };
 

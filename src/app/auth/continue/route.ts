@@ -5,22 +5,26 @@ import { getAuth } from "@/lib/auth";
 import { getSession } from "@/lib/authz";
 import { getDb } from "@/lib/db";
 import { getLogger } from "@/lib/logger";
-import { SIGN_IN_PATHS, homePathFor, signupRoleSchema } from "@/lib/roles";
+import { SIGN_IN_PATHS, googleContinueRoleSchema, homePathFor } from "@/lib/roles";
 import { assignInitialRole } from "@/lib/user-roles";
 
 /**
- * Landing point after Google sign-in on a role's page (ADR-026). A new account takes that role;
- * an account with another role is signed out and sent back with an explanation.
+ * Landing point after Google sign-in on a role's page (ADR-026). A new user/organisation account
+ * takes that role; hiring managers are never assigned here (only `acceptInvite` writes that role).
+ * An account with another role (or none, for hiring managers) is signed out and sent back with an
+ * explanation.
  */
 export async function GET(request: NextRequest) {
-  const parsed = signupRoleSchema.safeParse(request.nextUrl.searchParams.get("as"));
+  const parsed = googleContinueRoleSchema.safeParse(request.nextUrl.searchParams.get("as"));
   if (!parsed.success) redirect("/dashboard");
   const expected = parsed.data;
 
   const session = await getSession();
   if (!session) redirect(SIGN_IN_PATHS[expected]);
 
-  await assignInitialRole(session.user.id, expected);
+  if (expected === "user" || expected === "organisation") {
+    await assignInitialRole(session.user.id, expected);
+  }
   const { role } = await getDb().user.findUniqueOrThrow({
     where: { id: session.user.id },
     select: { role: true },

@@ -2,6 +2,7 @@
 
 import {
   Briefcase,
+  CalendarClock,
   FileStack,
   FileText,
   LayoutDashboard,
@@ -9,6 +10,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Users,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -31,6 +33,7 @@ const NAV: Record<Role, NavItem[]> = {
   organisation: [
     { href: "/organisation", label: "Dashboard", icon: LayoutDashboard },
     { href: "/organisation/opportunities", label: "Listings", icon: Briefcase },
+    { href: "/organisation/team", label: "Team", icon: Users },
     { href: "/organisation/profile", label: "Profile", icon: UserRound },
   ],
   admin: [
@@ -38,12 +41,17 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/admin/organisations", label: "Organisation reviews", icon: ShieldCheck },
     { href: "/admin/settings", label: "Settings", icon: Settings },
   ],
+  hiring_manager: [
+    { href: "/hiring-manager", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/hiring-manager/interviews", label: "Interviews", icon: CalendarClock },
+  ],
 };
 
 const ROLE_NAMES: Record<Role, string> = {
   user: "User",
   organisation: "Organisation",
   admin: "Admin",
+  hiring_manager: "Hiring manager",
 };
 
 /** The one nav item matching the path: the longest href that is the path or a parent of it. */

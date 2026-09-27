@@ -40,6 +40,9 @@ Out of MVP: in-app messaging, contracts/milestones, payments, reviews/ratings.
 - FR-9 (2026-09-26): When an organisation creates a listing, the LLM extracts its required skills and drafts screening questions; the organisation edits them before publishing. Questions lock once someone applies (ADR-032).
 - FR-10 (2026-09-26): Jobs are recommended to users from their resume skills (profile skills as a fallback) matched against each listing's required skills (ADR-033).
 - FR-11 (2026-09-26): Applying requires answering every screening question. The LLM scores the resume against the listing's skills and requirements and scores the answers; organisations see resume, answer and overall scores and filter applicants by minimum score and apply time. Users never see scores (ADR-033).
+- FR-12 (2026-09-26): An organisation can give each listing a customizable hiring pipeline (interviews, tests, assignments, other steps), copy it from another listing, or have the LLM suggest one from the listing's job description (ADR-037).
+- FR-13 (2026-09-26): The organisation moves candidates through the pipeline and schedules interviews and tests (India time). Scheduling creates a Google Calendar event from the platform account with a Google Meet link for interviews, invites the candidate and interviewers, and sends VenturePath emails; reschedule and cancel notify everyone (ADR-035).
+- FR-14 (2026-09-26): Organisations invite employees as Hiring Managers by email. A Hiring Manager has a dashboard of the interviews they are assigned to and submits feedback (rating, recommendation, notes) that only the organisation sees (ADR-036). An "AI Hiring Manager" is shown as coming soon and is not available.
 - TBD: application flow, messaging, verification of users/organisations, payments, reviews/ratings, notifications.
 
 ## Non-Functional Requirements

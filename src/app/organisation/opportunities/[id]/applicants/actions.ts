@@ -3,9 +3,37 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/authz";
 import { decideApplication } from "@/lib/applications";
+import { advanceCandidate, failCandidate, moveCandidate } from "@/lib/pipeline-progress";
+import {
+  cancelScheduledEvent,
+  rescheduleEvent,
+  retryCalendarSync,
+  scheduleEvent,
+} from "@/lib/scheduling";
+import type { ProgressFailure, ScheduleFailure } from "@/lib/hiring/types";
 import { getLogger } from "@/lib/logger";
 import { reanalyzeForOrganisation } from "@/lib/resume-analysis";
 import { flash } from "@/lib/flash";
+
+const PROGRESS_ERRORS: Record<ProgressFailure, string> = {
+  not_found: "Application not found.",
+  stale: "This candidate's stage changed. Reload the page and try again.",
+  invalid: "This listing's pipeline changed. Reload the page and try again.",
+};
+
+const SCHEDULE_ERRORS: Record<ScheduleFailure, string> = {
+  not_found: "Application or event not found.",
+  invalid: "Check the schedule details.",
+  in_past: "Choose a time in the future.",
+  wrong_stage: "The candidate is no longer at that stage. Reload the page.",
+  bad_interviewer: "One of the chosen interviewers is no longer available. Reload the page.",
+  stale: "This event changed. Reload the page and try again.",
+};
+
+const revalidateApplicants = () => revalidatePath("/organisation/opportunities", "layout");
+
+const stringOrNull = (value: FormDataEntryValue | null): string | null =>
+  typeof value === "string" && value.length > 0 ? value : null;
 
 export type ReanalyzeState =
   { status: "idle" } | { status: "done" } | { status: "error"; message: string };
@@ -58,4 +86,148 @@ export async function decideAction(formData: FormData): Promise<void> {
     );
   }
   revalidatePath("/organisation/opportunities");
+}
+
+function interviewerIdsFrom(formData: FormData): string[] {
+  return formData
+    .getAll("interviewerUserIds")
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
+}
+
+export async function advanceAction(formData: FormData): Promise<void> {
+  const session = await requireRole("organisation");
+  const applicationId = formData.get("applicationId");
+  if (typeof applicationId !== "string") return;
+  const expectedStageId = stringOrNull(formData.get("expectedStageId"));
+
+  const result = await advanceCandidate(session.user.id, applicationId, expectedStageId);
+  await flash(
+    result.ok ? "success" : "error",
+    result.ok
+      ? result.accepted
+        ? "Candidate passed the final stage and was accepted."
+        : "Candidate advanced to the next stage."
+      : PROGRESS_ERRORS[result.reason],
+  );
+  revalidateApplicants();
+}
+
+export async function failAction(formData: FormData): Promise<void> {
+  const session = await requireRole("organisation");
+  const applicationId = formData.get("applicationId");
+  if (typeof applicationId !== "string") return;
+  const expectedStageId = stringOrNull(formData.get("expectedStageId"));
+
+  const result = await failCandidate(session.user.id, applicationId, expectedStageId);
+  await flash(
+    result.ok ? "success" : "error",
+    result.ok ? "Candidate rejected." : PROGRESS_ERRORS[result.reason],
+  );
+  revalidateApplicants();
+}
+
+export async function moveAction(formData: FormData): Promise<void> {
+  const session = await requireRole("organisation");
+  const applicationId = formData.get("applicationId");
+  if (typeof applicationId !== "string") return;
+  const expectedStageId = stringOrNull(formData.get("expectedStageId"));
+  const targetRaw = stringOrNull(formData.get("targetStageId"));
+  const targetStageId = targetRaw === "applied" ? null : targetRaw;
+
+  const result = await moveCandidate(
+    session.user.id,
+    applicationId,
+    expectedStageId,
+    targetStageId,
+  );
+  await flash(
+    result.ok ? "success" : "error",
+    result.ok ? "Candidate moved." : PROGRESS_ERRORS[result.reason],
+  );
+  revalidateApplicants();
+}
+
+export async function scheduleAction(formData: FormData): Promise<void> {
+  const session = await requireRole("organisation");
+  const applicationId = formData.get("applicationId");
+  const stageId = formData.get("stageId");
+  const startsAtLocal = formData.get("startsAtLocal");
+  const durationMinutes = Number(formData.get("durationMinutes"));
+  if (
+    typeof applicationId !== "string" ||
+    typeof stageId !== "string" ||
+    typeof startsAtLocal !== "string"
+  ) {
+    await flash("error", "Check the schedule form.");
+    revalidateApplicants();
+    return;
+  }
+
+  const result = await scheduleEvent(session.user.id, {
+    applicationId,
+    stageId,
+    startsAtLocal,
+    durationMinutes,
+    interviewerUserIds: interviewerIdsFrom(formData),
+  });
+  await flash(
+    result.ok ? "success" : "error",
+    result.ok ? "Interview scheduled." : (result.message ?? SCHEDULE_ERRORS[result.reason]),
+  );
+  revalidateApplicants();
+}
+
+export async function rescheduleAction(formData: FormData): Promise<void> {
+  const session = await requireRole("organisation");
+  const eventId = formData.get("eventId");
+  const startsAtLocal = formData.get("startsAtLocal");
+  const durationMinutes = Number(formData.get("durationMinutes"));
+  const expectedUpdatedAtRaw = formData.get("expectedUpdatedAt");
+  if (
+    typeof eventId !== "string" ||
+    typeof startsAtLocal !== "string" ||
+    typeof expectedUpdatedAtRaw !== "string"
+  ) {
+    await flash("error", "Check the reschedule form.");
+    revalidateApplicants();
+    return;
+  }
+
+  const result = await rescheduleEvent(session.user.id, eventId, {
+    startsAtLocal,
+    durationMinutes,
+    interviewerUserIds: interviewerIdsFrom(formData),
+    expectedUpdatedAt: new Date(expectedUpdatedAtRaw),
+  });
+  await flash(
+    result.ok ? "success" : "error",
+    result.ok ? "Interview rescheduled." : (result.message ?? SCHEDULE_ERRORS[result.reason]),
+  );
+  revalidateApplicants();
+}
+
+export async function cancelEventAction(formData: FormData): Promise<void> {
+  const session = await requireRole("organisation");
+  const eventId = formData.get("eventId");
+  if (typeof eventId !== "string") return;
+
+  const result = await cancelScheduledEvent(session.user.id, eventId);
+  await flash(
+    result.ok ? "success" : "error",
+    result.ok ? "Interview cancelled." : (result.message ?? SCHEDULE_ERRORS[result.reason]),
+  );
+  revalidateApplicants();
+}
+
+export async function retrySyncAction(formData: FormData): Promise<void> {
+  const session = await requireRole("organisation");
+  const eventId = formData.get("eventId");
+  if (typeof eventId !== "string") return;
+
+  const result = await retryCalendarSync(session.user.id, eventId);
+  await flash(
+    result.ok ? "success" : "error",
+    result.ok ? "Calendar sync retried." : (result.message ?? SCHEDULE_ERRORS[result.reason]),
+  );
+  revalidateApplicants();
 }
