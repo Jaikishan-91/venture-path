@@ -11,7 +11,8 @@ Added:
 - Apply with proof (Module 4): up to 3 proof cards, resume optional (at least one of the two); optional apply task on listings whose answer becomes a proof card; applicants page shows proof cards first; screening scores proof text when there is no resume (ADR-043).
 - AI interviewer, chat (Module 5): `ai_interview` pipeline stage; "Send AI interview" bulk action; emailed one-attempt link `/interview/[token]` (3 days); consent, 6 questions (from the job and the student's proof) with at most one follow-up each, paste and tab-leave flags; sign-in returns to the link (`?next=` limited to `/interview/<token>`); `ai_interview` stages are never scheduled; `pipeline_suggest` proposes AI interview → live interview for junior roles (ADR-044).
 - AI interview report (Module 6): two passes (verbatim evidence quotes, then 0–5 per skill), recommendation computed in code, owner-only panel with chat transcript and "Retry report" (ADR-044).
-- `THIRD_PARTY_NOTICES.md` (FoloUp, aural-oss; MIT).
+- Voice mode for the AI interview (beta, behind `VOICE_INTERVIEW_ENABLED`): `voice-agent/` Python sidecar (LiveKit Agents + Gemini Live, adapted from DeepInterview), LiveKit dev server under the `voice` Compose profile, voice-agent and LiveKit token routes, `VoiceRoom` with live captions and Switch to chat; npm `livekit-server-sdk` 2.19.3, `livekit-client` 2.24.0, `@livekit/components-react` 2.9.25 (ADR-045).
+- `THIRD_PARTY_NOTICES.md` (FoloUp, aural-oss: MIT; DeepInterview: Apache-2.0).
 - Navigation: students Home · Challenges · Jobs · My Proof · Applied · Profile (Resumes linked from My Proof); organisations gain Challenges, "Listings" renamed "Jobs".
 - Tests: `tests/{challenges,challenge-schemas,proofs,proof-schemas,proof-check,ai-interview,ai-interview-report,ai-interview-schemas}.test.ts`, extended `tests/applications.test.ts`.
 
@@ -20,7 +21,7 @@ Changed:
 - The disabled "AI Hiring Manager — coming soon" options are gone (replaced by the AI interview stage).
 - Text AI now runs on Gemini (`gemini-3.5-flash`, OpenAI-compatible endpoint); Docker Postgres host port is configurable (`POSTGRES_HOST_PORT`).
 
-Verified: `npm run typecheck`, `npm run lint` (0 errors), `npm test` 524/525 (the one failure predates v2, see BLOCKERS). Live Gemini: question plan ~10 s, follow-up 3–4 s, report ~20 s (one run's evidence pass failed fast, likely a 503 → "Retry report" path).
+Verified: `npm run typecheck`, `npm run lint` (0 errors), `npm test` 539/540, `uv run pytest` 27/27 in `voice-agent/` (the one failure predates v2, see BLOCKERS). Live Gemini: question plan ~10 s, follow-up 3–4 s, report ~20 s (one run's evidence pass failed fast, likely a 503 → "Retry report" path).
 
 ## 2026-09-26 — Hiring pipelines, interviews and hiring managers
 
