@@ -15,6 +15,7 @@ import {
   type OpportunityResult,
 } from "@/lib/opportunities";
 import { parseQuestions, opportunitySchema } from "@/lib/opportunity-schemas";
+import { applyTaskSchema } from "@/lib/proof-schemas";
 import { flash } from "@/lib/flash";
 import { assistListing, assistOwnListing, type AssistResult } from "@/lib/listing-assist";
 
@@ -45,6 +46,11 @@ export async function saveOpportunityAction(
   if (!parsed.success) {
     return { status: "error", message: parsed.error.issues[0]?.message ?? "Check the form" };
   }
+  const applyTask = applyTaskSchema.safeParse(values.applyTask ?? "");
+  if (!applyTask.success) {
+    return { status: "error", message: applyTask.error.issues[0]?.message ?? "Check the form" };
+  }
+  const input = { ...parsed.data, applyTask: applyTask.data };
   // Locked question lists are shown read-only and not submitted: leave them untouched.
   const questions = values.questionsEditable
     ? parseQuestions(
@@ -56,8 +62,8 @@ export async function saveOpportunityAction(
   let result: OpportunityResult<{ id?: string }>;
   try {
     result = values.id
-      ? await updateOpportunity(session.user.id, values.id, parsed.data, questions?.questions)
-      : await createOpportunity(session.user.id, parsed.data, questions?.questions ?? []);
+      ? await updateOpportunity(session.user.id, values.id, input, questions?.questions)
+      : await createOpportunity(session.user.id, input, questions?.questions ?? []);
   } catch (err) {
     getLogger().error({ userId: session.user.id, err }, "opportunity save failed");
     return { status: "error", message: "Something went wrong. Please try again." };

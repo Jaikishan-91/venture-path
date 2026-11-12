@@ -70,6 +70,7 @@ export default async function EditOpportunityPage({ params }: { params: Promise<
               experienceLevel: opportunity.experienceLevel ?? "",
               compensationMin: opportunity.compensationMin?.toString() ?? "",
               compensationMax: opportunity.compensationMax?.toString() ?? "",
+              applyTask: opportunity.applyTask ?? "",
             }}
           />
           {pipeline && (

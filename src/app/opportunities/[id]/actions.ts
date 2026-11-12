@@ -15,6 +15,8 @@ import { MAX_LIBRARY_RESUMES } from "@/lib/resume-library";
 import { getLogger } from "@/lib/logger";
 import { displayFileName, resumeExtension, resumeFileError } from "@/lib/resumes";
 import { flash } from "@/lib/flash";
+import { parseProofIds, parseTaskAnswer } from "@/lib/proof-schemas";
+import { MAX_APPLICATION_PROOFS } from "@/lib/v2/types";
 
 export type ApplyState =
   { status: "idle" } | { status: "error"; message: string } | { status: "done" };
@@ -26,6 +28,9 @@ const APPLY_ERRORS: Record<ApplyFailure, string> = {
   resume_not_found: "Choose one of your resumes.",
   resume_limit: `Your resume library is full (${MAX_LIBRARY_RESUMES}). Pick an existing resume or delete one first.`,
   answers_mismatch: "The questions changed. Reload the page and answer them again.",
+  needs_evidence: "Attach at least one proof card or a resume.",
+  proof_not_found: `Choose up to ${MAX_APPLICATION_PROOFS} of your own proof cards.`,
+  task_required: "Answer the task before applying.",
 };
 
 export async function applyAction(_prev: ApplyState, formData: FormData): Promise<ApplyState> {
@@ -40,8 +45,21 @@ export async function applyAction(_prev: ApplyState, formData: FormData): Promis
     return { status: "error", message: `Keep the note under ${MAX_NOTE_LENGTH} characters` };
   }
 
-  let resume: ApplyResume;
-  if (choice === "upload") {
+  const proofs = parseProofIds(formData.getAll("proofIds"));
+  if (!proofs.ok) return { status: "error", message: proofs.message };
+  const taskValue = formData.get("taskAnswer");
+  let taskAnswer: string | undefined;
+  if (taskValue !== null) {
+    const task = parseTaskAnswer(taskValue);
+    if (!task.ok) return { status: "error", message: task.message };
+    taskAnswer = task.answer;
+  }
+
+  // "none" applies with proof cards only (docs/PRODUCT.md Module 4).
+  let resume: ApplyResume | Record<string, never>;
+  if (choice === "none") {
+    resume = {};
+  } else if (choice === "upload") {
     const file = formData.get("resume");
     if (!(file instanceof File)) return { status: "error", message: "Choose a resume file" };
     const fileError = resumeFileError(file);
@@ -68,6 +86,8 @@ export async function applyAction(_prev: ApplyState, formData: FormData): Promis
     const result = await applyToOpportunity(session.user.id, opportunityId, {
       note,
       answers: answers.answers,
+      proofIds: proofs.ids,
+      taskAnswer,
       ...resume,
     });
     if (!result.ok) return { status: "error", message: APPLY_ERRORS[result.reason] };

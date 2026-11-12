@@ -17,6 +17,7 @@ import {
   WORK_MODE_LABELS,
   WORK_MODES,
 } from "@/lib/opportunity-schemas";
+import { MAX_APPLY_TASK_LENGTH } from "@/lib/v2/types";
 import { saveOpportunityAction, type OpportunityFormState } from "./actions";
 import { QuestionsEditor, type QuestionValue } from "./questions-editor";
 
@@ -37,6 +38,7 @@ export type OpportunityValues = {
   experienceLevel: string;
   compensationMin: string;
   compensationMax: string;
+  applyTask: string;
 };
 
 const selectClass =
@@ -292,6 +294,22 @@ export function OpportunityForm({
         </div>
       </div>
       <QuestionsEditor initial={questions} locked={questionsLocked} />
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="applyTask">Apply task (optional)</Label>
+        <Textarea
+          id="applyTask"
+          name="applyTask"
+          defaultValue={values.applyTask}
+          maxLength={MAX_APPLY_TASK_LENGTH}
+          rows={3}
+          aria-describedby="applyTask-hint"
+          placeholder="e.g. Write 3 Instagram captions for our Diwali sweets box."
+        />
+        <p id="applyTask-hint" className="text-xs text-muted-foreground">
+          A small task (30–60 minutes) every applicant must answer. Their answer becomes a proof
+          card you can see.
+        </p>
+      </div>
       {!values.id && aiEnabled && (
         <p className="text-xs text-muted-foreground">
           When you save, AI adds the skills this listing needs and, if you wrote no questions,

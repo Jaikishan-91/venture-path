@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ProofCard } from "@/components/proof/proof-card";
 import { RoleHome } from "@/components/role-home";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { listInterviewerOptions } from "@/lib/team";
 import { listFeedbackForApplications, type FeedbackView } from "@/lib/interview-feedback";
 import { listEventsForApplications, type ScheduledEventView } from "@/lib/scheduling";
 import { createLlmClient } from "@/lib/llm/provider";
+import { sortByProofLevel } from "@/lib/proof-schemas";
 import { decideAction } from "./actions";
 import { ApplicantFilters } from "./applicant-filters";
 import { PipelinePanel } from "./pipeline-panel";
@@ -101,6 +103,15 @@ export default async function ApplicantsPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 text-sm">
+              {/* Proof cards first, strongest badge first (docs/PRODUCT.md Module 4). */}
+              {application.proofs.length > 0 && (
+                <section aria-label="Proof" className="flex flex-col gap-2">
+                  <h3 className="text-xs font-medium text-[#4a4d53]">Proof</h3>
+                  {sortByProofLevel(application.proofs).map((proof) => (
+                    <ProofCard key={proof.id} proof={proof} compact />
+                  ))}
+                </section>
+              )}
               {application.userProfile.skills.length > 0 && (
                 <p>{application.userProfile.skills.join(", ")}</p>
               )}
