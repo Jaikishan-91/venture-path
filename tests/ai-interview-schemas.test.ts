@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   answerInputSchema,
+  applyEvidenceRules,
   computeRecommendation,
+  MAX_EVIDENCE_QUOTES,
+  quotesByQuestion,
   fallbackQuestions,
   parseEvidence,
   parseFollowUp,
@@ -14,7 +17,7 @@ import {
 import { parsePipelineSuggestion } from "@/lib/pipeline-assist";
 import { parsePipelineStages } from "@/lib/pipeline-schemas";
 import { parseScheduleInput } from "@/lib/scheduling-schemas";
-import { MAX_INTERVIEW_ANSWER_LENGTH } from "@/lib/v2/types";
+import { interviewScore, MAX_INTERVIEW_ANSWER_LENGTH } from "@/lib/v2/types";
 
 const plan = (kinds: string[]) =>
   JSON.stringify({
@@ -146,6 +149,132 @@ describe("quotes", () => {
     expect(
       parseReport('{"skills":[{"skill":"Motivation","score":2.5}]}', ["Motivation"], answers),
     ).toBeNull();
+  });
+
+  it("parseReport reads per-question scores only for the plan's ids", () => {
+    const reply = JSON.stringify({
+      skills: [{ skill: "Motivation", score: "3", quote: "" }],
+      questions: [
+        { questionId: "q2", score: 3, reason: "  Clear hours,\n tied to the shop.  " },
+        { questionId: "q1", score: "2", reason: "Generic." },
+        { questionId: "q7", score: 4, reason: "Unknown id." },
+        { questionId: "q1", score: 5, reason: "Repeat." },
+        { questionId: "q2", score: 6, reason: "Out of range." },
+        { questionId: "q3", score: 1.5, reason: "Not whole." },
+        { questionId: "q3", score: "", reason: "Empty." },
+        "junk",
+      ],
+      strengths: [],
+      concerns: [],
+      summary: "",
+    });
+    expect(parseReport(reply, ["Motivation"], answers, ["q1", "q2", "q3"])!.questions).toEqual([
+      { questionId: "q1", score: 2, reason: "Generic." },
+      { questionId: "q2", score: 3, reason: "Clear hours, tied to the shop." },
+    ]);
+    // Without the plan's ids (old callers) there is no per-question list.
+    expect(parseReport(reply, ["Motivation"], answers)!.questions).toBeUndefined();
+    // A missing list is an empty one, not an invalid report.
+    expect(
+      parseReport('{"skills":[{"skill":"Motivation","score":1}]}', ["Motivation"], answers, ["q1"])!
+        .questions,
+    ).toEqual([]);
+  });
+
+  it("parseEvidence keeps up to MAX_EVIDENCE_QUOTES per skill", () => {
+    const texts = ["one two three. four five six. seven eight nine. ten eleven. twelve!"];
+    const evidence = parseEvidence(
+      JSON.stringify({
+        evidence: [
+          {
+            skill: "SEO",
+            quotes: ["one two three", "four five six", "seven eight nine", "ten eleven", "twelve"],
+          },
+        ],
+      }),
+      ["SEO"],
+      texts,
+    );
+    expect(evidence![0].quotes).toHaveLength(MAX_EVIDENCE_QUOTES);
+  });
+
+  it("quotesByQuestion attributes quotes to the answer (or follow-up) they came from", () => {
+    const at = new Date().toISOString();
+    const questions = [
+      { id: "q1", kind: "skill" as const, skill: "SEO", text: "SEO?" },
+      { id: "q2", kind: "proof" as const, skill: "SEO", text: "Your project?" },
+    ];
+    const turns = [
+      { role: "student" as const, text: "I ranked a bakery site first.", questionId: "q1", at },
+      {
+        role: "student" as const,
+        text: "Traffic doubled in a month.",
+        questionId: "q1",
+        followUp: true,
+        at,
+      },
+      { role: "student" as const, text: "I built the shop's Instagram.", questionId: "q2", at },
+    ];
+    const byQuestion = quotesByQuestion(
+      [
+        {
+          skill: "SEO",
+          quotes: ["ranked a bakery site first", "Traffic doubled", "built the shop's Instagram"],
+        },
+      ],
+      questions,
+      turns,
+    );
+    expect(byQuestion.get("q1")).toEqual(["ranked a bakery site first", "Traffic doubled"]);
+    expect(byQuestion.get("q2")).toEqual(["built the shop's Instagram"]);
+  });
+
+  it("applyEvidenceRules zeroes skills without quotes and unanswered questions", () => {
+    const result = applyEvidenceRules(
+      {
+        skills: [
+          { skill: "SEO", score: 4, quote: "x" },
+          { skill: "Canva", score: 5, quote: "y" },
+        ],
+        strengths: [],
+        concerns: [],
+        summary: "",
+        questions: [
+          { questionId: "q1", score: 4, reason: "Specific." },
+          { questionId: "q2", score: 3, reason: "Made up." },
+        ],
+      },
+      [
+        { skill: "SEO", quotes: ["x"] },
+        { skill: "Canva", quotes: [] },
+      ],
+      new Set(["q1"]),
+    );
+    expect(result.skills).toEqual([
+      { skill: "SEO", score: 4, quote: "x" },
+      { skill: "Canva", score: 0, quote: "" },
+    ]);
+    expect(result.questions).toEqual([
+      { questionId: "q1", score: 4, reason: "Specific." },
+      { questionId: "q2", score: 0, reason: "No answer." },
+    ]);
+  });
+});
+
+describe("interviewScore", () => {
+  it("is the 0–100 mean of the 0–5 skill scores and agrees with the recommendation bands", () => {
+    expect(interviewScore(null)).toBeNull();
+    expect(interviewScore({ skills: [] })).toBeNull();
+    const report = (scores: number[]) => ({
+      skills: scores.map((score, index) => ({ skill: `s${index}`, score, quote: "" })),
+    });
+    expect(interviewScore(report([5, 5, 5]))).toBe(100);
+    expect(interviewScore(report([4, 3]))).toBe(70);
+    expect(computeRecommendation([4, 3])).toBe("strong");
+    expect(interviewScore(report([3, 2]))).toBe(50);
+    expect(computeRecommendation([3, 2])).toBe("maybe");
+    expect(interviewScore(report([2, 2, 3]))).toBe(47);
+    expect(computeRecommendation([2, 2, 3])).toBe("not_fit");
   });
 });
 

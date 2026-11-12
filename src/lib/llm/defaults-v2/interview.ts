@@ -28,7 +28,11 @@ Question: {{question}}
 
 Return JSON only: {"followUp": "..."} or {"followUp": null}`,
 
-  interview_evidence: `You read the transcript of a student's written or spoken interview for the role "{{title}}". For each skill below, copy the sentences from the STUDENT'S answers that show (or fail to show) that skill. Copy them word for word from the student's answers; never rephrase, never quote the interviewer, never invent. Use at most 3 short quotes per skill (each under 300 characters). If the student said nothing relevant to a skill, give it an empty list.
+  interview_evidence: `You read the transcript of a student's written or spoken interview for the role "{{title}}". For each skill below, copy the sentences from the STUDENT'S answers that show (or fail to show) that skill. Copy them word for word from the student's answers, exactly as written (keep Hinglish, spelling mistakes and short forms); never rephrase, never fix grammar, never quote the interviewer, never invent.
+- Use at most 4 short quotes per skill, each under 300 characters.
+- Prefer sentences with concrete detail (what they did, where, how, numbers, results). If an answer is only a vague claim ("I am good at it", "I will work hard"), copy that claim so the scorer sees what was actually said.
+- When several questions test the same skill, take at least one quote from each relevant answer.
+- If the student said nothing relevant to a skill, give it an empty list.
 
 Skills: {{skills}}
 
@@ -36,14 +40,28 @@ Skills: {{skills}}
 
 Return JSON only: {"evidence": [{"skill": "...", "quotes": ["..."]}]}`,
 
-  interview_report: `You write an advisory interview report for a small business owner hiring for the role "{{title}}". Use ONLY the quotes below, which are the student's own words, grouped by skill. Do not assume anything that is not in the quotes.
+  interview_report: `You write an advisory interview report for a small business owner hiring for the role "{{title}}". Use ONLY the quotes inside the evidence below. They are the student's own words, grouped by skill and by question. Do not assume anything that is not in the quotes. Be a strict, fair scorer: a 4 or 5 must be earned by concrete detail in the quotes.
 
-For each skill give a whole-number score from 0 to 5:
-0 = no evidence, 1 = very weak, 2 = weak, 3 = adequate, 4 = good, 5 = excellent with concrete detail.
-For each skill also pick the single quote that best supports the score (copied exactly from the quotes given, or "" if there are none).
-Then list up to 3 strengths, up to 3 concerns the owner should check in a live interview, and a summary of 2 sentences or fewer. Plain words, no jargon. Judge only what was said, not grammar or accent.
+Score every skill and every question with a whole number from 0 to 5 on this scale:
+0 = no answer, nothing relevant, or no quotes.
+1 = a vague claim with no example ("I am good at marketing", "I am hard-working").
+2 = a generic example anyone could give, without names, numbers or details ("I made some posts for a shop").
+3 = one specific, real example: what they did and where, with at least one concrete detail.
+4 = a specific example with the method (how they did it) and a result (a number, an outcome or feedback).
+5 = several specific examples with results, clearly useful for this business.
+For a situation question read "example" as "plan": 2 = a textbook answer ("I will talk to the customer and solve it"), 3 = clear concrete steps, 4–5 = concrete steps that fit this business, backed by reasons or past experience.
+For motivation and availability: 1 = generic ("I want to learn"), 2 = a general reason, 3 = a concrete reason tied to this role or business plus clear hours, 4–5 = also real interest shown with specifics (what they know about the business, what they already did).
+
+Rules:
+- Score only from the quotes. A skill or question with no quotes scores 0.
+- A generic or textbook answer cannot score above 2, however well written.
+- Do not reward length, confidence, buzzwords or claims such as "I am an expert"; reward concrete, checkable detail.
+- Ignore grammar, spelling, accent and English level. Simple English or Hinglish is fine and never lowers a score.
+- Each skill: pick the single quote that best supports its score (copied exactly from the quotes given, or "" when there are none).
+- Each question (by its id, e.g. "q1"): a one-line reason in plain English, under 20 words, saying what was specific or what was missing.
+- Strengths: 2 or 3 short points backed by the quotes (fewer only if the quotes show none). Concerns: 2 or 3 things the owner should check in the live interview. Summary: 2 sentences or fewer. Plain words, no jargon. Never say whether to hire or reject.
 
 {{evidence}}
 
-Return JSON only: {"skills": [{"skill": "...", "score": 0, "quote": "..."}], "strengths": ["..."], "concerns": ["..."], "summary": "..."}`,
+Return JSON only: {"skills": [{"skill": "...", "score": 0, "quote": "..."}], "questions": [{"questionId": "q1", "score": 0, "reason": "..."}], "strengths": ["..."], "concerns": ["..."], "summary": "..."}`,
 } as const;

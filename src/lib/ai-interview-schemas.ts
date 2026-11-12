@@ -267,6 +267,10 @@ export function quoteInAnswers(quote: string, studentTexts: string[]): boolean {
   return studentTexts.some((text) => normalise(text).includes(needle));
 }
 
+/** Quotes Pass A may keep per skill (a skill probed by two questions needs room for both). */
+export const MAX_EVIDENCE_QUOTES = 4;
+const MAX_REASON_LENGTH = 200;
+
 const matchSkill = (raw: unknown, skills: string[]): string | null => {
   const name = cleanText(raw, MAX_SKILL_NAME_LENGTH * 2).toLowerCase();
   return skills.find((skill) => skill.toLowerCase() === name) ?? null;
@@ -292,13 +296,43 @@ export function parseEvidence(
     if (!skill || !Array.isArray(record.quotes)) continue;
     const list = bySkill.get(skill)!;
     for (const quote of record.quotes) {
-      if (typeof quote !== "string" || list.length >= MAX_REPORT_ITEMS) continue;
+      if (typeof quote !== "string" || list.length >= MAX_EVIDENCE_QUOTES) continue;
       const clean = stripQuote(quote).slice(0, MAX_QUOTE_LENGTH);
       if (quoteInAnswers(clean, studentTexts) && !list.includes(clean)) list.push(clean);
     }
   }
   return skills.map((skill) => ({ skill, quotes: bySkill.get(skill)! }));
 }
+
+/**
+ * The verified quotes grouped by the question whose answer (or follow-up answer) contains them.
+ * A quote found in several answers goes to the first question. Lets Pass B score each question
+ * from quotes only.
+ */
+export function quotesByQuestion(
+  evidence: { skill: string; quotes: string[] }[],
+  questions: InterviewQuestion[],
+  transcript: TranscriptTurn[],
+): Map<string, string[]> {
+  const answers = new Map<string, string[]>(questions.map((question) => [question.id, []]));
+  for (const turn of transcript) {
+    if (turn.role === "student") answers.get(turn.questionId)?.push(turn.text);
+  }
+  const result = new Map<string, string[]>(questions.map((question) => [question.id, []]));
+  for (const quote of evidence.flatMap((entry) => entry.quotes)) {
+    const owner = questions.find((question) => quoteInAnswers(quote, answers.get(question.id)!));
+    const list = owner ? result.get(owner.id)! : null;
+    if (list && !list.includes(quote)) list.push(quote);
+  }
+  return result;
+}
+
+const wholeScore = (value: unknown): number | null => {
+  const score = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
+  return typeof score === "number" && Number.isInteger(score) && score >= 0 && score <= 5
+    ? score
+    : null;
+};
 
 const textList = (value: unknown): string[] =>
   Array.isArray(value)
@@ -311,12 +345,14 @@ const textList = (value: unknown): string[] =>
 /**
  * Parse Pass B (`interview_report`) into an `InterviewReport`. Scores must be whole numbers 0–5
  * (invalid entries are dropped); a quote not found in the student's answers is replaced by "".
- * Null when no skill could be scored.
+ * With `questionIds` (the plan's ids) the per-question list is parsed too: unknown or repeated
+ * ids and invalid scores are dropped and plan order is kept. Null when no skill could be scored.
  */
 export function parseReport(
   content: string,
   skills: string[],
   studentTexts: string[],
+  questionIds?: string[],
 ): InterviewReport | null {
   const parsed = parseJsonObject(content);
   if (!parsed || !Array.isArray(parsed.skills)) return null;
@@ -325,9 +361,8 @@ export function parseReport(
     if (!item || typeof item !== "object") continue;
     const record = item as Record<string, unknown>;
     const skill = matchSkill(record.skill, skills);
-    const score = typeof record.score === "string" ? Number(record.score) : record.score;
-    if (!skill || scored.some((entry) => entry.skill === skill)) continue;
-    if (typeof score !== "number" || !Number.isInteger(score) || score < 0 || score > 5) continue;
+    const score = wholeScore(record.score);
+    if (!skill || score === null || scored.some((entry) => entry.skill === skill)) continue;
     const rawQuote = typeof record.quote === "string" ? stripQuote(record.quote) : "";
     const quote = quoteInAnswers(rawQuote, studentTexts) ? rawQuote.slice(0, MAX_QUOTE_LENGTH) : "";
     scored.push({ skill, score, quote });
@@ -335,17 +370,68 @@ export function parseReport(
   if (scored.length === 0) return null;
   // Keep the plan's skill order.
   scored.sort((a, b) => skills.indexOf(a.skill) - skills.indexOf(b.skill));
-  return {
+  const report: InterviewReport = {
     skills: scored,
     strengths: textList(parsed.strengths),
     concerns: textList(parsed.concerns),
     summary: cleanText(parsed.summary, MAX_SUMMARY_LENGTH),
   };
+  if (questionIds) report.questions = parseQuestionScores(parsed.questions, questionIds);
+  return report;
+}
+
+function parseQuestionScores(
+  value: unknown,
+  questionIds: string[],
+): NonNullable<InterviewReport["questions"]> {
+  if (!Array.isArray(value)) return [];
+  const scored: NonNullable<InterviewReport["questions"]> = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const record = item as Record<string, unknown>;
+    const questionId = typeof record.questionId === "string" ? record.questionId.trim() : "";
+    const score = wholeScore(record.score);
+    if (!questionIds.includes(questionId) || score === null) continue;
+    if (scored.some((entry) => entry.questionId === questionId)) continue;
+    scored.push({ questionId, score, reason: cleanText(record.reason, MAX_REASON_LENGTH) });
+  }
+  return scored.sort(
+    (a, b) => questionIds.indexOf(a.questionId) - questionIds.indexOf(b.questionId),
+  );
+}
+
+/**
+ * Evidence rules enforced in code after Pass B, so the model can't score what it was never
+ * shown: a skill with no verified quotes scores 0, a question the student never answered scores 0.
+ */
+export function applyEvidenceRules(
+  report: InterviewReport,
+  evidence: { skill: string; quotes: string[] }[],
+  answeredQuestionIds: ReadonlySet<string>,
+): InterviewReport {
+  const quoted = new Set(
+    evidence.filter((entry) => entry.quotes.length > 0).map((entry) => entry.skill),
+  );
+  const result: InterviewReport = {
+    ...report,
+    skills: report.skills.map((entry) =>
+      quoted.has(entry.skill) ? entry : { ...entry, score: 0, quote: "" },
+    ),
+  };
+  if (report.questions) {
+    result.questions = report.questions.map((entry) =>
+      answeredQuestionIds.has(entry.questionId)
+        ? entry
+        : { ...entry, score: 0, reason: "No answer." },
+    );
+  }
+  return result;
 }
 
 /**
  * The recommendation, computed in code from the skill scores (never by the AI, docs/PRODUCT.md
  * Module 6): average ≥ 3.5 with no skill below 2 → strong; average ≥ 2.5 → maybe; else not_fit.
+ * On the 0–100 `interviewScore` that is ≥ 70 (and no skill below 2) → strong, ≥ 50 → maybe.
  */
 export function computeRecommendation(scores: number[]): InterviewRecommendation {
   if (scores.length === 0) return "not_fit";
