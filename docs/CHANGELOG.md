@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-11-12 — VenturePath v2: challenges, proof cards, AI interviewer
+
+Product spec: `docs/PRODUCT.md` (renamed from Pramaan). Plan: `plan/2026-11-12-venturepath-v2.md`. Built as Module 0 (foundation) plus four parallel work packages.
+
+Added:
+- Foundation: one migration `venturepath_v2_challenges_proof_interview` (`Challenge`, `ChallengeSubmission`, `Proof`, `InterviewSession`, application↔proof link, `Opportunity.applyTask`, `StageKind.ai_interview`); shared contract `src/lib/v2/types.ts`; `src/lib/uploads.ts`; per-package prompt defaults in `src/lib/llm/defaults-v2/`; `npm run llm:check`; `npm run db:seed:demo` (demo story data) (ADR-038, ADR-039).
+- Business challenges (Modules 1–2): approved organisations post a challenge with one form (problem, optional good-solution text, up to 3 judging points, ₹ money and/or hiring reward, India-time deadline, optional file) and "Make it clearer with AI". Students browse `/challenges` and send one editable solution (text, link, file) until the deadline. AI scores each solution 0–10 in the background from per-point scores with the student's own quotes, and flags near-identical solutions. Organisations pick a winner and optional runner-up, mark money paid or offer a hire, and close; emails for winner/runner-up, hire offer and not selected; the student's challenge proof card becomes Verified on placement (ADR-040, ADR-041).
+- Proof cards (Module 3): `/user/proof` with ⚪ Added / 🔵 Checked / 🟢 Verified badges; background check of manual cards (link responds, SSRF-guarded, content never read; AI judges "What I did" against the skills) (ADR-042).
+- Apply with proof (Module 4): up to 3 proof cards, resume optional (at least one of the two); optional apply task on listings whose answer becomes a proof card; applicants page shows proof cards first; screening scores proof text when there is no resume (ADR-043).
+- AI interviewer, chat (Module 5): `ai_interview` pipeline stage; "Send AI interview" bulk action; emailed one-attempt link `/interview/[token]` (3 days); consent, 6 questions (from the job and the student's proof) with at most one follow-up each, paste and tab-leave flags; sign-in returns to the link (`?next=` limited to `/interview/<token>`); `ai_interview` stages are never scheduled; `pipeline_suggest` proposes AI interview → live interview for junior roles (ADR-044).
+- AI interview report (Module 6): two passes (verbatim evidence quotes, then 0–5 per skill), recommendation computed in code, owner-only panel with chat transcript and "Retry report" (ADR-044).
+- `THIRD_PARTY_NOTICES.md` (FoloUp, aural-oss; MIT).
+- Navigation: students Home · Challenges · Jobs · My Proof · Applied · Profile (Resumes linked from My Proof); organisations gain Challenges, "Listings" renamed "Jobs".
+- Tests: `tests/{challenges,challenge-schemas,proofs,proof-schemas,proof-check,ai-interview,ai-interview-report,ai-interview-schemas}.test.ts`, extended `tests/applications.test.ts`.
+
+Changed:
+- `Application.resumeFileName/resumeStorageKey` are nullable; resume download, applicants and hiring-manager pages handle proof-only applications.
+- The disabled "AI Hiring Manager — coming soon" options are gone (replaced by the AI interview stage).
+- Text AI now runs on Gemini (`gemini-3.5-flash`, OpenAI-compatible endpoint); Docker Postgres host port is configurable (`POSTGRES_HOST_PORT`).
+
+Verified: `npm run typecheck`, `npm run lint` (0 errors), `npm test` 524/525 (the one failure predates v2, see BLOCKERS). Live Gemini: question plan ~10 s, follow-up 3–4 s, report ~20 s (one run's evidence pass failed fast, likely a 503 → "Retry report" path).
+
 ## 2026-09-26 — Hiring pipelines, interviews and hiring managers
 
 Added:
