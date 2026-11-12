@@ -8,10 +8,10 @@ import {
   applyToOpportunity,
   decideApplication,
   getResumeForUser,
-  listApplicants,
   withdrawApplication,
 } from "@/lib/applications";
 import { getDb } from "@/lib/db";
+import { loadCandidate } from "@/lib/hiring-board-data";
 import { createOpportunity, changeOpportunityStatus } from "@/lib/opportunities";
 import type { OpportunityInput } from "@/lib/opportunity-schemas";
 
@@ -166,11 +166,11 @@ describe("applications", () => {
     expect(await getResumeForUser(user.id, applied.id)).not.toBeNull();
     expect(await getResumeForUser(organisation.id, applied.id)).not.toBeNull();
     expect(await getResumeForUser(stranger.id, applied.id)).toBeNull();
-    expect(await decideApplication(other.id, applied.id, "accepted")).toEqual({
+    expect(await decideApplication(other.id, applied.id, "rejected")).toEqual({
       ok: false,
       reason: "invalid_state",
     });
-    expect(await decideApplication(organisation.id, applied.id, "accepted")).toEqual({ ok: true });
+    expect(await decideApplication(organisation.id, applied.id, "rejected")).toEqual({ ok: true });
     expect(await withdrawApplication(user.id, applied.id)).toEqual({
       ok: false,
       reason: "invalid_state",
@@ -234,11 +234,11 @@ describe("applying with proof (Module 4)", () => {
     expect(await attachedProofIds(applied.id)).toEqual([proof.id]);
     expect(await getResumeForUser(user.id, applied.id)).toMatchObject({ resumeStorageKey: null });
 
-    const { applicants } = await listApplicants(organisation.id, opportunityId);
-    expect(applicants[0].proofs).toEqual([
+    const candidate = await loadCandidate(organisation.id, opportunityId, applied.id);
+    expect(candidate?.proofs).toEqual([
       expect.objectContaining({ id: proof.id, title: "Shop posts", level: "checked" }),
     ]);
-    expect(applicants[0].proofs[0]).not.toHaveProperty("aiScore");
+    expect(candidate?.proofs[0]).not.toHaveProperty("aiScore");
   });
 
   it("needs a proof card or a resume, and only the applicant's own cards", async () => {

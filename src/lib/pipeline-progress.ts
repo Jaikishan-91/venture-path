@@ -1,5 +1,10 @@
 import "server-only";
-import { decideApplicationTx, notifyApplicationDecision } from "./applications";
+import {
+  NO_PENDING_OFFER,
+  decideApplicationTx,
+  notifyApplicationDecision,
+  reasonOrNull,
+} from "./applications";
 import { getDb } from "./db";
 import { getLogger } from "./logger";
 import { getOrderedStages } from "./pipelines";
@@ -10,8 +15,8 @@ import { expireOpenInterviews, openInterviewForStage } from "./ai-interview";
 
 /**
  * Moves a candidate through a listing's pipeline (WP4, D5/ADR-037): submitted = implicit
- * "Applied" stage; failing any stage (or a direct reject) rejects the application; passing the
- * last stage accepts it, exactly like `decideApplication`. Every function here is scoped to the
+ * "Applied" stage; failing any stage (or a direct reject) rejects the application; after the
+ * last stage the owner makes an offer (`offers.ts`) — advancing never hires anyone. Every function here is scoped to the
  * organisation that owns the listing (via the application's opportunity) and is conditional on
  * `expectedStageId`, the stage the caller's page showed — a mismatch (someone else changed the
  * candidate's stage meanwhile) fails with `stale` rather than silently overwriting it.
@@ -55,14 +60,15 @@ async function loadOwnedApplication(
 
 /**
  * Advances a candidate to the next stage (writing `StageEvent(passed)` for the stage they were
- * at, unless they were at "Applied"), or — from the last stage — accepts the application, exactly
- * like `decideApplication`.
+ * at, unless they were at "Applied"). From the last stage there is nowhere to move: the next step
+ * is "Make offer" (`offers.ts`), so this returns `last_stage` and changes nothing. Nobody is hired
+ * without an offer the student accepted (plan 2026-11-12-hiring-and-ai-interview-v2, D2).
  */
 export async function advanceCandidate(
   orgUserId: string,
   applicationId: string,
   expectedStageId: string | null,
-): Promise<Result<{ stageId: string | null; accepted: boolean }, ProgressFailure>> {
+): Promise<Result<{ stageId: string }, ProgressFailure>> {
   const application = await loadOwnedApplication(orgUserId, applicationId);
   if (!application) return { ok: false, reason: "not_found" };
 
@@ -72,30 +78,17 @@ export async function advanceCandidate(
   const currentIndex =
     expectedStageId === null ? -1 : stages.findIndex((stage) => stage.id === expectedStageId);
   if (expectedStageId !== null && currentIndex === -1) return { ok: false, reason: "invalid" };
-  const isLastStage = currentIndex === stages.length - 1;
   const nextStage = stages[currentIndex + 1];
+  if (!nextStage) return { ok: false, reason: "last_stage" };
 
   const result = await getDb().$transaction(async (tx) => {
-    if (isLastStage) {
-      const decided = await decideApplicationTx(
-        tx,
-        { id: applicationId, currentStageId: expectedStageId },
-        "accepted",
-      );
-      if (decided === 0) return { ok: false as const, reason: "stale" as const };
-      await tx.stageEvent.create({
-        data: {
-          applicationId,
-          stageId: expectedStageId as string,
-          outcome: "passed",
-          actorUserId: orgUserId,
-        },
-      });
-      return { ok: true as const, stageId: expectedStageId, accepted: true };
-    }
-
     const { count } = await tx.application.updateMany({
-      where: { id: applicationId, status: "submitted", currentStageId: expectedStageId },
+      where: {
+        AND: [
+          { id: applicationId, status: "submitted", currentStageId: expectedStageId },
+          NO_PENDING_OFFER,
+        ],
+      },
       data: { currentStageId: nextStage.id },
     });
     if (count === 0) return { ok: false as const, reason: "stale" as const };
@@ -109,39 +102,30 @@ export async function advanceCandidate(
         },
       });
     }
-    return { ok: true as const, stageId: nextStage.id, accepted: false };
+    return { ok: true as const, stageId: nextStage.id };
   });
 
   if (!result.ok) return result;
 
-  getLogger().info(
-    { orgUserId, applicationId, stageId: result.stageId, accepted: result.accepted },
-    "candidate advanced",
-  );
-  if (result.accepted) {
-    runInBackground("application decision email", { applicationId }, () =>
-      notifyApplicationDecision(applicationId, "accepted"),
-    );
-    await cancelFutureEventsForApplication(applicationId);
-  } else if (expectedStageId !== null) {
+  getLogger().info({ orgUserId, applicationId, stageId: result.stageId }, "candidate advanced");
+  if (expectedStageId !== null) {
     await cancelFutureEventsForStage(applicationId, expectedStageId);
   }
-  await syncAiInterview(
-    applicationId,
-    result.accepted ? null : result.stageId,
-    !result.accepted && nextStage?.kind === "ai_interview",
-  );
+  await syncAiInterview(applicationId, result.stageId, nextStage.kind === "ai_interview");
   return result;
 }
 
 /**
  * Fails a candidate at their current stage (writing `StageEvent(failed)`, unless they were at
- * "Applied") and rejects the application, exactly like `decideApplication`.
+ * "Applied") and marks the application "Not selected", exactly like `decideApplication`. The
+ * optional kind `reason` is stored and included in the email. Refused (`stale`) while an offer
+ * is pending.
  */
 export async function failCandidate(
   orgUserId: string,
   applicationId: string,
   expectedStageId: string | null,
+  reason: string | null = null,
 ): Promise<Result<object, ProgressFailure>> {
   const application = await loadOwnedApplication(orgUserId, applicationId);
   if (!application) return { ok: false, reason: "not_found" };
@@ -157,6 +141,7 @@ export async function failCandidate(
       tx,
       { id: applicationId, currentStageId: expectedStageId },
       "rejected",
+      reasonOrNull(reason),
     );
     if (count === 0) return 0;
     if (expectedStageId !== null) {
@@ -205,7 +190,12 @@ export async function moveCandidate(
 
   const count = await getDb().$transaction(async (tx) => {
     const updateResult = await tx.application.updateMany({
-      where: { id: applicationId, status: "submitted", currentStageId: expectedStageId },
+      where: {
+        AND: [
+          { id: applicationId, status: "submitted", currentStageId: expectedStageId },
+          NO_PENDING_OFFER,
+        ],
+      },
       data: { currentStageId: targetStageId },
     });
     if (updateResult.count === 0) return 0;

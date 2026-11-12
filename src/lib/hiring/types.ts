@@ -144,7 +144,9 @@ export type ProgressFailure =
   /** The candidate's stage or status changed since the page loaded. */
   | "stale"
   /** The listing has no pipeline, or the target stage is not in it. */
-  | "invalid";
+  | "invalid"
+  /** Advance from the last stage: the next step is an offer (`offers.ts`), not a move. */
+  | "last_stage";
 
 export type ScheduleInput = {
   applicationId: string;

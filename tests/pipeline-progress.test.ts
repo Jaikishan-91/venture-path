@@ -119,7 +119,7 @@ afterAll(async () => {
 });
 
 describe("advanceCandidate", () => {
-  it("moves Applied -> stage 1 -> stage 2, then accepts on the last stage", async () => {
+  it("moves Applied -> stage 1 -> stage 2, and never accepts from the last stage", async () => {
     const owner = await createOrganisation();
     const opportunityId = await createListing(owner.id);
     const stage1 = await createStage(opportunityId, 0, { name: "Screen" });
@@ -127,36 +127,49 @@ describe("advanceCandidate", () => {
     const application = await createApplication(opportunityId, null);
 
     const first = await advanceCandidate(owner.id, application.id, null);
-    expect(first).toEqual({ ok: true, stageId: stage1.id, accepted: false });
+    expect(first).toEqual({ ok: true, stageId: stage1.id });
     expect(await getDb().stageEvent.count({ where: { applicationId: application.id } })).toBe(0);
 
     const second = await advanceCandidate(owner.id, application.id, stage1.id);
-    expect(second).toEqual({ ok: true, stageId: stage2.id, accepted: false });
+    expect(second).toEqual({ ok: true, stageId: stage2.id });
     const afterSecond = await getDb().stageEvent.findMany({
       where: { applicationId: application.id },
     });
     expect(afterSecond).toMatchObject([{ stageId: stage1.id, outcome: "passed" }]);
 
+    // Last stage: the next step is an offer (offers.ts), so nothing changes here.
+    sendEmailSpy.mockClear();
     const third = await advanceCandidate(owner.id, application.id, stage2.id);
-    expect(third).toEqual({ ok: true, stageId: stage2.id, accepted: true });
+    expect(third).toEqual({ ok: false, reason: "last_stage" });
     await settleBackground();
 
     const updated = await getDb().application.findUniqueOrThrow({ where: { id: application.id } });
-    expect(updated.status).toBe("accepted");
-    expect(updated.decidedAt).not.toBeNull();
+    expect(updated.status).toBe("submitted");
+    expect(updated.decidedAt).toBeNull();
     expect(updated.currentStageId).toBe(stage2.id);
+    expect(await getDb().stageEvent.count({ where: { applicationId: application.id } })).toBe(1);
+    expect(sendEmailSpy).not.toHaveBeenCalled();
+  });
 
-    const events = await getDb().stageEvent.findMany({
-      where: { applicationId: application.id },
-      orderBy: { createdAt: "asc" },
+  it("refuses to move a candidate with a pending offer", async () => {
+    const owner = await createOrganisation();
+    const opportunityId = await createListing(owner.id);
+    const stage1 = await createStage(opportunityId, 0);
+    await createStage(opportunityId, 1);
+    const application = await createApplication(opportunityId, stage1.id);
+    await getDb().application.update({
+      where: { id: application.id },
+      data: { offerStatus: "pending" },
     });
-    expect(events).toMatchObject([
-      { stageId: stage1.id, outcome: "passed" },
-      { stageId: stage2.id, outcome: "passed" },
-    ]);
-    expect(sendEmailSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ subject: expect.stringContaining("accepted") }),
-    );
+
+    expect(await advanceCandidate(owner.id, application.id, stage1.id)).toEqual({
+      ok: false,
+      reason: "stale",
+    });
+    expect(await failCandidate(owner.id, application.id, stage1.id)).toEqual({
+      ok: false,
+      reason: "stale",
+    });
   });
 
   it("refuses a stale expectedStageId", async () => {
@@ -188,6 +201,7 @@ describe("advanceCandidate", () => {
     const owner = await createOrganisation();
     const opportunityId = await createListing(owner.id);
     const stage1 = await createStage(opportunityId, 0);
+    await createStage(opportunityId, 1);
     const application = await createApplication(opportunityId, stage1.id, "withdrawn");
 
     expect(await advanceCandidate(owner.id, application.id, stage1.id)).toEqual({
@@ -215,13 +229,24 @@ describe("failCandidate", () => {
     const stage1 = await createStage(opportunityId, 0);
     const application = await createApplication(opportunityId, stage1.id);
 
-    const result = await failCandidate(owner.id, application.id, stage1.id);
+    const result = await failCandidate(
+      owner.id,
+      application.id,
+      stage1.id,
+      "  We picked someone closer to Pune.  ",
+    );
     expect(result).toEqual({ ok: true });
     await settleBackground();
 
     const updated = await getDb().application.findUniqueOrThrow({ where: { id: application.id } });
     expect(updated.status).toBe("rejected");
     expect(updated.decidedAt).not.toBeNull();
+    expect(updated.notSelectedReason).toBe("We picked someone closer to Pune.");
+    expect(sendEmailSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining("We picked someone closer to Pune."),
+      }),
+    );
 
     const events = await getDb().stageEvent.findMany({ where: { applicationId: application.id } });
     expect(events).toMatchObject([{ stageId: stage1.id, outcome: "failed" }]);

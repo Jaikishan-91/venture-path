@@ -1,47 +1,37 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ProofCard } from "@/components/proof/proof-card";
 import { RoleHome } from "@/components/role-home";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { isFiltered, parseApplicantFilters } from "@/lib/applicant-filters";
-import { listApplicants } from "@/lib/applications";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { requireRole } from "@/lib/authz";
-import { getOwnOpportunity } from "@/lib/opportunities";
-import { getOrderedStages } from "@/lib/pipelines";
-import { listInterviewerOptions } from "@/lib/team";
-import { listFeedbackForApplications, type FeedbackView } from "@/lib/interview-feedback";
-import { listEventsForApplications, type ScheduledEventView } from "@/lib/scheduling";
-import { createLlmClient } from "@/lib/llm/provider";
-import { sortByProofLevel } from "@/lib/proof-schemas";
-import { decideAction } from "./actions";
-import { ApplicantFilters } from "./applicant-filters";
-import { PipelinePanel } from "./pipeline-panel";
-import { ResumeAnalysis } from "./resume-analysis";
-import { listInterviewsForApplications, type OrgInterviewView } from "@/lib/ai-interview";
 import {
-  AiInterviewSection,
-  SendAiInterviewCheckbox,
-  SendAiInterviewForm,
-} from "./ai-interview-section";
+  BOARD_SORT_LABELS,
+  BOARD_SORTS,
+  boardHref,
+  boardTabs,
+  defaultTab,
+  parseBoardParams,
+} from "@/lib/hiring-board";
+import { loadBoard, rowsForTab } from "@/lib/hiring-board-data";
+import { getOwnOpportunity } from "@/lib/opportunities";
+import { recommendedStepsAction } from "./actions";
+import { BoardList } from "./board-list";
 
 export const metadata: Metadata = { title: "Applicants · VenturePath" };
 
-const STATUS_LABEL = {
-  submitted: "Waiting",
-  accepted: "Accepted",
-  rejected: "Not accepted",
-  withdrawn: "Withdrawn",
+const EMPTY_TEXT: Record<string, string> = {
+  applied: "Nobody new. New applications show up here.",
+  offer: "No offers waiting. Offers you make show up here until the student answers.",
+  hired: "Nobody hired yet.",
+  not_selected: "Nobody here.",
 };
 
-const formatApplied = (date: Date) =>
-  date.toLocaleString("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Kolkata",
-  });
-
+/**
+ * Hiring board (plan 2026-11-12-hiring-and-ai-interview-v2, Part 1): tabs Applied · each hiring
+ * step · Offer · Hired · Not selected, one compact row per candidate with one next-step button.
+ * Owner only.
+ */
 export default async function ApplicantsPage({
   params,
   searchParams,
@@ -51,154 +41,162 @@ export default async function ApplicantsPage({
 }) {
   const session = await requireRole("organisation");
   const { id } = await params;
-  const opportunity = await getOwnOpportunity(session.user.id, id);
-  if (!opportunity) notFound();
-  const filters = parseApplicantFilters(await searchParams);
-  const [{ applicants, unscored }, stages, interviewerOptions] = await Promise.all([
-    listApplicants(session.user.id, id, filters),
-    getOrderedStages(id),
-    listInterviewerOptions(session.user.id),
+  const [opportunity, board] = await Promise.all([
+    getOwnOpportunity(session.user.id, id),
+    loadBoard(session.user.id, id),
   ]);
-  const hasPipeline = stages.length > 0;
-  const applicationIds = applicants.map((application) => application.id);
-  const [eventsByApplication, feedbackByApplication]: [
-    Map<string, ScheduledEventView[]>,
-    Record<string, FeedbackView[]>,
-  ] = hasPipeline
-    ? await Promise.all([
-        listEventsForApplications(session.user.id, applicationIds),
-        listFeedbackForApplications(session.user.id, applicationIds),
-      ])
-    : [new Map(), {}];
-  // AI interview (docs/PRODUCT.md Modules 5–6): reports are for the owner only.
-  const aiStage = stages.find((stage) => stage.kind === "ai_interview");
-  const interviewsByApplication: Map<string, OrgInterviewView[]> = hasPipeline
-    ? await listInterviewsForApplications(session.user.id, applicationIds)
-    : new Map();
-  const canReanalyze = createLlmClient() !== null;
+  if (!opportunity || !board) notFound();
+
+  const { stages, counts } = board;
+  const query = parseBoardParams(await searchParams, stages);
+  const tab = query.tab ?? defaultTab(counts, stages);
+  const rows = rowsForTab(board, tab, query.q, query.sort);
   const basePath = `/organisation/opportunities/${id}/applicants`;
+  const linkQuery = `?${new URLSearchParams({ tab, sort: query.sort }).toString()}`;
+  const hasAiStage = stages.some((stage) => stage.kind === "ai_interview");
+  const stageTab = stages.find((stage) => stage.id === tab);
+  const selectable = tab === "applied" || Boolean(stageTab);
+  const total = board.rows.length;
 
   return (
     <RoleHome title={opportunity.title} name={session.user.name}>
-      <Link href="/organisation/opportunities" className="text-sm underline">
-        Your listings
-      </Link>
-      {opportunity._count.applications > 0 && (
-        <ApplicantFilters
-          filters={filters}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <Link href="/organisation/opportunities" className="underline">
+          Your listings
+        </Link>
+        {stages.length > 0 && (
+          <Link href={`/organisation/opportunities/${id}/edit#hiring-steps`} className="underline">
+            Edit hiring steps
+          </Link>
+        )}
+      </div>
+
+      {stages.length === 0 && (
+        <section
+          aria-label="Add hiring steps"
+          className="flex flex-col gap-3 rounded-xl border border-[#ecedef] bg-white p-4"
+        >
+          <h2 className="text-base font-medium">Add hiring steps</h2>
+          <p className="text-sm text-[#4a4d53]">
+            Recommended: a short <strong>AI interview</strong> first, then a{" "}
+            <strong>Live interview</strong> with you. After the last step you send an offer. Without
+            steps you can still make an offer straight from Applied.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <form action={recommendedStepsAction}>
+              <input type="hidden" name="opportunityId" value={id} />
+              <Button type="submit" size="sm">
+                Use recommended steps
+              </Button>
+            </form>
+            <Link
+              href={`/organisation/opportunities/${id}/edit#hiring-steps`}
+              className="text-sm underline"
+            >
+              Choose my own steps
+            </Link>
+          </div>
+        </section>
+      )}
+
+      <nav aria-label="Hiring steps" className="-mx-1 overflow-x-auto pb-1">
+        <ul className="flex w-max gap-1.5 px-1">
+          {boardTabs(stages).map((item) => {
+            const active = item.key === tab;
+            return (
+              <li key={item.key}>
+                <Link
+                  href={boardHref(basePath, { tab: item.key, q: query.q, sort: query.sort })}
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm whitespace-nowrap ${
+                    active
+                      ? "bg-[#26594a] text-white"
+                      : "border border-[#ecedef] bg-white text-[#33363b] hover:border-[#c9ccd2]"
+                  }`}
+                >
+                  {item.label}
+                  <span
+                    className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-white/20" : "bg-[#f1f2f4]"}`}
+                  >
+                    {counts[item.key] ?? 0}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {total > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <form
+            method="get"
+            action={basePath}
+            role="search"
+            className="flex w-full min-w-0 gap-2 sm:w-auto sm:flex-1"
+          >
+            <input type="hidden" name="tab" value={tab} />
+            {query.sort !== "best" && <input type="hidden" name="sort" value={query.sort} />}
+            <Input
+              name="q"
+              type="search"
+              defaultValue={query.q}
+              placeholder="Search by name"
+              aria-label="Search by name"
+              className="min-w-0 flex-1"
+            />
+            <Button type="submit" size="sm" variant="outline">
+              Search
+            </Button>
+          </form>
+          <div className="flex items-center gap-1 text-sm" aria-label="Sort">
+            {BOARD_SORTS.map((sort) => (
+              <Link
+                key={sort}
+                href={boardHref(basePath, { tab, q: query.q, sort })}
+                aria-current={sort === query.sort ? "true" : undefined}
+                className={buttonVariants({
+                  size: "sm",
+                  variant: sort === query.sort ? "secondary" : "ghost",
+                })}
+              >
+                {BOARD_SORT_LABELS[sort]}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {total === 0 ? (
+        <p className="text-sm text-muted-foreground">No applications yet.</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {query.q
+            ? `Nobody called “${query.q}” here.`
+            : (EMPTY_TEXT[tab] ?? `Nobody at ${stageTab?.name ?? "this step"} right now.`)}
+        </p>
+      ) : (
+        <BoardList
+          rows={rows.map((row) => ({
+            id: row.id,
+            name: row.name,
+            course: row.course,
+            institution: row.institution,
+            appliedAt: row.appliedAt,
+            currentStageId: row.currentStageId,
+            offerStatus: row.offerStatus,
+            bestProofLevel: row.bestProofLevel,
+            screeningScore: row.screeningScore,
+            interview: row.interview,
+            nextStep: row.nextStep,
+          }))}
           basePath={basePath}
-          stages={stages.map((stage) => ({ id: stage.id, name: stage.name }))}
+          linkQuery={linkQuery}
+          opportunityId={id}
+          selectable={selectable}
+          canSendAiInterview={tab === "applied" && hasAiStage}
         />
       )}
-      {aiStage && applicants.length > 0 && (
-        <SendAiInterviewForm opportunityId={id} stageName={aiStage.name} />
-      )}
-      <p className="text-sm text-muted-foreground" aria-live="polite">
-        {opportunity._count.applications === 0
-          ? "No applications yet."
-          : isFiltered(filters)
-            ? `${applicants.length} of ${opportunity._count.applications} applicants match.`
-            : `${applicants.length} ${applicants.length === 1 ? "applicant" : "applicants"}.`}
-        {unscored > 0 &&
-          ` ${unscored} not yet scored ${unscored === 1 ? "is" : "are"} hidden by the score filter.`}
-      </p>
-      {applicants.map((application) => (
-        <article
-          key={application.id}
-          aria-label={application.userProfile.user.name}
-          className="flex flex-col gap-3"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>{application.userProfile.user.name}</CardTitle>
-              <CardDescription>
-                {application.userProfile.course}, {application.userProfile.institution} ·{" "}
-                {STATUS_LABEL[application.status]} · Applied {formatApplied(application.appliedAt)}
-              </CardDescription>
-              {aiStage &&
-                application.status === "submitted" &&
-                application.currentStageId !== aiStage.id && (
-                  <SendAiInterviewCheckbox
-                    applicationId={application.id}
-                    currentStageId={application.currentStageId}
-                  />
-                )}
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 text-sm">
-              {/* Proof cards first, strongest badge first (docs/PRODUCT.md Module 4). */}
-              {application.proofs.length > 0 && (
-                <section aria-label="Proof" className="flex flex-col gap-2">
-                  <h3 className="text-xs font-medium text-[#4a4d53]">Proof</h3>
-                  {sortByProofLevel(application.proofs).map((proof) => (
-                    <ProofCard key={proof.id} proof={proof} compact />
-                  ))}
-                </section>
-              )}
-              {application.userProfile.skills.length > 0 && (
-                <p>{application.userProfile.skills.join(", ")}</p>
-              )}
-              {application.note && <p className="whitespace-pre-line">{application.note}</p>}
-              {application.status === "accepted" && (
-                <p>Email: {application.userProfile.user.email}</p>
-              )}
-              {application.resumeFileName && (
-                <a href={`/api/applications/${application.id}/resume`} className="underline">
-                  Download {application.resumeFileName}
-                </a>
-              )}
-              {hasPipeline && (
-                <PipelinePanel
-                  applicationId={application.id}
-                  status={application.status}
-                  currentStageId={application.currentStageId}
-                  stages={stages}
-                  events={eventsByApplication.get(application.id) ?? []}
-                  feedback={feedbackByApplication[application.id] ?? []}
-                  interviewerOptions={interviewerOptions}
-                />
-              )}
-              {application.status === "submitted" && (
-                <div className="flex gap-2">
-                  <form action={decideAction}>
-                    <input type="hidden" name="applicationId" value={application.id} />
-                    <input type="hidden" name="decision" value="accepted" />
-                    <button type="submit" className={buttonVariants({ size: "sm" })}>
-                      Accept
-                    </button>
-                  </form>
-                  <form action={decideAction}>
-                    <input type="hidden" name="applicationId" value={application.id} />
-                    <input type="hidden" name="decision" value="rejected" />
-                    <button
-                      type="submit"
-                      className={buttonVariants({ variant: "outline", size: "sm" })}
-                    >
-                      Reject
-                    </button>
-                  </form>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {interviewsByApplication.get(application.id)?.[0] && (
-            <AiInterviewSection
-              interview={interviewsByApplication.get(application.id)![0]}
-              applicationStatus={application.status}
-              currentStageId={application.currentStageId}
-              stages={stages}
-            />
-          )}
-
-          <ResumeAnalysis
-            applicationId={application.id}
-            analysis={application.analysis}
-            answers={application.answers}
-            canReanalyze={canReanalyze}
-            proofOnly={!application.resumeFileName}
-          />
-        </article>
-      ))}
     </RoleHome>
   );
 }

@@ -1,8 +1,10 @@
 import "server-only";
+import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "./db";
 import { getLogger } from "./logger";
 import { checkSoftLock, parsePipelineStages } from "./pipeline-schemas";
 import type { PipelineFailure, PipelineStageView, Result, StageInput } from "./hiring/types";
+import { RECOMMENDED_STAGES } from "./v2/types";
 
 type StageRow = {
   id: string;
@@ -219,4 +221,36 @@ export function getOrderedStages(opportunityId: string) {
     orderBy: { position: "asc" },
     select: { id: true, position: true, name: true, kind: true, durationMinutes: true },
   });
+}
+
+/**
+ * "Use recommended steps" (plan 2026-11-12-hiring-and-ai-interview-v2, D3): saves
+ * `RECOMMENDED_STAGES` (AI interview → Live interview, source "organisation") through
+ * `savePipeline`, only when the listing has no stages (`stale` otherwise, e.g. a double click).
+ * Never runs on its own; the owner clicks it.
+ */
+export async function applyRecommendedStages(
+  orgUserId: string,
+  opportunityId: string,
+): Promise<Result<{ version: string }, PipelineFailure>> {
+  const current = await getPipeline(orgUserId, opportunityId);
+  if (!current) return { ok: false, reason: "not_found" };
+  if (current.stages.length > 0) return { ok: false, reason: "stale" };
+  const stages: StageInput[] = RECOMMENDED_STAGES.map((stage) => ({
+    name: stage.name,
+    kind: stage.kind,
+    instructions: stage.instructions,
+    externalUrl: null,
+    durationMinutes: stage.durationMinutes,
+    source: "organisation",
+  }));
+  try {
+    return await savePipeline(orgUserId, opportunityId, stages, current.version);
+  } catch (err) {
+    // Two clicks at once: the unique [opportunityId, position] index rejects the second insert.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return { ok: false, reason: "stale" };
+    }
+    throw err;
+  }
 }
