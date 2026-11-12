@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/authz";
-import { decideApplication } from "@/lib/applications";
-import { advanceCandidate, failCandidate, moveCandidate } from "@/lib/pipeline-progress";
+import { advanceCandidate, moveCandidate } from "@/lib/pipeline-progress";
 import {
   cancelScheduledEvent,
   rescheduleEvent,
@@ -14,11 +13,28 @@ import type { ProgressFailure, ScheduleFailure } from "@/lib/hiring/types";
 import { getLogger } from "@/lib/logger";
 import { reanalyzeForOrganisation } from "@/lib/resume-analysis";
 import { flash } from "@/lib/flash";
+import { makeOffer, markNotSelected, withdrawOffer, type NotSelectedFailure } from "@/lib/offers";
+import { applyRecommendedStages } from "@/lib/pipelines";
+import type { OfferFailure } from "@/lib/v2/types";
 
 const PROGRESS_ERRORS: Record<ProgressFailure, string> = {
   not_found: "Application not found.",
   stale: "This candidate's stage changed. Reload the page and try again.",
-  invalid: "This listing's pipeline changed. Reload the page and try again.",
+  invalid: "This listing's hiring steps changed. Reload the page and try again.",
+  last_stage: "This is the last step. Make an offer instead.",
+};
+
+const NOT_SELECTED_ERRORS: Record<NotSelectedFailure, string> = {
+  ...PROGRESS_ERRORS,
+  wrong_state: "An offer is waiting for the student. Withdraw it first.",
+};
+
+const OFFER_ERRORS: Record<OfferFailure, string> = {
+  not_found: "Application not found.",
+  invalid: "Check the offer details.",
+  not_ready: "Move the candidate through every hiring step before making an offer.",
+  wrong_state: "An offer is already waiting, or this candidate is already decided.",
+  stale: "This candidate changed meanwhile. Reload the page and try again.",
 };
 
 const SCHEDULE_ERRORS: Record<ScheduleFailure, string> = {
@@ -70,58 +86,147 @@ export async function reanalyzeAction(
   return { status: "done" };
 }
 
-export async function decideAction(formData: FormData): Promise<void> {
-  const session = await requireRole("organisation");
-  const id = formData.get("applicationId");
-  const decision = formData.get("decision");
-  if (typeof id === "string" && (decision === "accepted" || decision === "rejected")) {
-    const result = await decideApplication(session.user.id, id, decision);
-    await flash(
-      result.ok ? "success" : "error",
-      result.ok
-        ? decision === "accepted"
-          ? "Application accepted. You can now see the applicant's email."
-          : "Application rejected."
-        : "This application has already been decided or withdrawn.",
-    );
-  }
-  revalidatePath("/organisation/opportunities");
-}
-
 function interviewerIdsFrom(formData: FormData): string[] {
   return formData
     .getAll("interviewerUserIds")
     .filter((value): value is string => typeof value === "string" && value.length > 0);
 }
 
+/** "Move to <next step>" / "Send AI interview" (one candidate). Never hires: see `makeOfferAction`. */
 export async function advanceAction(formData: FormData): Promise<void> {
   const session = await requireRole("organisation");
   const applicationId = formData.get("applicationId");
   if (typeof applicationId !== "string") return;
   const expectedStageId = stringOrNull(formData.get("expectedStageId"));
+  // Only picks the toast text; the server decides what the next stage is.
+  const aiInterview = formData.get("nextKind") === "ai_interview";
 
   const result = await advanceCandidate(session.user.id, applicationId, expectedStageId);
   await flash(
     result.ok ? "success" : "error",
     result.ok
-      ? result.accepted
-        ? "Candidate passed the final stage and was accepted."
-        : "Candidate advanced to the next stage."
+      ? aiInterview
+        ? "AI interview sent. The candidate gets a private link by email."
+        : "Candidate moved to the next step."
       : PROGRESS_ERRORS[result.reason],
   );
   revalidateApplicants();
 }
 
-export async function failAction(formData: FormData): Promise<void> {
+export type FormActionState =
+  { status: "idle" } | { status: "done" } | { status: "error"; message: string };
+
+/** "Not selected" with an optional kind reason (sent in the email). */
+export async function notSelectedAction(
+  _prev: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const session = await requireRole("organisation");
+  const applicationId = formData.get("applicationId");
+  if (typeof applicationId !== "string") return { status: "error", message: "Missing application" };
+  const expectedStageId = stringOrNull(formData.get("expectedStageId"));
+  const reason = formData.get("reason");
+
+  const result = await markNotSelected(
+    session.user.id,
+    applicationId,
+    expectedStageId,
+    typeof reason === "string" ? reason : undefined,
+  );
+  if (!result.ok) {
+    return { status: "error", message: result.message ?? NOT_SELECTED_ERRORS[result.reason] };
+  }
+  await flash("success", "Marked not selected. The candidate was told by email.");
+  revalidateApplicants();
+  return { status: "done" };
+}
+
+/** Bulk "Not selected" from the board (no reason). Selections are `applicationId|expectedStageId`. */
+export async function bulkNotSelectedAction(formData: FormData): Promise<void> {
+  const session = await requireRole("organisation");
+  const selections = formData
+    .getAll("selection")
+    .filter((value): value is string => typeof value === "string")
+    .slice(0, 100)
+    .map((value) => {
+      const [applicationId, stageId] = value.split("|");
+      return { applicationId, expectedStageId: stageId ? stageId : null };
+    })
+    .filter((selection) => /^[0-9a-f-]{36}$/i.test(selection.applicationId));
+  if (selections.length === 0) {
+    await flash("error", "Select at least one candidate first.");
+    revalidateApplicants();
+    return;
+  }
+  let done = 0;
+  for (const selection of selections) {
+    const result = await markNotSelected(
+      session.user.id,
+      selection.applicationId,
+      selection.expectedStageId,
+      undefined,
+    );
+    if (result.ok) done += 1;
+  }
+  const skipped = selections.length - done;
+  await flash(
+    done > 0 ? "success" : "error",
+    done > 0
+      ? `${done} marked not selected.` +
+          (skipped > 0 ? ` ${skipped} skipped (changed meanwhile).` : "")
+      : "Nobody was changed. These candidates changed meanwhile; reload the page.",
+  );
+  revalidateApplicants();
+}
+
+/** "Make offer": message, optional stipend and start date. */
+export async function makeOfferAction(
+  _prev: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const session = await requireRole("organisation");
+  const applicationId = formData.get("applicationId");
+  if (typeof applicationId !== "string") return { status: "error", message: "Missing application" };
+  const result = await makeOffer(session.user.id, applicationId, {
+    message: formData.get("message") ?? "",
+    stipendInr: formData.get("stipendInr") ?? "",
+    startDate: formData.get("startDate") ?? "",
+  });
+  if (!result.ok) {
+    return { status: "error", message: result.message ?? OFFER_ERRORS[result.reason] };
+  }
+  await flash("success", "Offer sent. The student can accept or decline it in the app.");
+  revalidateApplicants();
+  return { status: "done" };
+}
+
+export async function withdrawOfferAction(formData: FormData): Promise<void> {
   const session = await requireRole("organisation");
   const applicationId = formData.get("applicationId");
   if (typeof applicationId !== "string") return;
-  const expectedStageId = stringOrNull(formData.get("expectedStageId"));
-
-  const result = await failCandidate(session.user.id, applicationId, expectedStageId);
+  const result = await withdrawOffer(session.user.id, applicationId);
   await flash(
     result.ok ? "success" : "error",
-    result.ok ? "Candidate rejected." : PROGRESS_ERRORS[result.reason],
+    result.ok ? "Offer withdrawn." : OFFER_ERRORS[result.reason],
+  );
+  revalidateApplicants();
+}
+
+/** "Use recommended steps" (D3): only when the listing has no steps yet. */
+export async function recommendedStepsAction(formData: FormData): Promise<void> {
+  const session = await requireRole("organisation");
+  const opportunityId = formData.get("opportunityId");
+  if (typeof opportunityId !== "string") return;
+  const result = await applyRecommendedStages(session.user.id, opportunityId);
+  await flash(
+    result.ok ? "success" : "error",
+    result.ok
+      ? "Hiring steps added: AI interview, then Live interview."
+      : result.reason === "not_approved"
+        ? "Your business must be approved by an admin before you can do this."
+        : result.reason === "stale"
+          ? "This listing already has hiring steps."
+          : "Listing not found.",
   );
   revalidateApplicants();
 }

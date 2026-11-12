@@ -5,7 +5,12 @@ import { requireRole } from "@/lib/authz";
 import type { PipelineFailure, PipelineStageView, StageInput } from "@/lib/hiring/types";
 import { getLogger } from "@/lib/logger";
 import { suggestPipeline, type SuggestPipelineFailure } from "@/lib/pipeline-assist";
-import { getPipeline, getPipelineTemplate, savePipeline } from "@/lib/pipelines";
+import {
+  applyRecommendedStages,
+  getPipeline,
+  getPipelineTemplate,
+  savePipeline,
+} from "@/lib/pipelines";
 
 const SAVE_FAILURE_MESSAGES: Record<PipelineFailure, string> = {
   not_found: "This listing doesn't exist.",
@@ -89,4 +94,24 @@ export async function copyPipelineTemplateAction(
     return { status: "error", message: "That listing has no pipeline to copy." };
   }
   return { status: "ok", stages };
+}
+
+/** "Use recommended steps" on the empty pipeline editor (D3): saves AI interview → Live interview. */
+export async function recommendedStepsEditorAction(
+  opportunityId: string,
+): Promise<SavePipelineResult> {
+  const session = await requireRole("organisation");
+  const result = await applyRecommendedStages(session.user.id, opportunityId);
+  if (!result.ok) {
+    return {
+      status: "error",
+      message:
+        result.reason === "stale"
+          ? "This listing already has hiring steps. Reload the page."
+          : (result.message ?? SAVE_FAILURE_MESSAGES[result.reason]),
+    };
+  }
+  revalidatePath(`/organisation/opportunities/${opportunityId}`, "layout");
+  const fresh = await getPipeline(session.user.id, opportunityId);
+  return { status: "ok", stages: fresh?.stages ?? [], version: fresh?.version ?? result.version };
 }

@@ -15,6 +15,7 @@ import {
 } from "@/lib/hiring/types";
 import {
   copyPipelineTemplateAction,
+  recommendedStepsEditorAction,
   savePipelineAction,
   suggestPipelineAction,
 } from "./pipeline-actions";
@@ -97,7 +98,23 @@ export function PipelineEditor({
   const [savePending, startSave] = useTransition();
   const [suggestPending, startSuggest] = useTransition();
   const [copyPending, startCopy] = useTransition();
-  const pending = savePending || suggestPending || copyPending;
+  const [recommendPending, startRecommend] = useTransition();
+  const pending = savePending || suggestPending || copyPending || recommendPending;
+
+  function handleRecommended() {
+    startRecommend(async () => {
+      const result = await recommendedStepsEditorAction(opportunityId);
+      if (result.status === "error") {
+        setErrorState({ status: "error", message: result.message });
+        return;
+      }
+      setStages(result.stages.map(fromView));
+      setVersion(result.version);
+      setDirty(false);
+      setErrorState({ status: "idle" });
+      toast.success("Hiring steps added: AI interview, then Live interview.");
+    });
+  }
 
   /** Replaces every unreached stage with `newStages`, keeping reached stages as they are. */
   function applyReplacement(newStages: StageInput[]) {
@@ -188,12 +205,12 @@ export function PipelineEditor({
   }
 
   return (
-    <Card>
+    <Card id="hiring-steps">
       <CardHeader>
-        <CardTitle>Hiring pipeline</CardTitle>
+        <CardTitle>Hiring steps</CardTitle>
         <CardDescription>
-          Candidates move through these steps after applying. Leave it empty to accept or reject
-          directly.
+          Candidates move through these steps after applying; after the last one you send an offer.
+          Leave it empty to make offers straight from Applied.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -240,9 +257,21 @@ export function PipelineEditor({
         </div>
 
         {stages.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No pipeline yet. Applicants are accepted or rejected directly.
-          </p>
+          <div className="flex flex-col gap-2 rounded-lg bg-[#f7f7f9] p-3 text-sm">
+            <p>
+              No steps yet. Recommended: a short <strong>AI interview</strong>, then a{" "}
+              <strong>Live interview</strong>.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              className="self-start"
+              disabled={pending || dirty}
+              onClick={handleRecommended}
+            >
+              {recommendPending ? "Adding…" : "Use recommended steps"}
+            </Button>
+          </div>
         ) : (
           <ol className="flex flex-col gap-3">
             {stages.map((stage, index) => (

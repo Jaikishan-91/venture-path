@@ -34,6 +34,8 @@ interface Props {
   canReanalyze: boolean;
   /** No resume attached: the "resume" score was computed from proof cards (ADR-043). */
   proofOnly?: boolean;
+  /** False when the page lists the screening answers in their own section. */
+  showAnswers?: boolean;
 }
 
 const scoreColor = (score: number | null) =>
@@ -68,6 +70,7 @@ export function ResumeAnalysis({
   answers,
   canReanalyze,
   proofOnly = false,
+  showAnswers = true,
 }: Props) {
   const [state, action, pending] = useActionState<ReanalyzeState, FormData>(reanalyzeAction, {
     status: "idle",
@@ -80,10 +83,10 @@ export function ResumeAnalysis({
         <CardTitle>AI screening</CardTitle>
         <CardDescription>
           {analysis
-            ? `${analysis.model ? `Model: ${analysis.model} · ` : ""}Analyzed ${formatDate(analysis.createdAt)}`
+            ? `Advice only · Analyzed ${formatDate(analysis.createdAt)}`
             : canReanalyze
               ? "No analysis yet."
-              : "AI screening is not configured."}
+              : "AI unavailable."}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 text-sm">
@@ -106,7 +109,7 @@ export function ResumeAnalysis({
             <span className="font-medium">Missing skills:</span> {analysis.missingSkills.join(", ")}
           </p>
         )}
-        {answers.length > 0 && (
+        {showAnswers && answers.length > 0 && (
           <details className="rounded-lg bg-[#f7f7f9] p-3">
             <summary className="cursor-pointer font-medium">Answers ({answers.length})</summary>
             {analysis?.answersSummary && (

@@ -14,8 +14,8 @@ vi.mock("@/lib/embeddings", async (importActual) => {
   };
 });
 
-import { applyToOpportunity, listApplicants, withdrawApplication } from "@/lib/applications";
-import { parseApplicantFilters } from "@/lib/applicant-filters";
+import { applyToOpportunity, withdrawApplication } from "@/lib/applications";
+import { loadBoard, rowsForTab } from "@/lib/hiring-board-data";
 import { settleBackground } from "@/lib/background";
 import { getDb } from "@/lib/db";
 import { assistListing, assistOwnListing } from "@/lib/listing-assist";
@@ -619,8 +619,8 @@ describe("analyzeApplication with answers", () => {
   });
 });
 
-describe("listApplicants filters", () => {
-  it("filters by minimum score and apply time, and sorts", async () => {
+describe("hiring board sorting (replaces the old filter bar)", () => {
+  it("sorts a tab by best match (screening score when no interview) or newest", async () => {
     const organisation = await createUser("organisation");
     const other = await createUser("organisation");
     const id = await publishedListing(organisation.id);
@@ -650,51 +650,16 @@ describe("listApplicants filters", () => {
     await seed("Low", 40, new Date(now.getTime() - 2 * 60 * 60 * 1000));
     await seed("Unscored", null, new Date(now.getTime() - 60 * 60 * 1000));
 
-    const names = (result: Awaited<ReturnType<typeof listApplicants>>) =>
-      result.applicants.map((a) => a.userProfile.user.name);
+    const board = await loadBoard(organisation.id, id);
+    if (!board) throw new Error("no board");
+    const names = (sort: "best" | "newest", q = "") =>
+      rowsForTab(board, "applied", q, sort).map((row) => row.name);
 
-    expect(
-      names(await listApplicants(organisation.id, id, parseApplicantFilters({}), now)),
-    ).toEqual(["High", "Mid", "Low", "Unscored"]);
-    expect(
-      names(
-        await listApplicants(organisation.id, id, parseApplicantFilters({ sort: "newest" }), now),
-      ),
-    ).toEqual(["Unscored", "Low", "Mid", "High"]);
-
-    const scored = await listApplicants(
-      organisation.id,
-      id,
-      parseApplicantFilters({ minScore: "70" }),
-      now,
-    );
-    expect(names(scored)).toEqual(["High", "Mid"]);
-    expect(scored.unscored).toBe(1);
-
-    expect(
-      names(
-        await listApplicants(
-          organisation.id,
-          id,
-          parseApplicantFilters({ applied: "7d", sort: "oldest" }),
-          now,
-        ),
-      ),
-    ).toEqual(["Mid", "Low", "Unscored"]);
-    expect(
-      names(
-        await listApplicants(
-          organisation.id,
-          id,
-          parseApplicantFilters({ applied: "custom", from: "2026-09-16", to: "2026-09-16" }),
-          now,
-        ),
-      ),
-    ).toEqual(["High"]);
-
-    expect((await listApplicants(other.id, id, parseApplicantFilters({}), now)).applicants).toEqual(
-      [],
-    );
+    expect(names("best")).toEqual(["High", "Mid", "Low", "Unscored"]);
+    expect(names("newest")).toEqual(["Unscored", "Low", "Mid", "High"]);
+    expect(names("best", "i")).toEqual(["High", "Mid"]);
+    expect(board.counts.applied).toBe(4);
+    expect(await loadBoard(other.id, id)).toBeNull();
   });
 });
 

@@ -5,19 +5,15 @@ import { sendEmail } from "./email";
 import { getEnv } from "./env";
 import { getLogger } from "./logger";
 import { visibleOpportunityWhere } from "./search";
-import { appliedRange, parseApplicantFilters, type ApplicantFilters } from "./applicant-filters";
 import { cancelFutureEventsForApplication } from "./scheduling";
 import type { ResumeExtension } from "./resumes";
 import { analyzeApplication } from "./resume-analysis";
 import { addResume, deleteStoredFileIfUnreferenced } from "./resume-library";
-import { PROOF_CARD_SELECT } from "./proofs";
 import { MAX_APPLICATION_PROOFS, MAX_APPLY_TASK_ANSWER_LENGTH } from "./v2/types";
 
 type TxClient = Prisma.TransactionClient | ReturnType<typeof getDb>;
 
 export const MAX_NOTE_LENGTH = 1000;
-
-const DEFAULT_APPLICANT_FILTERS = parseApplicantFilters({});
 
 export type ApplyFailure =
   | "needs_profile"
@@ -263,42 +259,59 @@ export async function withdrawApplication(
   return { ok: true };
 }
 
+/** A pending offer blocks a reject: withdraw it first (plan 2026-11-12-hiring-and-ai-interview-v2). */
+export const NO_PENDING_OFFER: Prisma.ApplicationWhereInput = {
+  OR: [{ offerStatus: null }, { offerStatus: { in: ["accepted", "declined", "withdrawn"] } }],
+};
+
 /**
- * Marks a `submitted` application decided, conditional on `where` (which the caller composes for
- * its own optimistic-concurrency check), inside a transaction it controls. Internal helper shared
- * by `decideApplication` and `pipeline-progress.ts` (ADR-037: pipeline wraps accept/reject), so
- * the decision write and its StageEvent (when any) commit together. Returns the row count updated
- * (0 or 1); callers decide what a miss means (`invalid_state` vs `stale`).
+ * Marks a `submitted` application "Not selected", conditional on `where` (which the caller
+ * composes for its own optimistic-concurrency check), inside a transaction it controls. Internal
+ * helper shared by `decideApplication` and `pipeline-progress.ts` (ADR-037: pipeline wraps the
+ * reject), so the decision write and its StageEvent (when any) commit together. Never matches an
+ * application with a pending offer. Returns the row count updated (0 or 1); callers decide what a
+ * miss means (`invalid_state` vs `stale`). Hiring ("accepted") only happens when the student
+ * accepts an offer (`offers.ts`).
  */
 export async function decideApplicationTx(
   tx: TxClient,
   where: Prisma.ApplicationWhereInput,
-  decision: "accepted" | "rejected",
+  decision: "rejected",
+  notSelectedReason: string | null = null,
 ): Promise<number> {
   const { count } = await tx.application.updateMany({
-    where: { ...where, status: "submitted" },
-    data: { status: decision, decidedAt: new Date() },
+    where: { AND: [where, { status: "submitted" }, NO_PENDING_OFFER] },
+    data: { status: decision, decidedAt: new Date(), notSelectedReason },
   });
   return count;
 }
 
-/** The acceptance/rejection email, shared by `decideApplication` and `pipeline-progress.ts`. */
+/** Trimmed "Not selected" reason, or null when empty. Callers validate the length first. */
+export const reasonOrNull = (reason: string | null | undefined) => {
+  const trimmed = reason?.trim() ?? "";
+  return trimmed ? trimmed : null;
+};
+
+/** The "Not selected" email (with the kind reason, when given), shared with `pipeline-progress.ts`. */
 export async function notifyApplicationDecision(
   applicationId: string,
-  decision: "accepted" | "rejected",
+  decision: "rejected",
 ): Promise<void> {
   await notifyUser(applicationId, decision);
 }
 
+/** "Not selected" for listings without hiring steps (with steps, `failCandidate` is used). */
 export async function decideApplication(
   organisationUserId: string,
   applicationId: string,
-  decision: "accepted" | "rejected",
+  decision: "rejected",
+  notSelectedReason: string | null = null,
 ): Promise<DecisionResult> {
   const count = await decideApplicationTx(
     getDb(),
     { id: applicationId, opportunity: { organisationProfile: { userId: organisationUserId } } },
     decision,
+    reasonOrNull(notSelectedReason),
   );
   if (count === 0) return { ok: false, reason: "invalid_state" };
   getLogger().info(
@@ -342,18 +355,17 @@ async function notifyOrganisation(applicationId: string) {
   }
 }
 
-async function notifyUser(applicationId: string, decision: "accepted" | "rejected") {
+async function notifyUser(applicationId: string, decision: "rejected") {
   const logger = getLogger();
   try {
     const application = await getDb().application.findUniqueOrThrow({
       where: { id: applicationId },
       select: {
+        notSelectedReason: true,
         opportunity: {
           select: {
             title: true,
-            organisationProfile: {
-              select: { businessName: true, user: { select: { email: true } } },
-            },
+            organisationProfile: { select: { businessName: true } },
           },
         },
         userProfile: { select: { user: { select: { email: true } } } },
@@ -361,17 +373,13 @@ async function notifyUser(applicationId: string, decision: "accepted" | "rejecte
     });
     const url = `${getEnv().BETTER_AUTH_URL}/user/applications`;
     const business = application.opportunity.organisationProfile;
-    const text =
-      decision === "accepted"
-        ? `${business.businessName} accepted your application for ${application.opportunity.title}.\n\nContact them at ${business.user.email}.\n\n${url}`
-        : `${business.businessName} didn't accept your application for ${application.opportunity.title}.\n\n${url}`;
+    const reason = application.notSelectedReason
+      ? `\n\nA note from them:\n${application.notSelectedReason}`
+      : "";
     await sendEmail({
       to: application.userProfile.user.email,
-      subject:
-        decision === "accepted"
-          ? `Application accepted: ${application.opportunity.title}`
-          : `Application update: ${application.opportunity.title}`,
-      text,
+      subject: `Application update: ${application.opportunity.title}`,
+      text: `Thank you for applying to ${application.opportunity.title}. ${business.businessName} has chosen not to go ahead with your application this time.${reason}\n\nKeep adding proof of your work and applying. Your applications:\n${url}`,
     });
     logger.info({ applicationId, status: decision }, "application decision email sent");
   } catch (err) {
@@ -393,7 +401,13 @@ export function listUserApplications(applicantUserId: string) {
           _count: { select: { stages: true } },
         },
       },
-      currentStage: { select: { name: true } },
+      currentStage: { select: { name: true, kind: true } },
+      // Status only: students never see the report or scores (docs/PRODUCT.md §3).
+      interviewSessions: {
+        select: { stageId: true, status: true, expiresAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
     },
     orderBy: { appliedAt: "desc" },
   });
@@ -403,76 +417,6 @@ export function getOwnApplication(applicantUserId: string, opportunityId: string
   return getDb().application.findFirst({
     where: { opportunityId, userProfile: { userId: applicantUserId } },
   });
-}
-
-/**
- * Applicants for one of the organisation's listings, with scores and answers, filtered and
- * sorted (ADR-033). `unscored` counts applicants hidden only because they have no overall score.
- */
-export async function listApplicants(
-  organisationUserId: string,
-  opportunityId: string,
-  filters: ApplicantFilters = DEFAULT_APPLICANT_FILTERS,
-  now = new Date(),
-) {
-  const range = appliedRange(filters, now);
-  const base: Prisma.ApplicationWhereInput = {
-    opportunityId,
-    opportunity: { organisationProfile: { userId: organisationUserId } },
-    ...(range ? { appliedAt: range } : {}),
-    ...(filters.stage === "applied"
-      ? { currentStageId: null }
-      : filters.stage
-        ? { currentStageId: filters.stage }
-        : {}),
-  };
-  const where: Prisma.ApplicationWhereInput =
-    filters.minScore === null
-      ? base
-      : { ...base, analysis: { is: { overallScore: { gte: filters.minScore } } } };
-  const orderBy: Prisma.ApplicationOrderByWithRelationInput[] =
-    filters.sort === "score"
-      ? [{ analysis: { overallScore: { sort: "desc", nulls: "last" } } }, { appliedAt: "desc" }]
-      : [{ appliedAt: filters.sort === "oldest" ? "asc" : "desc" }];
-
-  const db = getDb();
-  const [applicants, unscored] = await Promise.all([
-    db.application.findMany({
-      where,
-      orderBy,
-      include: {
-        userProfile: {
-          select: {
-            institution: true,
-            course: true,
-            skills: true,
-            user: { select: { name: true, email: true } },
-          },
-        },
-        analysis: true,
-        proofs: { select: PROOF_CARD_SELECT },
-        answers: {
-          select: {
-            id: true,
-            answer: true,
-            score: true,
-            feedback: true,
-            question: { select: { prompt: true, position: true } },
-          },
-          orderBy: { question: { position: "asc" } },
-        },
-      },
-    }),
-    filters.minScore === null
-      ? Promise.resolve(0)
-      : db.application.count({
-          where: {
-            ...base,
-            OR: [{ analysis: { is: null } }, { analysis: { is: { overallScore: null } } }],
-          },
-        }),
-  ]);
-  return { applicants, unscored };
 }
 
 export async function getResumeForUser(userId: string, applicationId: string) {
