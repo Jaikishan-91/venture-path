@@ -21,7 +21,8 @@ Known Limitations (not blocking):
 - Recommendation weights (0.7 coverage, 0.3 similarity) and the 0.25 threshold are heuristics tuned on test data. The skill alias map is small.
 - Question lock: an application created in the same instant as a question edit can be refused ("questions changed", reload) rather than locking the edit; no answers are ever attached to a deleted question.
 - Resolved 2026-09-26: the local `.env` had `LLM_PROVIDER=enabled` (invalid, so AI was silently off), the base URL `https://ollama.com/api` (not OpenAI-compatible), and the model `deepseek-v4-flash:0731` (retired by Ollama Cloud, HTTP 410). It now uses `openai`, `https://ollama.com/v1` and `gemma4:31b` (ADR-034); a live call through `createLlmClient` returned a parseable analysis. Only 6 of the key's 17 models are in the free plan; the rest return HTTP 402 until usage credits are added.
-- `LLM_FALLBACK_MODEL` is read but not used. The `job_description` prompt is editable but no feature uses it yet.
+- The `job_description` prompt is editable but no feature uses it yet. (`LLM_FALLBACK_MODEL` is used since 2026-11-12, ADR-046.)
+- Gemini free tier (seen 2026-11-12 in the e2e run): `gemini-3.5-flash` returned 429 after about 20 requests in a day. One demo run uses roughly 25–30 AI calls (challenge assist and scoring, proof checks, listing assist, ~12 interview calls, 2 report passes, screening), so rehearsals can exhaust the quota. The fallback model has its own quota; a billing-enabled key removes the limit.
 - Running the whole Playwright suite in parallel on a cold dev server can time out (route compilation plus the embedding model load). Every spec passes when re-run, or with `--workers=1`.
 - An invalid or expired verification link redirects to `/dashboard`, which sends signed-out users to `/sign-in` without explaining why.
 

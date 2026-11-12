@@ -41,9 +41,31 @@ export function createLlmClient(): LlmClient | null {
 
   return {
     model: config.model,
-    chat: async (messages: LlmMessage[]) => callOpenAiCompatible(config, messages),
+    chat: async (messages: LlmMessage[]) => {
+      const first = await callOpenAiCompatible(config, config.model, messages);
+      if (
+        first.content !== null ||
+        !config.fallbackModel ||
+        config.fallbackModel === config.model
+      ) {
+        return first.content;
+      }
+      // Rate limits and overload are per model (Gemini free tier: ADR-046), so one retry on the
+      // fallback model keeps AI features working. Other failures (bad request, auth) are not retried.
+      if (!first.retryable) return null;
+      logger.info(
+        { model: config.model, fallbackModel: config.fallbackModel },
+        "LLM retry on fallback model",
+      );
+      return (await callOpenAiCompatible(config, config.fallbackModel, messages)).content;
+    },
   };
 }
+
+/** `retryable`: rate limit, server error, timeout or network failure — worth trying another model. */
+type CallResult = { content: string | null; retryable: boolean };
+
+const isRetryableStatus = (status: number) => status === 429 || status >= 500;
 
 interface OpenAiCompatibleRequest {
   model: string;
@@ -55,15 +77,16 @@ interface OpenAiCompatibleRequest {
 
 async function callOpenAiCompatible(
   config: LlmProviderConfig,
+  model: string,
   messages: LlmMessage[],
-): Promise<string | null> {
+): Promise<CallResult> {
   if (!config.baseUrl) {
     logger.warn({ provider: config.kind }, "LLM baseUrl missing; analysis unavailable");
-    return null;
+    return { content: null, retryable: false };
   }
 
   const body: OpenAiCompatibleRequest = {
-    model: config.model,
+    model,
     messages,
     max_tokens: config.maxTokens,
     temperature: config.temperature,
@@ -96,13 +119,13 @@ async function callOpenAiCompatible(
       logger.warn(
         {
           provider: config.kind,
-          model: config.model,
+          model,
           status: res.status,
           body: text,
         },
         "LLM request failed",
       );
-      return null;
+      return { content: null, retryable: isRetryableStatus(res.status) };
     }
 
     const data = (await res.json()) as {
@@ -112,14 +135,14 @@ async function callOpenAiCompatible(
 
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      logger.warn({ provider: config.kind, model: config.model }, "LLM returned empty content");
-      return null;
+      logger.warn({ provider: config.kind, model }, "LLM returned empty content");
+      return { content: null, retryable: false };
     }
 
     logger.info(
       {
         provider: config.kind,
-        model: config.model,
+        model,
         ms: Date.now() - started,
         inputTokens: data.usage?.prompt_tokens,
         outputTokens: data.usage?.completion_tokens,
@@ -127,9 +150,9 @@ async function callOpenAiCompatible(
       "LLM request completed",
     );
 
-    return content;
+    return { content, retryable: false };
   } catch (err) {
-    logger.warn({ provider: config.kind, model: config.model, err }, "LLM request threw");
-    return null;
+    logger.warn({ provider: config.kind, model, err }, "LLM request threw");
+    return { content: null, retryable: true };
   }
 }

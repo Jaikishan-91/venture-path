@@ -1,6 +1,7 @@
 import { AiInterviewReport } from "@/components/hiring/ai-interview-report";
 import { buttonVariants } from "@/components/ui/button";
 import type { OrgInterviewView } from "@/lib/ai-interview";
+import { getLlmConfig } from "@/lib/llm/config";
 import { advanceAction, failAction } from "./actions";
 import { retryInterviewReportAction, sendAiInterviewAction } from "./ai-interview-actions";
 import type { PipelineStageOption } from "./pipeline-panel";
@@ -99,5 +100,14 @@ export function AiInterviewSection({
     </form>
   );
 
-  return <AiInterviewReport interview={interview} actions={actions || undefined} retry={retry} />;
+  // With AI switched off a retry can't work; the panel says "AI unavailable" instead (PRODUCT.md §3 rule 7).
+  const aiAvailable = getLlmConfig().kind !== "disabled";
+  return (
+    <AiInterviewReport
+      interview={interview}
+      actions={actions || undefined}
+      retry={aiAvailable ? retry : undefined}
+      aiAvailable={aiAvailable}
+    />
+  );
 }

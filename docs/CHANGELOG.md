@@ -21,7 +21,9 @@ Changed:
 - The disabled "AI Hiring Manager — coming soon" options are gone (replaced by the AI interview stage).
 - Text AI now runs on Gemini (`gemini-3.5-flash`, OpenAI-compatible endpoint); Docker Postgres host port is configurable (`POSTGRES_HOST_PORT`).
 
-Verified: `npm run typecheck`, `npm run lint` (0 errors), `npm test` 539/540, `uv run pytest` 27/27 in `voice-agent/` (the one failure predates v2, see BLOCKERS). Live Gemini: question plan ~10 s, follow-up 3–4 s, report ~20 s (one run's evidence pass failed fast, likely a 503 → "Retry report" path).
+Fixed after the end-to-end run: the fallback LLM model is now used on rate limits and server errors; the report panel says "AI unavailable" when AI is off; proof-only applications show a "Proof" score, not "Resume" (ADR-046). Added `e2e/demo-story.spec.ts` (docs/PRODUCT.md §8, 10 steps, passes with the live LLM and with it off; 375px checks) and `E2E_PORT` for Playwright.
+
+Verified: `npm run typecheck`, `npm run lint` (0 errors), `npm test` 543/544, `uv run pytest` 27/27 in `voice-agent/` (the one failure predates v2, see BLOCKERS). Live Gemini: question plan ~10 s, follow-up 3–4 s, report ~20 s (one run's evidence pass failed fast, likely a 503 → "Retry report" path).
 
 ## 2026-09-26 — Hiring pipelines, interviews and hiring managers
 

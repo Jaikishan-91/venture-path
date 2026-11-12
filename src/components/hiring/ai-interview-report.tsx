@@ -50,8 +50,11 @@ export function AiInterviewReport({
   interview,
   actions,
   retry,
+  aiAvailable = true,
 }: {
   interview: OrgInterviewView;
+  /** False when no LLM is configured: say "AI unavailable" rather than offering a retry. */
+  aiAvailable?: boolean;
   /** Move / Reject forms, shown when the candidate is still at a stage. */
   actions?: ReactNode;
   /** "Retry report" form, shown when the report failed. */
@@ -90,9 +93,11 @@ export function AiInterviewReport({
 
       {interview.status === "completed" && interview.reportStatus !== "done" && (
         <p className="text-muted-foreground">
-          {interview.reportStatus === "failed"
-            ? "The AI report couldn't be written. Read the chat below, or retry."
-            : "Writing the report… refresh in a minute."}
+          {interview.reportStatus !== "failed"
+            ? "Writing the report… refresh in a minute."
+            : aiAvailable
+              ? "The AI report couldn't be written. Read the chat below, or retry."
+              : "AI unavailable, so there's no report. Read the chat below."}
         </p>
       )}
 

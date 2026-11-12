@@ -32,6 +32,8 @@ interface Props {
   answers: Answer[];
   /** Whether the organisation can run the analysis (only when an LLM is configured). */
   canReanalyze: boolean;
+  /** No resume attached: the "resume" score was computed from proof cards (ADR-043). */
+  proofOnly?: boolean;
 }
 
 const scoreColor = (score: number | null) =>
@@ -60,7 +62,13 @@ function Score({ label, score, large }: { label: string; score: number | null; l
   );
 }
 
-export function ResumeAnalysis({ applicationId, analysis, answers, canReanalyze }: Props) {
+export function ResumeAnalysis({
+  applicationId,
+  analysis,
+  answers,
+  canReanalyze,
+  proofOnly = false,
+}: Props) {
   const [state, action, pending] = useActionState<ReanalyzeState, FormData>(reanalyzeAction, {
     status: "idle",
   });
@@ -81,7 +89,7 @@ export function ResumeAnalysis({ applicationId, analysis, answers, canReanalyze 
       <CardContent className="flex flex-col gap-3 text-sm">
         <dl className="grid grid-cols-3 gap-3" aria-label="Scores">
           <Score label="Overall" score={analysis?.overallScore ?? null} large />
-          <Score label="Resume" score={analysis?.resumeScore ?? null} />
+          <Score label={proofOnly ? "Proof" : "Resume"} score={analysis?.resumeScore ?? null} />
           <Score
             label="Answers"
             score={answers.length === 0 ? null : (analysis?.answersScore ?? null)}

@@ -195,6 +195,7 @@ export default async function ApplicantsPage({
             analysis={application.analysis}
             answers={application.answers}
             canReanalyze={canReanalyze}
+            proofOnly={!application.resumeFileName}
           />
         </article>
       ))}
