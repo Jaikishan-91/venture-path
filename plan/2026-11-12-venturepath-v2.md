@@ -56,3 +56,10 @@ Each WP adds Vitest tests (`tests/<area>.test.ts`, LLM stubbed via `fetch` like 
 ## Rollback
 
 All new tables are additive. The only change to existing data is two columns becoming nullable (no data loss). Reverting the code leaves new tables unused.
+
+## Progress (2026-11-12)
+
+- Module 0 committed; WP-A, WP-B, WP-C, WP-D merged; WP-E end-to-end demo story (`e2e/demo-story.spec.ts`) passes with the live LLM and with it off, no overflow at 375px.
+- Fixes after e2e: fallback LLM model on 429/5xx, "AI unavailable" report state, "Proof" score label (ADR-046).
+- Verified: typecheck, lint (0 errors), `npm test` 543/544 (pre-existing failure only), `voice-agent` pytest 27/27, voice smoke test with a scripted LiveKit client (ADR-045).
+- Remaining before `shipped`: voice in a real browser with a microphone; demo reliability needs a billing-enabled Gemini key (free tier ~20 requests/day per model).

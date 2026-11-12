@@ -2,6 +2,8 @@ import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 import type { Role } from "../src/generated/prisma/client";
+import { settleBackground } from "../src/lib/background";
+import { submitSolution } from "../src/lib/challenges";
 import { getDb } from "../src/lib/db";
 import { refreshOpportunityEmbedding } from "../src/lib/search";
 
@@ -176,9 +178,15 @@ async function main() {
         "Make reels showing sweets being made. Ask customers to tag the shop and give 5% off for a story tag. Post the festival menu 10 days before Diwali.",
       ],
     ] as const) {
-      await db.challengeSubmission.create({
-        data: { challengeId: challenge.id, userProfileId: profiles[email], text },
-      });
+      // Through the app's own submit path, so AI scoring and the challenge proof card run too.
+      const student = await db.user.findUniqueOrThrow({ where: { email }, select: { id: true } });
+      const result = await submitSolution(
+        student.id,
+        challenge.id,
+        { text, link: null },
+        undefined,
+      );
+      if (!result.ok) throw new Error(`Demo submission failed: ${result.reason}`);
     }
   }
 
@@ -230,6 +238,9 @@ async function main() {
     });
     await refreshOpportunityEmbedding(job.id);
   }
+
+  // Wait for AI scoring of the submissions and the listing embedding (skipped when AI is off).
+  await settleBackground();
 
   console.log(`Demo ready. Password for every demo account: ${PASSWORD}
   Organisation: owner@sharma-sweets.test (approved)

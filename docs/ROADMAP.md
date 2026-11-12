@@ -18,7 +18,7 @@ Current:
 
 - Hiring pipelines, interview scheduling with Google Meet, and hiring managers shipped 2026-09-26: `plan/2026-09-26-hiring-pipelines-and-interviews.md`.
 
-- VenturePath v2 (docs/PRODUCT.md) Modules 0–6 merged 2026-11-12: challenges, proof cards, apply with proof, AI interviewer chat + report: `plan/2026-11-12-venturepath-v2.md`. Voice mode merged (beta, ADR-045). Module 7 end-to-end verification in progress.
+- VenturePath v2 (docs/PRODUCT.md) Modules 0–6 merged 2026-11-12: challenges, proof cards, apply with proof, AI interviewer chat + report: `plan/2026-11-12-venturepath-v2.md`. Voice mode merged (beta, ADR-045). Module 7 done: navigation, demo seed (`npm run db:seed:demo`), `e2e/demo-story.spec.ts` passing. Open: voice with a real browser mic; a billing-enabled Gemini key for reliable demos (BLOCKERS).
 
 Next (MVP phases, in order):
 - None. MVP phases 0–6 are shipped. Later: password reset, admin role changes.
