@@ -359,7 +359,14 @@ describe("report retries", () => {
   it("retries a busy provider with backoff, then succeeds", async () => {
     const fetchMock = stubLlm({ evidence, report, failFirst: 2 });
     const { session } = await createCompletedSession();
-    expect(await generateInterviewReport(session.id, { sleep: noSleep })).toBe("done");
+    // Without the env override (tests/setup.ts sets "0,0") the shared delays apply.
+    const override = process.env.REPORT_RETRY_DELAYS_MS;
+    delete process.env.REPORT_RETRY_DELAYS_MS;
+    try {
+      expect(await generateInterviewReport(session.id, { sleep: noSleep })).toBe("done");
+    } finally {
+      process.env.REPORT_RETRY_DELAYS_MS = override;
+    }
     expect(noSleep.mock.calls.map((call) => call[0])).toEqual([...REPORT_RETRY_DELAYS_MS]);
     expect(fetchMock).toHaveBeenCalledTimes(4); // 503, 503, then both passes
     const stored = await getDb().interviewSession.findUniqueOrThrow({ where: { id: session.id } });

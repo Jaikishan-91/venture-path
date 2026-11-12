@@ -7,3 +7,5 @@ process.env.LOG_LEVEL = "silent";
 process.env.LOKI_URL = "";
 // Never call a real (possibly paid) LLM from tests; LLM tests opt in with a stubbed fetch.
 process.env.LLM_PROVIDER = "disabled";
+// AI interview report retries run inside background work; don't make settleBackground() wait.
+process.env.REPORT_RETRY_DELAYS_MS = "0,0";

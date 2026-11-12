@@ -69,7 +69,7 @@ export function RecommendationChip({
   const style = RECOMMENDATION_STYLE[recommendation];
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${style.className}`}
+      className={`inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${style.className}`}
     >
       <span aria-hidden="true">{style.dot}</span> {INTERVIEW_RECOMMENDATION_LABELS[recommendation]}
       {adviceNote && <span className="font-normal">(advice only)</span>}
@@ -149,7 +149,7 @@ function QuestionCards({
             aria-label={`Question ${card.index + 1}`}
             className="flex min-w-0 flex-col gap-2 rounded-lg border border-border p-3"
           >
-            <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
               <p className="min-w-0 flex-1 font-medium break-words">
                 <span className="text-muted-foreground">Q{card.index + 1}.</span>{" "}
                 {card.question.text}

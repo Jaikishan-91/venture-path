@@ -43,7 +43,7 @@ export const STALE_PENDING_MS = 5 * 60 * 1000;
 
 export type ReportRunOptions = {
   now?: Date;
-  /** Delays between attempts; defaults to `REPORT_RETRY_DELAYS_MS`. */
+  /** Delays between attempts; defaults to `REPORT_RETRY_DELAYS_MS` (or the env override). */
   retryDelaysMs?: readonly number[];
   /** Injectable wait, so tests don't sleep. */
   sleep?: (ms: number) => Promise<void>;
@@ -52,6 +52,19 @@ export type ReportRunOptions = {
 };
 
 const realSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Retry delays: `REPORT_RETRY_DELAYS_MS` from v2/types, unless the env var of the same name
+ * holds a comma-separated list of milliseconds (tests set "0,0"; ops can tune it).
+ */
+function defaultRetryDelays(): readonly number[] {
+  const raw = process.env.REPORT_RETRY_DELAYS_MS?.trim();
+  if (!raw) return REPORT_RETRY_DELAYS_MS;
+  const delays = raw.split(",").map((part) => Number(part.trim()));
+  return delays.every((delay) => Number.isFinite(delay) && delay >= 0)
+    ? delays
+    : REPORT_RETRY_DELAYS_MS;
+}
 
 /** Start the report in the background. Idempotent; ignores sessions that aren't completed. */
 export function startInterviewReport(sessionId: string, options: ReportRunOptions = {}): void {
@@ -76,7 +89,7 @@ export async function generateInterviewReport(
   options: ReportRunOptions = {},
 ): Promise<"done" | "failed" | null> {
   const now = options.now ?? new Date();
-  const delays = options.retryDelaysMs ?? REPORT_RETRY_DELAYS_MS;
+  const delays = options.retryDelaysMs ?? defaultRetryDelays();
   const sleep = options.sleep ?? realSleep;
   const maxAttempts = delays.length + 1;
   const db = getDb();
