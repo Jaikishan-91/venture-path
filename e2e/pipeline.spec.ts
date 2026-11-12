@@ -28,8 +28,11 @@ async function expectNoHorizontalScroll(page: Page) {
 
 /** Opens the collapsed "Pipeline & scheduling" panel on an applicant card, if not already open. */
 async function openPipelinePanel(card: Locator) {
-  const summary = card.getByText("Pipeline & scheduling");
-  if (await summary.isVisible()) await summary.click();
+  // A <details> keeps its open state across the server action's re-render; only open it if closed.
+  const details = card.locator("details", { hasText: "Pipeline & scheduling" });
+  if (!(await details.evaluate((element) => (element as HTMLDetailsElement).open))) {
+    await card.getByText("Pipeline & scheduling").click();
+  }
 }
 
 test("organisation builds a pipeline, candidate is scheduled and progressed to accepted", async ({
@@ -58,6 +61,8 @@ test("organisation builds a pipeline, candidate is scheduled and progressed to a
     // Save-as-draft redirects to the listing page, or (when the AI assist adds skills/questions)
     // straight to the edit page; either way, go to the listing page to publish.
     await page.getByRole("button", { name: "Save as draft" }).click();
+    // Wait for the save (and any AI assist) to finish before leaving the page.
+    await page.waitForURL((url) => !url.pathname.endsWith("/new"), { timeout: 60_000 });
     await page.goto("/organisation/opportunities");
     const article = page.getByRole("article", { name: title });
     await article.getByRole("button", { name: "Publish" }).click();
