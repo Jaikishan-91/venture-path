@@ -196,7 +196,8 @@ function Intro({
   pending: boolean;
   onStart: (mode: "chat" | "voice") => void;
 }) {
-  const [mode, setMode] = useState<"chat" | "voice">("chat");
+  // Voice is the default when it is enabled; chat is always one tap away (and the fallback).
+  const [mode, setMode] = useState<"chat" | "voice">(view.voiceEnabled ? "voice" : "chat");
   const [mic, setMic] = useState<MicStatus>("idle");
   const [agreed, setAgreed] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -267,7 +268,7 @@ function Intro({
             How do you want to answer?
           </legend>
           <div className="grid grid-cols-2 gap-2">
-            {(["chat", "voice"] as const).map((option) => (
+            {(["voice", "chat"] as const).map((option) => (
               <label
                 key={option}
                 className={`flex cursor-pointer flex-col gap-0.5 rounded-xl border bg-white p-3 text-sm transition-colors has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50 motion-reduce:transition-none ${
