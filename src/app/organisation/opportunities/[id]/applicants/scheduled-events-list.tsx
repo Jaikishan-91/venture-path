@@ -120,9 +120,6 @@ export function ScheduledEventsList({
                         {option.name} ({option.kind === "owner" ? "Owner" : "Hiring manager"})
                       </option>
                     ))}
-                    <option value="" disabled>
-                      AI Hiring Manager — coming soon
-                    </option>
                   </select>
                   <button type="submit" className={buttonVariants({ size: "sm" })}>
                     Save changes

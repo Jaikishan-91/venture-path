@@ -47,12 +47,15 @@ export function SignInForm({
   googleEnabled,
   error,
   inviteToken,
+  nextPath,
 }: {
   role: Role;
   googleEnabled: boolean;
   error?: string;
   /** For `hiring_manager` sign-in reached from an invite link (`?invite=`): resumes to accept it. */
   inviteToken?: string;
+  /** Where to return after a user sign-in (only an AI interview link, see `safeNextPath`). */
+  nextPath?: string;
 }) {
   const [state, action, pending] = useActionState<SignInState, FormData>(
     signInAs.bind(null, role),
@@ -83,6 +86,7 @@ export function SignInForm({
       <CardContent className="flex flex-col gap-4">
         <form action={action} className="flex flex-col gap-4">
           {inviteToken && <input type="hidden" name="invite" value={inviteToken} />}
+          {nextPath && <input type="hidden" name="next" value={nextPath} />}
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" autoComplete="email" required />

@@ -161,21 +161,19 @@ export function PipelineStageCard({
             />
           </div>
           {stage.kind === "interview" && (
-            <fieldset className="flex flex-col gap-1.5">
-              <legend className="text-sm font-medium">Interviewer</legend>
-              <div className="flex flex-col gap-1 text-sm">
-                <label className="flex items-center gap-2">
-                  <input type="radio" name={`interviewer-${index}`} defaultChecked />
-                  Hiring managers
-                </label>
-                <label className="flex items-center gap-2 text-muted-foreground">
-                  <input type="radio" name={`interviewer-${index}`} disabled />
-                  AI Hiring Manager — coming soon
-                </label>
-              </div>
-            </fieldset>
+            <p className="self-end text-xs text-muted-foreground">
+              Run by you or your hiring managers. To screen candidates first, add an “AI interview”
+              step before this one.
+            </p>
           )}
         </div>
+      )}
+
+      {stage.kind === "ai_interview" && (
+        <p className="text-xs text-muted-foreground">
+          The AI asks the candidate 6 questions by chat and writes a report for you. Nothing is
+          scheduled; the candidate gets a private link by email. You make the decision.
+        </p>
       )}
 
       <div className="flex flex-col gap-1.5">

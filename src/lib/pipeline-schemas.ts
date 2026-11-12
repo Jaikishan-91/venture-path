@@ -6,6 +6,7 @@ import {
   MAX_STAGES,
   MIN_DURATION_MINUTES,
   STAGE_KINDS,
+  UNSCHEDULED_STAGE_KINDS,
   type PipelineStageView,
   type StageInput,
 } from "./hiring/types";
@@ -57,15 +58,20 @@ const stageDurationMinutes = z
   .max(MAX_DURATION_MINUTES, `Duration can't exceed ${MAX_DURATION_MINUTES} minutes`)
   .nullable();
 
-const stageSchema = z.object({
-  id: z.uuid().optional(),
-  name: stageName,
-  kind: z.enum(STAGE_KINDS, "Choose a stage kind"),
-  instructions: stageInstructions,
-  externalUrl: stageExternalUrl,
-  durationMinutes: stageDurationMinutes,
-  source: z.enum(["ai", "organisation"] as const),
-});
+const stageSchema = z
+  .object({
+    id: z.uuid().optional(),
+    name: stageName,
+    kind: z.enum(STAGE_KINDS, "Choose a stage kind"),
+    instructions: stageInstructions,
+    externalUrl: stageExternalUrl,
+    durationMinutes: stageDurationMinutes,
+    source: z.enum(["ai", "organisation"] as const),
+  })
+  // AI interview steps are never scheduled, so they have no duration (docs/PRODUCT.md Module 5).
+  .transform((stage) =>
+    UNSCHEDULED_STAGE_KINDS.includes(stage.kind) ? { ...stage, durationMinutes: null } : stage,
+  );
 
 /** `StageInput[]`: at most `MAX_STAGES`, unique names (case-insensitive). Pure (ADR-037). */
 export const pipelineStagesSchema = z

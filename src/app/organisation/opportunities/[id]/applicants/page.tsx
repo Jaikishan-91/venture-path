@@ -17,6 +17,12 @@ import { decideAction } from "./actions";
 import { ApplicantFilters } from "./applicant-filters";
 import { PipelinePanel } from "./pipeline-panel";
 import { ResumeAnalysis } from "./resume-analysis";
+import { listInterviewsForApplications, type OrgInterviewView } from "@/lib/ai-interview";
+import {
+  AiInterviewSection,
+  SendAiInterviewCheckbox,
+  SendAiInterviewForm,
+} from "./ai-interview-section";
 
 export const metadata: Metadata = { title: "Applicants · VenturePath" };
 
@@ -62,6 +68,11 @@ export default async function ApplicantsPage({
         listFeedbackForApplications(session.user.id, applicationIds),
       ])
     : [new Map(), {}];
+  // AI interview (docs/PRODUCT.md Modules 5–6): reports are for the owner only.
+  const aiStage = stages.find((stage) => stage.kind === "ai_interview");
+  const interviewsByApplication: Map<string, OrgInterviewView[]> = hasPipeline
+    ? await listInterviewsForApplications(session.user.id, applicationIds)
+    : new Map();
   const canReanalyze = createLlmClient() !== null;
   const basePath = `/organisation/opportunities/${id}/applicants`;
 
@@ -76,6 +87,9 @@ export default async function ApplicantsPage({
           basePath={basePath}
           stages={stages.map((stage) => ({ id: stage.id, name: stage.name }))}
         />
+      )}
+      {aiStage && applicants.length > 0 && (
+        <SendAiInterviewForm opportunityId={id} stageName={aiStage.name} />
       )}
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {opportunity._count.applications === 0
@@ -99,6 +113,14 @@ export default async function ApplicantsPage({
                 {application.userProfile.course}, {application.userProfile.institution} ·{" "}
                 {STATUS_LABEL[application.status]} · Applied {formatApplied(application.appliedAt)}
               </CardDescription>
+              {aiStage &&
+                application.status === "submitted" &&
+                application.currentStageId !== aiStage.id && (
+                  <SendAiInterviewCheckbox
+                    applicationId={application.id}
+                    currentStageId={application.currentStageId}
+                  />
+                )}
             </CardHeader>
             <CardContent className="flex flex-col gap-3 text-sm">
               {application.userProfile.skills.length > 0 && (
@@ -147,6 +169,15 @@ export default async function ApplicantsPage({
               )}
             </CardContent>
           </Card>
+
+          {interviewsByApplication.get(application.id)?.[0] && (
+            <AiInterviewSection
+              interview={interviewsByApplication.get(application.id)![0]}
+              applicationStatus={application.status}
+              currentStageId={application.currentStageId}
+              stages={stages}
+            />
+          )}
 
           <ResumeAnalysis
             applicationId={application.id}

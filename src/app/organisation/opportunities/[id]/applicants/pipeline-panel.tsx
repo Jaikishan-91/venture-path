@@ -1,6 +1,7 @@
 import { buttonVariants } from "@/components/ui/button";
 import {
   DEFAULT_DURATION_MINUTES,
+  UNSCHEDULED_STAGE_KINDS,
   type InterviewerOption,
   type StageKind,
 } from "@/lib/hiring/types";
@@ -113,7 +114,7 @@ export function PipelinePanel({
               </form>
             </div>
 
-            {currentStage && (
+            {currentStage && !UNSCHEDULED_STAGE_KINDS.includes(currentStage.kind) && (
               <ScheduleForm
                 applicationId={applicationId}
                 stageId={currentStage.id}

@@ -4,6 +4,7 @@ import {
   MAX_DURATION_MINUTES,
   MEET_STAGE_KINDS,
   MIN_DURATION_MINUTES,
+  UNSCHEDULED_STAGE_KINDS,
   type StageKind,
 } from "./hiring/types";
 
@@ -40,13 +41,22 @@ export type ScheduleParseResult =
  * Validate a schedule/reschedule form: shape via `scheduleFormSchema`, `startsAtLocal` via
  * `indiaLocalToUtc` (all slots are in India time, D7), the time must be in the future, and —
  * because a Meet link needs someone to invite — a stage in `MEET_STAGE_KINDS` needs at least one
- * interviewer (a test/assignment slot may have zero).
+ * interviewer (a test/assignment slot may have zero). Kinds in `UNSCHEDULED_STAGE_KINDS` (the AI
+ * interview) are run by the platform and are never scheduled.
  */
 export function parseScheduleInput(
   input: unknown,
   stageKind: StageKind,
   now: Date = new Date(),
 ): ScheduleParseResult {
+  if (UNSCHEDULED_STAGE_KINDS.includes(stageKind)) {
+    return {
+      ok: false,
+      reason: "invalid",
+      message:
+        "AI interview steps aren't scheduled. The candidate gets an interview link by email.",
+    };
+  }
   const parsed = scheduleFormSchema.safeParse(input);
   if (!parsed.success) {
     return {
