@@ -8,6 +8,7 @@ import {
   applyToOpportunity,
   decideApplication,
   getResumeForUser,
+  listApplicants,
   withdrawApplication,
 } from "@/lib/applications";
 import { getDb } from "@/lib/db";
@@ -63,8 +64,8 @@ const listing: OpportunityInput = {
   compensationMax: null,
 };
 
-async function publishedListing(organisationId: string) {
-  const created = await createOpportunity(organisationId, listing);
+async function publishedListing(organisationId: string, applyTask: string | null = null) {
+  const created = await createOpportunity(organisationId, { ...listing, applyTask });
   if (!created.ok) throw new Error(created.reason);
   await changeOpportunityStatus(organisationId, created.id, "publish");
   return created.id;
@@ -78,6 +79,31 @@ beforeAll(async () => {
   uploadDir = await mkdtemp(path.join(tmpdir(), "vp-resumes-"));
   process.env.UPLOAD_DIR = uploadDir;
 });
+
+/** A manual proof card owned by `userId`, written directly (no background check). */
+async function proofFor(userId: string, title = "Shop posts") {
+  const profile = await getDb().userProfile.findUniqueOrThrow({ where: { userId } });
+  return getDb().proof.create({
+    data: {
+      userProfileId: profile.id,
+      title,
+      whatIDid: "Wrote 30 posts in Canva.",
+      link: "https://example.com/posts",
+      skills: ["canva"],
+      level: "checked",
+    },
+  });
+}
+
+const attachedProofIds = async (applicationId: string) =>
+  (
+    await getDb().application.findUniqueOrThrow({
+      where: { id: applicationId },
+      select: { proofs: { select: { id: true } } },
+    })
+  ).proofs
+    .map((proof) => proof.id)
+    .sort();
 
 afterAll(async () => {
   await getDb().user.deleteMany({ where: { email: { endsWith: `@${EMAIL_DOMAIN}` } } });
@@ -185,5 +211,124 @@ describe("applications", () => {
 
     const cancelled = await getDb().scheduledEvent.findUniqueOrThrow({ where: { id: event.id } });
     expect(cancelled.status).toBe("cancelled");
+  });
+});
+
+describe("applying with proof (Module 4)", () => {
+  it("applies with proof cards only and shows them to the organisation", async () => {
+    const organisation = await createUser("organisation");
+    const user = await createUser("user");
+    const opportunityId = await publishedListing(organisation.id);
+    const proof = await proofFor(user.id);
+
+    const applied = await applyToOpportunity(user.id, opportunityId, {
+      note: "",
+      proofIds: [proof.id, proof.id],
+    });
+    if (!applied.ok) throw new Error(applied.reason);
+    await settleBackground();
+
+    const row = await getDb().application.findUniqueOrThrow({ where: { id: applied.id } });
+    expect(row.resumeStorageKey).toBeNull();
+    expect(row.resumeFileName).toBeNull();
+    expect(await attachedProofIds(applied.id)).toEqual([proof.id]);
+    expect(await getResumeForUser(user.id, applied.id)).toMatchObject({ resumeStorageKey: null });
+
+    const { applicants } = await listApplicants(organisation.id, opportunityId);
+    expect(applicants[0].proofs).toEqual([
+      expect.objectContaining({ id: proof.id, title: "Shop posts", level: "checked" }),
+    ]);
+    expect(applicants[0].proofs[0]).not.toHaveProperty("aiScore");
+  });
+
+  it("needs a proof card or a resume, and only the applicant's own cards", async () => {
+    const organisation = await createUser("organisation");
+    const user = await createUser("user");
+    const other = await createUser("user");
+    const opportunityId = await publishedListing(organisation.id);
+    const theirs = await proofFor(other.id);
+
+    expect(await applyToOpportunity(user.id, opportunityId, { note: "" })).toEqual({
+      ok: false,
+      reason: "needs_evidence",
+    });
+    expect(
+      await applyToOpportunity(user.id, opportunityId, { note: "", proofIds: [theirs.id] }),
+    ).toEqual({ ok: false, reason: "proof_not_found" });
+    const mine = await Promise.all([1, 2, 3, 4].map((i) => proofFor(user.id, `Proof ${i}`)));
+    expect(
+      await applyToOpportunity(user.id, opportunityId, {
+        note: "",
+        proofIds: mine.map((proof) => proof.id),
+      }),
+    ).toEqual({ ok: false, reason: "proof_not_found" });
+    // A resume alone still works.
+    expect(await applyToOpportunity(user.id, opportunityId, { ...resume, note: "" })).toMatchObject(
+      { ok: true },
+    );
+  });
+
+  it("replaces the attached proof cards when resubmitting", async () => {
+    const organisation = await createUser("organisation");
+    const user = await createUser("user");
+    const opportunityId = await publishedListing(organisation.id);
+    const [first, second] = [await proofFor(user.id, "One"), await proofFor(user.id, "Two")];
+
+    const applied = await applyToOpportunity(user.id, opportunityId, {
+      ...resume,
+      note: "",
+      proofIds: [first.id],
+    });
+    if (!applied.ok) throw new Error(applied.reason);
+    expect(await withdrawApplication(user.id, applied.id)).toEqual({ ok: true });
+    expect(
+      await applyToOpportunity(user.id, opportunityId, { note: "", proofIds: [second.id] }),
+    ).toEqual({ ok: true, id: applied.id });
+    expect(await attachedProofIds(applied.id)).toEqual([second.id]);
+    const row = await getDb().application.findUniqueOrThrow({ where: { id: applied.id } });
+    expect(row.resumeStorageKey).toBeNull();
+    await settleBackground();
+  });
+
+  it("requires the apply task answer and saves it as an attached proof card", async () => {
+    const organisation = await createUser("organisation");
+    const user = await createUser("user");
+    const opportunityId = await publishedListing(organisation.id, "Write 3 captions.");
+
+    expect(await applyToOpportunity(user.id, opportunityId, { ...resume, note: "" })).toEqual({
+      ok: false,
+      reason: "task_required",
+    });
+    const applied = await applyToOpportunity(user.id, opportunityId, {
+      note: "",
+      taskAnswer: "  1. Sweet! 2. Sweeter! 3. Sweetest!  ",
+    });
+    if (!applied.ok) throw new Error(applied.reason);
+
+    const taskProofs = await getDb().proof.findMany({
+      where: { source: "apply_task", applications: { some: { id: applied.id } } },
+    });
+    expect(taskProofs).toHaveLength(1);
+    expect(taskProofs[0]).toMatchObject({
+      title: "Task: Marketing intern",
+      whatIDid: "1. Sweet! 2. Sweeter! 3. Sweetest!",
+      level: "added",
+      aiScoreStatus: "skipped",
+    });
+
+    // Resubmitting updates the same task card instead of adding another.
+    expect(await withdrawApplication(user.id, applied.id)).toEqual({ ok: true });
+    const again = await applyToOpportunity(user.id, opportunityId, {
+      note: "",
+      taskAnswer: "New captions",
+    });
+    expect(again).toEqual({ ok: true, id: applied.id });
+    const after = await getDb().proof.findMany({
+      where: { source: "apply_task", userProfile: { userId: user.id } },
+    });
+    expect(after).toHaveLength(1);
+    expect(after[0]).toMatchObject({ id: taskProofs[0].id, whatIDid: "New captions" });
+    expect(await attachedProofIds(applied.id)).toEqual([taskProofs[0].id]);
+    await settleBackground();
   });
 });

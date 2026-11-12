@@ -37,6 +37,7 @@ export default async function NewOpportunityPage() {
             experienceLevel: "",
             compensationMin: "",
             compensationMax: "",
+            applyTask: "",
           }}
         />
       ) : (

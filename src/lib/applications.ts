@@ -10,6 +10,8 @@ import { cancelFutureEventsForApplication } from "./scheduling";
 import type { ResumeExtension } from "./resumes";
 import { analyzeApplication } from "./resume-analysis";
 import { addResume, deleteStoredFileIfUnreferenced } from "./resume-library";
+import { PROOF_CARD_SELECT } from "./proofs";
+import { MAX_APPLICATION_PROOFS, MAX_APPLY_TASK_ANSWER_LENGTH } from "./v2/types";
 
 type TxClient = Prisma.TransactionClient | ReturnType<typeof getDb>;
 
@@ -23,7 +25,13 @@ export type ApplyFailure =
   | "already_applied"
   | "resume_not_found"
   | "resume_limit"
-  | "answers_mismatch";
+  | "answers_mismatch"
+  /** Neither a proof card nor a resume (docs/PRODUCT.md Module 4). */
+  | "needs_evidence"
+  /** A picked proof card isn't the applicant's, or more than the limit were picked. */
+  | "proof_not_found"
+  /** The listing has an apply task and the answer is missing or too long. */
+  | "task_required";
 export type ApplyResult = { ok: true; id: string } | { ok: false; reason: ApplyFailure };
 
 export type DecisionFailure = "not_found" | "invalid_state";
@@ -38,14 +46,28 @@ const noteOrNull = (note: string) => {
 export type ApplyResume =
   { resumeId: string } | { fileName: string; extension: ResumeExtension; bytes: Buffer };
 
+/** No resume: the application relies on proof cards (docs/PRODUCT.md Module 4). */
+type NoResume = { resumeId?: undefined; bytes?: undefined };
+
+export type ApplyInput = {
+  note: string;
+  answers?: Record<string, string>;
+  /** The applicant's own proof cards to attach (at most MAX_APPLICATION_PROOFS). */
+  proofIds?: string[];
+  /** Answer to the listing's apply task; required when the listing has one. */
+  taskAnswer?: string;
+} & (ApplyResume | NoResume);
+
 /**
- * Apply to a visible listing with a resume and answers to all of its screening questions
- * (keyed by question ID). A withdrawn application is resubmitted in place, replacing its answers.
+ * Apply to a visible listing with proof cards and/or a resume (at least one), answers to all of
+ * its screening questions (keyed by question ID), and the apply task answer when it has one (saved
+ * as an `apply_task` proof card and attached). A withdrawn application is resubmitted in place,
+ * replacing its answers and attached proof cards.
  */
 export async function applyToOpportunity(
   applicantUserId: string,
   opportunityId: string,
-  input: { note: string; answers?: Record<string, string> } & ApplyResume,
+  input: ApplyInput,
 ): Promise<ApplyResult> {
   const db = getDb();
   const profile = await db.userProfile.findUnique({ where: { userId: applicantUserId } });
@@ -53,9 +75,27 @@ export async function applyToOpportunity(
 
   const open = await db.opportunity.findFirst({
     where: { id: opportunityId, ...visibleOpportunityWhere() },
-    select: { id: true, questions: { select: { id: true } } },
+    select: { id: true, title: true, applyTask: true, questions: { select: { id: true } } },
   });
   if (!open) return { ok: false, reason: "not_open" };
+
+  const taskAnswer = input.taskAnswer?.trim() ?? "";
+  if (open.applyTask && (!taskAnswer || taskAnswer.length > MAX_APPLY_TASK_ANSWER_LENGTH)) {
+    return { ok: false, reason: "task_required" };
+  }
+  const proofIds = [...new Set(input.proofIds ?? [])];
+  if (proofIds.length > MAX_APPLICATION_PROOFS) return { ok: false, reason: "proof_not_found" };
+  if (proofIds.length > 0) {
+    const owned = await db.proof.count({
+      where: { id: { in: proofIds }, userProfileId: profile.id },
+    });
+    if (owned !== proofIds.length) return { ok: false, reason: "proof_not_found" };
+  }
+  const hasResume =
+    ("resumeId" in input && Boolean(input.resumeId)) || ("bytes" in input && Boolean(input.bytes));
+  if (!hasResume && proofIds.length === 0 && !open.applyTask) {
+    return { ok: false, reason: "needs_evidence" };
+  }
 
   const answers = input.answers ?? {};
   const questionIds = open.questions.map((question) => question.id);
@@ -71,15 +111,15 @@ export async function applyToOpportunity(
   });
   if (existing && existing.status !== "withdrawn") return { ok: false, reason: "already_applied" };
 
-  let resume: { id: string; fileName: string; storageKey: string };
-  if ("resumeId" in input) {
+  let resume: { id: string; fileName: string; storageKey: string } | null = null;
+  if ("resumeId" in input && input.resumeId) {
     const found = await db.resume.findFirst({
       where: { id: input.resumeId, userProfileId: profile.id },
       select: { id: true, fileName: true, storageKey: true },
     });
     if (!found) return { ok: false, reason: "resume_not_found" };
     resume = found;
-  } else {
+  } else if ("bytes" in input && input.bytes) {
     const added = await addResume(applicantUserId, input);
     if (!added.ok)
       return { ok: false, reason: added.reason === "limit" ? "resume_limit" : "needs_profile" };
@@ -88,9 +128,9 @@ export async function applyToOpportunity(
 
   const data = {
     note: noteOrNull(input.note),
-    resumeId: resume.id,
-    resumeFileName: resume.fileName,
-    resumeStorageKey: resume.storageKey,
+    resumeId: resume?.id ?? null,
+    resumeFileName: resume?.fileName ?? null,
+    resumeStorageKey: resume?.storageKey ?? null,
     status: "submitted" as const,
     appliedAt: new Date(),
     decidedAt: null,
@@ -103,6 +143,15 @@ export async function applyToOpportunity(
   let applicationId: string;
   try {
     applicationId = await db.$transaction(async (tx) => {
+      const taskProofId = open.applyTask
+        ? await saveTaskProof(tx, {
+            userProfileId: profile.id,
+            applicationId: existing?.id ?? null,
+            title: `Task: ${open.title}`,
+            answer: taskAnswer,
+          })
+        : null;
+      const attached = [...proofIds, ...(taskProofId ? [taskProofId] : [])].map((id) => ({ id }));
       if (!existing) {
         const created = await tx.application.create({
           data: {
@@ -110,6 +159,7 @@ export async function applyToOpportunity(
             opportunityId,
             userProfileId: profile.id,
             answers: { create: answerRows },
+            proofs: { connect: attached },
           },
           select: { id: true },
         });
@@ -120,6 +170,10 @@ export async function applyToOpportunity(
         data,
       });
       if (count === 0) throw new AlreadyApplied();
+      await tx.application.update({
+        where: { id: existing.id },
+        data: { proofs: { set: attached } },
+      });
       await tx.analysis.deleteMany({ where: { applicationId: existing.id } });
       await tx.applicationAnswer.deleteMany({ where: { applicationId: existing.id } });
       await tx.applicationAnswer.createMany({
@@ -141,7 +195,7 @@ export async function applyToOpportunity(
     throw err;
   }
 
-  if (existing?.resumeStorageKey && existing.resumeStorageKey !== resume.storageKey) {
+  if (existing?.resumeStorageKey && existing.resumeStorageKey !== resume?.storageKey) {
     await deleteStoredFileIfUnreferenced(existing.resumeStorageKey);
   }
   getLogger().info(
@@ -157,6 +211,41 @@ export async function applyToOpportunity(
 }
 
 class AlreadyApplied extends Error {}
+
+/**
+ * The apply task answer as an `apply_task` proof card. On resubmit the card already attached to
+ * the application is updated in place instead of adding another. No AI check runs on it.
+ */
+async function saveTaskProof(
+  tx: Prisma.TransactionClient,
+  input: { userProfileId: string; applicationId: string | null; title: string; answer: string },
+): Promise<string> {
+  const data = {
+    title: input.title.slice(0, 120),
+    whatIDid: input.answer,
+    level: "added" as const,
+    aiScoreStatus: "skipped" as const,
+  };
+  const previous = input.applicationId
+    ? await tx.proof.findFirst({
+        where: {
+          source: "apply_task",
+          userProfileId: input.userProfileId,
+          applications: { some: { id: input.applicationId } },
+        },
+        select: { id: true },
+      })
+    : null;
+  if (previous) {
+    await tx.proof.update({ where: { id: previous.id }, data });
+    return previous.id;
+  }
+  const created = await tx.proof.create({
+    data: { ...data, userProfileId: input.userProfileId, source: "apply_task", skills: [] },
+    select: { id: true },
+  });
+  return created.id;
+}
 
 export async function withdrawApplication(
   applicantUserId: string,
@@ -361,6 +450,7 @@ export async function listApplicants(
           },
         },
         analysis: true,
+        proofs: { select: PROOF_CARD_SELECT },
         answers: {
           select: {
             id: true,

@@ -14,6 +14,7 @@ import {
 } from "@/lib/opportunity-schemas";
 import { listQuestions } from "@/lib/opportunities";
 import { getUserProfile } from "@/lib/profiles";
+import { listOwnProofs } from "@/lib/proofs";
 import { listResumes, MAX_LIBRARY_RESUMES } from "@/lib/resume-library";
 import { getVisibleOpportunity } from "@/lib/search";
 import { withdrawAction } from "./actions";
@@ -40,15 +41,21 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   const profile =
     session?.user.role === "user" && !application ? await getUserProfile(session.user.id) : null;
   const canApply = (profile !== null && !application) || application?.status === "withdrawn";
-  const [questions, resumes] = canApply
-    ? await Promise.all([listQuestions(opportunity.id), listResumes(session!.user.id)])
-    : [[], []];
+  const [questions, resumes, proofs] = canApply
+    ? await Promise.all([
+        listQuestions(opportunity.id),
+        listResumes(session!.user.id),
+        listOwnProofs(session!.user.id),
+      ])
+    : [[], [], []];
   const applyForm = (
     <ApplyForm
       opportunityId={opportunity.id}
       questions={questions}
       resumes={resumes.map((resume) => ({ id: resume.id, fileName: resume.fileName }))}
       canUpload={resumes.length < MAX_LIBRARY_RESUMES}
+      proofs={proofs.map((proof) => ({ id: proof.id, title: proof.title, level: proof.level }))}
+      applyTask={opportunity.applyTask}
     />
   );
 
@@ -153,7 +160,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
         <section
           className={`flex h-fit min-w-0 flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-[#e2e5e7] ${
             // A tall form (screening questions) can't be sticky: its end would be unreachable.
-            questions.length === 0 ? "md:sticky md:top-6" : ""
+            questions.length === 0 && !opportunity.applyTask ? "md:sticky md:top-6" : ""
           }`}
         >
           <h2 className="text-lg font-medium">Apply</h2>

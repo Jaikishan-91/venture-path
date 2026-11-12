@@ -162,7 +162,8 @@ export const opportunitySchema = fields.transform((input, ctx) => {
     compensationMax,
   };
 });
-export type OpportunityInput = z.output<typeof opportunitySchema>;
+/** `applyTask` (docs/PRODUCT.md Module 4) is parsed separately (`applyTaskSchema`); undefined leaves it unchanged. */
+export type OpportunityInput = z.output<typeof opportunitySchema> & { applyTask?: string | null };
 
 /** Screening questions (ADR-032). The AI drafts them; the organisation edits before anyone applies. */
 export const MAX_QUESTIONS = 8;

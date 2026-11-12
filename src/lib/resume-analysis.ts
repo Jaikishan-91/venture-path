@@ -8,6 +8,7 @@ import { scoreAnswers } from "./answer-scoring";
 import { asData, parseJsonObject, stringList } from "./llm/json";
 import { buildPrompt, DATA_SYSTEM_MESSAGE, getPromptContent } from "./llm/prompts";
 import { createLlmClient, type LlmClient, type LlmMessage } from "./llm/provider";
+import { proofEvidenceText } from "./proof-schemas";
 import { readResume, resumeExtension } from "./resumes";
 import { combineScores, parseScore } from "./skills";
 
@@ -75,6 +76,7 @@ export async function analyzeApplication(applicationId: string): Promise<Analyze
     select: {
       id: true,
       resumeStorageKey: true,
+      proofs: { select: { title: true, whatIDid: true, skills: true } },
       opportunity: {
         select: {
           title: true,
@@ -106,7 +108,13 @@ export async function analyzeApplication(applicationId: string): Promise<Analyze
     (a, b) => a.question.position - b.question.position,
   );
   const [resume, scored] = await Promise.all([
-    analyzeResumePart(client, application.resumeStorageKey, application.opportunity, applicationId),
+    analyzeResumePart(
+      client,
+      application.resumeStorageKey,
+      application.opportunity,
+      applicationId,
+      proofEvidenceText(application.proofs),
+    ),
     answers.length > 0
       ? scoreAnswers(
           client,
@@ -188,10 +196,15 @@ async function analyzeResumePart(
   storageKey: string | null,
   opportunity: ListingForPrompt,
   applicationId: string,
+  /** Attached proof cards as text: the candidate evidence when there is no resume. */
+  proofText = "",
 ): Promise<PartResult<ResumeAnalysisSummary>> {
-  // Applications made with proof only have no resume (docs/PRODUCT.md Module 4).
-  if (!storageKey) return { ok: false, reason: "no_resume" };
-  const resumeText = await readResumeText(storageKey);
+  // Applications made with proof only have no resume (docs/PRODUCT.md Module 4): their proof
+  // cards stand in for it.
+  if (!storageKey && !proofText) return { ok: false, reason: "no_resume" };
+  const resumeText = storageKey
+    ? await readResumeText(storageKey)
+    : `The candidate applied with proof cards instead of a resume.\n\n${proofText}`;
   if (!resumeText) {
     logger.warn(
       { applicationId },
