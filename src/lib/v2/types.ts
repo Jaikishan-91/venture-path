@@ -192,8 +192,18 @@ export type VoiceTranscriptPost = {
 export type VoiceJoin = { url: string; token: string; roomName: string };
 
 /**
- * Functions WP-C exports from `src/lib/ai-interview.ts` for WP-D's routes:
- *   getVoicePlan(sessionId: string): Promise<VoicePlan | null>
- *   recordVoiceTranscript(sessionId: string, post: VoiceTranscriptPost): Promise<Result<object, InterviewFailure>>
- *   findSessionByToken(token: string): Promise<{ id: string; status: string; mode: "chat" | "voice" | null; consentedAt: Date | null; expiresAt: Date } | null>
+ * Cross-package functions (wired together at merge):
+ *  - WP-C exports from `src/lib/ai-interview.ts`:
+ *      findSessionByToken(token: string) — hashes the token (SHA-256 hex) and loads the session.
+ *  - WP-C exports from `src/lib/ai-interview-report.ts`:
+ *      startInterviewReport(sessionId: string): void — runs the report in the background
+ *      (same for chat and voice). Idempotent; ignores sessions that aren't completed.
+ *  - WP-D owns `src/lib/ai-interview-voice.ts` (DB-level, no dependency on WP-C files):
+ *      getVoicePlan(sessionId: string): Promise<VoicePlan | null>
+ *      recordVoiceTranscript(sessionId: string, post: VoiceTranscriptPost): Promise<Result<object, InterviewFailure>>
+ *    On `completed: true` it marks the session completed; the call to `startInterviewReport`
+ *    is added at merge (marked `// MERGE: startInterviewReport`).
+ *  - `src/components/interview/voice-room.tsx` exports
+ *      VoiceRoom(props: { token: string; onSwitchToChat: () => void })
+ *    WP-C creates a placeholder; WP-D's real component replaces it at merge.
  */
