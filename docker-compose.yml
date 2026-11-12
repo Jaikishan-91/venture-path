@@ -59,6 +59,38 @@ services:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
 
+  # Voice AI interview (docs/PRODUCT.md Module 5): `docker compose --profile voice up -d`.
+  # LiveKit in dev mode: API key `devkey`, secret `secret`, signalling on 7880, ICE/TCP 7881 and one
+  # UDP mux port (7882) for media. node-ip 127.0.0.1 advertises loopback, so browsers on this machine
+  # (and the agent, which shares this network namespace) reach the media ports.
+  livekit:
+    profiles: ["voice"]
+    image: livekit/livekit-server:v1.13.11
+    command: --dev --bind 0.0.0.0 --node-ip 127.0.0.1 --udp-port 7882
+    ports:
+      - "127.0.0.1:7880:7880"
+      - "127.0.0.1:7881:7881"
+      - "127.0.0.1:7882:7882/udp"
+    # The voice agent shares this network namespace and calls the app on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # Python sidecar (voice-agent/): speaks the plan with Gemini Live and posts the transcript back.
+  voice-agent:
+    profiles: ["voice"]
+    build:
+      context: ./voice-agent
+    env_file: .env
+    environment:
+      # Same network namespace as livekit, so loopback reaches the server and its media port.
+      LIVEKIT_URL: ws://127.0.0.1:7880
+      VOICE_AGENT_APP_URL: ${VOICE_AGENT_DOCKER_APP_URL:-http://host.docker.internal:3000}
+    network_mode: "service:livekit"
+    depends_on:
+      - livekit
+    restart: unless-stopped
+
   # Production image (`npm run docker:prod`). Code changes need a rebuild.
   next:
     profiles: ["prod"]
