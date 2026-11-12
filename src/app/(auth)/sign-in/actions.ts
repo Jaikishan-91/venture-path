@@ -6,6 +6,7 @@ import { getAuth } from "@/lib/auth";
 import { getLogger } from "@/lib/logger";
 import { signInWithRole, type RoleSignInResult } from "@/lib/role-sign-in";
 import { SIGN_IN_PATHS, homePathFor, isRole, type Role } from "@/lib/roles";
+import { safeNextPath } from "@/lib/ai-interview-schemas";
 import { flash } from "@/lib/flash";
 
 export type SignInState =
@@ -47,7 +48,8 @@ export async function signInAs(
 
   if (result.ok) {
     await flash("success", "Signed in. Welcome back.");
-    redirect(homePathFor(result.role));
+    const nextPath = result.role === "user" ? safeNextPath(formData.get("next")) : null;
+    redirect(nextPath ?? homePathFor(result.role));
   }
   if (result.reason === "unverified") {
     return {

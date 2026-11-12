@@ -51,7 +51,7 @@ Experience level: {{experienceLevel}}
 
 Job Description:`,
 
-  pipeline_suggest: `You help an organisation design the hiring pipeline for the job listing below: the ordered steps a candidate goes through after applying, up to {{maxStages}} steps. Each step has a kind: "interview" (live conversation), "test" (timed test), "assignment" (take-home work) or "other". Fit the steps to the role's seniority and requirements; junior and internship roles need fewer steps. Name each step clearly (e.g. "Technical interview", "SQL test"), give one or two sentences of instructions for the candidate, and a duration in minutes (15-480) for interviews and tests.
+  pipeline_suggest: `You help an organisation design the hiring pipeline for the job listing below: the ordered steps a candidate goes through after applying, up to {{maxStages}} steps. Each step has a kind: "interview" (live conversation), "test" (timed test), "assignment" (take-home work), "ai_interview" (a short written or spoken interview run by the platform's AI, which writes a report for the organisation; no duration) or "other". Fit the steps to the role's seniority and requirements; junior and internship roles need fewer steps: for internships and junior roles use exactly two steps, an "ai_interview" step named "AI interview" followed by an "interview" step named "Live interview". Candidates start at "Applied" automatically, so never add an "Applied" step. Name each step clearly (e.g. "Technical interview", "SQL test"), give one or two sentences of instructions for the candidate, and a duration in minutes (15-480) for interviews and tests only.
 
 Return JSON only: {"stages": [{"name": "...", "kind": "interview", "instructions": "...", "durationMinutes": 45}]}
 

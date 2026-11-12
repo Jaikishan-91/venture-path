@@ -28,6 +28,7 @@ export const PROMPT_KEYS = [
   "interview_questions",
   "interview_followup",
   "interview_report",
+  "interview_evidence",
 ] as const;
 export type PromptKey = (typeof PROMPT_KEYS)[number];
 
@@ -81,6 +82,10 @@ export const DEFAULT_PROMPT_TEMPLATES: Record<PromptKey, { name: string; content
     content: DEFAULT_PROMPTS.interview_followup,
   },
   interview_report: { name: "AI interview: report", content: DEFAULT_PROMPTS.interview_report },
+  interview_evidence: {
+    name: "AI interview: evidence quotes",
+    content: DEFAULT_PROMPTS.interview_evidence,
+  },
 };
 
 /** Return all prompts, using the DB row when present and falling back to defaults. */

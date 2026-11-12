@@ -61,9 +61,6 @@ export function ScheduleForm({
               {option.name} ({option.kind === "owner" ? "Owner" : "Hiring manager"})
             </option>
           ))}
-          <option value="" disabled>
-            AI Hiring Manager — coming soon
-          </option>
         </select>
       </div>
       <p className="text-xs text-muted-foreground">Times are in India time (IST).</p>

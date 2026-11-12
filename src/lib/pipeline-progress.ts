@@ -6,6 +6,7 @@ import { getOrderedStages } from "./pipelines";
 import { runInBackground } from "./background";
 import { cancelFutureEventsForApplication, cancelFutureEventsForStage } from "./scheduling";
 import type { ProgressFailure, Result } from "./hiring/types";
+import { expireOpenInterviews, openInterviewForStage } from "./ai-interview";
 
 /**
  * Moves a candidate through a listing's pipeline (WP4, D5/ADR-037): submitted = implicit
@@ -15,6 +16,24 @@ import type { ProgressFailure, Result } from "./hiring/types";
  * `expectedStageId`, the stage the caller's page showed — a mismatch (someone else changed the
  * candidate's stage meanwhile) fails with `stale` rather than silently overwriting it.
  */
+
+/**
+ * AI interview hook (docs/PRODUCT.md Module 5): after a transition, unfinished interviews of
+ * stages the candidate left expire, and reaching an `ai_interview` stage opens its interview
+ * (invite emailed in the background). Never fails the transition itself.
+ */
+async function syncAiInterview(
+  applicationId: string,
+  stageId: string | null,
+  enteredAiInterview: boolean,
+): Promise<void> {
+  try {
+    await expireOpenInterviews(applicationId, stageId);
+    if (stageId && enteredAiInterview) await openInterviewForStage(applicationId, stageId);
+  } catch (err) {
+    getLogger().error({ applicationId, stageId, err }, "AI interview sync failed");
+  }
+}
 
 type OwnedApplication = {
   id: string;
@@ -107,6 +126,11 @@ export async function advanceCandidate(
   } else if (expectedStageId !== null) {
     await cancelFutureEventsForStage(applicationId, expectedStageId);
   }
+  await syncAiInterview(
+    applicationId,
+    result.accepted ? null : result.stageId,
+    !result.accepted && nextStage?.kind === "ai_interview",
+  );
   return result;
 }
 
@@ -154,6 +178,7 @@ export async function failCandidate(
     notifyApplicationDecision(applicationId, "rejected"),
   );
   await cancelFutureEventsForApplication(applicationId);
+  await syncAiInterview(applicationId, null, false);
   return { ok: true };
 }
 
@@ -199,5 +224,11 @@ export async function moveCandidate(
   if (expectedStageId !== null && expectedStageId !== targetStageId) {
     await cancelFutureEventsForStage(applicationId, expectedStageId);
   }
+  const target = stages.find((stage) => stage.id === targetStageId);
+  await syncAiInterview(
+    applicationId,
+    targetStageId,
+    target?.kind === "ai_interview" && targetStageId !== expectedStageId,
+  );
   return { ok: true, stageId: targetStageId };
 }
