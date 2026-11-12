@@ -152,12 +152,15 @@ export type ProofForPlan = { title: string; whatIDid: string; skills: string[] }
 
 /**
  * The fixed 6-question bank used until (or instead of, when the AI is off or fails) the
- * generated plan: 2 skill, 2 proof, 1 situation, 1 motivation.
+ * generated plan: 2 skill, 2 proof, 1 situation, 1 motivation. Same order as the AI plan: an
+ * opener tied to this business and role, then proof and skill questions in turn, a small-business
+ * situation, and motivation/availability last. Short, one thing per question, plain English.
  */
 export function fallbackQuestions(
   listing: FallbackListing,
   proofs: ProofForPlan[] = [],
 ): InterviewQuestion[] {
+  const business = listing.businessName;
   const [skill1, skill2] = listing.skills;
   const roleSkill = skill1 ?? "Role skills";
   const [proof1, proof2] = proofs;
@@ -168,44 +171,46 @@ export function fallbackQuestions(
       kind: "skill",
       skill: roleSkill,
       text: skill1
-        ? `Tell us about a time you used ${skill1}. What did you do, and what was the result?`
-        : `What skills would you bring to the ${listing.title} role? Give one real example.`,
+        ? `As ${listing.title} at ${business}, how would you use ${skill1} to help them in your first week?`
+        : `As ${listing.title} at ${business}, what would you do first to help them, and why?`,
     },
     {
       id: "q2",
-      kind: "skill",
-      skill: skill2 ?? roleSkill,
-      text: skill2
-        ? `How would you use ${skill2} in your first two weeks as ${listing.title}?`
-        : `What would you do in your first two weeks as ${listing.title}?`,
-    },
-    {
-      id: "q3",
       kind: "proof",
       skill: proofSkill(proof1),
       text: proof1
-        ? `You added "${proof1.title}". What exactly was your part, and how did you do it?`
-        : "Tell us about a project or task you are proud of. What exactly was your part?",
+        ? `In your proof "${proof1.title}", what did you do yourself, step by step?`
+        : "Tell us about one piece of work you did yourself. What were the steps?",
+    },
+    {
+      id: "q3",
+      kind: "skill",
+      skill: skill2 ?? roleSkill,
+      text: skill2
+        ? `Walk us through how you would do a small ${skill2} task for ${business}, from start to finish.`
+        : `Walk us through how you would plan your first task for ${business}.`,
     },
     {
       id: "q4",
       kind: "proof",
       skill: proofSkill(proof2 ?? proof1),
       text: proof2
-        ? `In "${proof2.title}", what went wrong or was hard, and how did you handle it?`
-        : "In that work, what went wrong or was hard, and how did you handle it?",
+        ? `In "${proof2.title}", what was hard, and how would you do it for ${business}?`
+        : proof1
+          ? `If you did "${proof1.title}" again for ${business}, what would you change?`
+          : "What was hard in that work, and how did you handle it?",
     },
     {
       id: "q5",
       kind: "situation",
       skill: KIND_SKILL.situation,
-      text: `A customer of ${listing.businessName} is unhappy with work you delivered. What do you do?`,
+      text: `A customer of ${business} complains on a day you also have a deadline. What do you do first?`,
     },
     {
       id: "q6",
       kind: "motivation",
       skill: KIND_SKILL.motivation,
-      text: `Why do you want this role, and how many hours a week can you give it?`,
+      text: `Why do you want this role at ${business}, and how many hours a week can you give it?`,
     },
   ];
 }

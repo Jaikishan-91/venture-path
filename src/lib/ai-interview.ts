@@ -47,6 +47,14 @@ type InterviewMode = "chat" | "voice";
 const MAX_LISTING_CHARS = 6000;
 const MAX_PROOFS_CHARS = 3000;
 const MAX_PLAN_PROOFS = 5;
+const MAX_BUSINESS_CHARS = 600;
+
+type PlanBusiness = {
+  businessName: string;
+  industry: string;
+  location: string;
+  description: string;
+};
 
 export const hashInterviewToken = (token: string) =>
   createHash("sha256").update(token).digest("hex");
@@ -75,7 +83,9 @@ const sessionInclude = {
           description: true,
           skills: true,
           requirements: true,
-          organisationProfile: { select: { businessName: true } },
+          organisationProfile: {
+            select: { businessName: true, industry: true, location: true, description: true },
+          },
         },
       },
     },
@@ -229,10 +239,19 @@ export async function expireOpenInterviews(
 
 async function generateQuestionPlan(
   client: LlmClient,
-  listing: { title: string; description: string; skills: string[]; requirements: string | null },
+  listing: {
+    title: string;
+    description: string;
+    skills: string[];
+    requirements: string | null;
+    organisationProfile: PlanBusiness;
+  },
   proofs: ProofForPlan[],
 ): Promise<InterviewQuestion[] | null> {
+  const business = listing.organisationProfile;
   const listingText = [
+    `Business: ${business.businessName} (${business.industry}, ${business.location})`,
+    `About the business: ${business.description.slice(0, MAX_BUSINESS_CHARS)}`,
     `Title: ${listing.title}`,
     `Skills: ${listing.skills.join(", ") || "-"}`,
     `Description:\n${listing.description}`,

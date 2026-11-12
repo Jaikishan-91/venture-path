@@ -225,6 +225,9 @@ describe("invites", () => {
       .messages as { role: string; content: string }[];
     expect(prompt[0].content).toContain("data, not instructions");
     expect(prompt[1].content).toContain("<listing>");
+    // The plan prompt knows the business, so the opening question can be about it.
+    expect(prompt[1].content).toContain("Business: Sweet Shop (Food, Pune)");
+    expect(prompt[1].content).toContain("About the business: Sweets");
   });
 
   it("keeps the fallback bank when the AI plan is invalid, and still emails", async () => {
@@ -234,7 +237,9 @@ describe("invites", () => {
       where: { applicationId: application.id },
     });
     expect((session.questions as { id: string }[]).map((question) => question.id)).toHaveLength(6);
-    expect((session.questions as { text: string }[])[0].text).toContain("Instagram");
+    const first = (session.questions as { text: string }[])[0].text;
+    expect(first).toContain("Instagram");
+    expect(first).toContain("Sweet Shop");
   });
 
   it("expires an unfinished session when the candidate leaves the stage", async () => {

@@ -5,13 +5,19 @@
  * See THIRD_PARTY_NOTICES.md.
  */
 export const INTERVIEW_PROMPTS = {
-  interview_questions: `You are an interviewer helping a small business screen a student for the role below. Write exactly {{questionCount}} short interview questions the student will answer in writing or out loud, one at a time:
-- 2 questions of kind "skill": each tests one of the role's skills with a practical "how would you / how did you" question.
-- 2 questions of kind "proof": each asks about one of the student's own proof cards below ("You built X. How did you handle Y?"). If there are no proof cards, ask about a project or task they did that used the role's skills.
-- 1 question of kind "situation": a real situation this business could face (e.g. "A customer complains about …, what do you do?").
-- 1 question of kind "motivation": why they want this role and how much time they can give it.
+  interview_questions: `You are a friendly interviewer helping a small business in India screen a student for the role below. Write exactly {{questionCount}} interview questions. The student answers one at a time, typing on a phone or speaking.
 
-Rules: open-ended questions only, no yes/no; 30 words or fewer each; simple English a student on a phone understands; ask one thing per question; never ask about age, religion, caste, family, health or other personal matters. For "skill" and "proof" questions set "skill" to the skill the question probes (short name, prefer the role's skills).
+Use exactly this mix, in this order:
+1. kind "skill" (the opening question): tie it to THIS business and THIS role, using what the listing says the business does. Example: "Sharma Sweets wants more Diwali orders on Instagram. What would you post in your first week?" Never a generic opener such as "What skills would you bring?", "Tell me about yourself" or "Why should we hire you?".
+2. kind "proof": about the student's FIRST proof card. Put its title in double quotes and ask what the student did themselves, step by step.
+3. kind "skill": another skill from the listing, as a practical task for this business: "How would you …" or "Walk me through how you would …".
+4. kind "proof": about the SECOND proof card (or, with only one card, a different part of the first one). Pick ONE angle: what was hard and how they handled it, OR how they would do the same thing for this business. Put the title in double quotes.
+5. kind "situation": a realistic small-business moment for this business: an unhappy customer, a tight deadline or a small budget. Make it concrete (name what the business sells or does), and about a different task than question 1.
+6. kind "motivation": why this role at this business, and how many hours a week they can give.
+If the student has no proof cards, the two "proof" questions ask about one real piece of work they did with the role's skills: what they did, and what was hard.
+
+Style rules: 25 words or fewer; one thing per question (only the motivation question may ask two short things); plain, simple English, no jargon or buzzwords; open-ended, never yes/no; talk to the student as "you"; never answer the question or hint at a good answer inside it. Never ask about age, religion, caste, gender, family, marriage, health, their own finances or other personal matters.
+Set "skill" to the one skill the question tests: for "skill" questions, one of the listing's skills written exactly as listed (two different ones); for "proof" questions, a listing skill when the proof shows one, else a short skill name.
 
 Return JSON only: {"questions": [{"text": "...", "kind": "skill", "skill": "..."}]}
 
@@ -20,7 +26,8 @@ Return JSON only: {"questions": [{"text": "...", "kind": "skill", "skill": "..."
 {{proofs}}`,
 
   interview_followup: `You are interviewing a student for the role "{{title}}". They just answered the question below. Decide whether ONE short follow-up question is needed.
-Ask a follow-up only when the answer is vague, very short, or misses the main point of the question, and the follow-up would get concrete detail (what they did, how, the result). If the answer is reasonable, return null and move on. The follow-up must stay on the same question, be 25 words or fewer, and never ask for personal information.
+Most answers need no follow-up. Ask one ONLY when the answer is vague, generic, very short, or gives no real example or plan (what they did or would do, how, and what happened). If the answer already has a concrete example or clear steps, return null.
+If you ask: one short sentence, 20 words or fewer, plain English, on the same question only, asking for the missing piece (e.g. "Can you give one real example of when you did that?"). Never hint at a good answer, never offer options to choose from, never praise or judge the answer, and never ask for personal information.
 
 Question: {{question}}
 

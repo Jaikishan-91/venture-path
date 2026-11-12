@@ -63,25 +63,87 @@ describe("parseFollowUp", () => {
 });
 
 describe("fallbackQuestions", () => {
-  it("has 6 questions in the 2/2/1/1 mix, using skills and proofs when present", () => {
-    const questions = fallbackQuestions(
-      { title: "Social media intern", skills: ["Instagram", "Canva"], businessName: "Sweet Shop" },
-      [{ title: "Diwali campaign", whatIDid: "Ran posts", skills: ["Instagram"] }],
-    );
-    expect(questions.map((question) => question.kind)).toEqual(GOOD_KINDS);
+  const ROOM_ORDER = ["skill", "proof", "skill", "proof", "situation", "motivation"];
+  const shop = {
+    title: "Social media intern",
+    skills: ["Instagram", "Canva"],
+    businessName: "Sweet Shop",
+  };
+  const diwali = { title: "Diwali campaign", whatIDid: "Ran posts", skills: ["Instagram"] };
+  const menu = { title: "Cafe menu redesign", whatIDid: "Designed it", skills: ["Canva"] };
+
+  const isValidPlan = (questions: { text: string; kind: string }[]) =>
+    parseQuestionPlan(JSON.stringify({ questions })) !== null;
+
+  it("opens with the business and role, then alternates proof and skill questions", () => {
+    const questions = fallbackQuestions(shop, [diwali, menu]);
+    expect(questions.map((question) => question.kind)).toEqual(ROOM_ORDER);
+    expect(questions[0].text).toContain("Sweet Shop");
+    expect(questions[0].text).toContain("Social media intern");
     expect(questions[0].text).toContain("Instagram");
-    expect(questions[2].text).toContain("Diwali campaign");
+    expect(questions[0].text).not.toMatch(/what skills would you bring/i);
+    expect(questions[1].text).toContain('"Diwali campaign"');
+    expect(questions[2].text).toContain("Canva");
+    expect(questions[3].text).toContain('"Cafe menu redesign"');
+    expect(questions[3].text).toContain("Sweet Shop");
     expect(questions[4].text).toContain("Sweet Shop");
+    expect(questions[5].text).toMatch(/hours a week/);
+    expect(questions.map((question) => question.skill)).toEqual([
+      "Instagram",
+      "Instagram",
+      "Canva",
+      "Canva",
+      "Problem solving",
+      "Motivation & availability",
+    ]);
+  });
+
+  it("asks both proof questions about the only proof card", () => {
+    const questions = fallbackQuestions(shop, [diwali]);
+    expect(questions[1].text).toContain('"Diwali campaign"');
+    expect(questions[3].text).toContain('"Diwali campaign"');
+    expect(questions[3].text).not.toBe(questions[1].text);
+  });
+
+  it("always passes the plan validation (2/2/1/1, ≤ 300 chars), with or without proofs", () => {
+    for (const proofs of [[], [diwali], [diwali, menu]]) {
+      const questions = fallbackQuestions(shop, proofs);
+      expect(isValidPlan(questions)).toBe(true);
+      expect(new Set(questions.map((question) => question.id)).size).toBe(6);
+    }
   });
 
   it("works with no skills and no proofs", () => {
     const questions = fallbackQuestions({ title: "Intern", skills: [], businessName: "Acme" });
     expect(questions).toHaveLength(6);
+    expect(questions[0].text).toContain("Acme");
+    expect(isValidPlan(questions)).toBe(true);
     expect(reportSkills(questions)).toEqual([
       "Role skills",
       "Problem solving",
       "Motivation & availability",
     ]);
+  });
+});
+
+describe("interview prompts", () => {
+  it("ask for the 2/2/1/1 JSON shape and a business-specific opener; follow-ups stay rare", async () => {
+    const { INTERVIEW_PROMPTS } = await import("@/lib/llm/defaults-v2/interview");
+    const questions = INTERVIEW_PROMPTS.interview_questions;
+    for (const placeholder of ["{{questionCount}}", "{{listing}}", "{{proofs}}"]) {
+      expect(questions).toContain(placeholder);
+    }
+    expect(questions).toContain(
+      '{"questions": [{"text": "...", "kind": "skill", "skill": "..."}]}',
+    );
+    expect(questions).toMatch(/opening question/);
+    expect(questions).toMatch(/double quotes/);
+    const followUp = INTERVIEW_PROMPTS.interview_followup;
+    for (const placeholder of ["{{title}}", "{{question}}", "{{answer}}"]) {
+      expect(followUp).toContain(placeholder);
+    }
+    expect(followUp).toContain('{"followUp": null}');
+    expect(followUp).toMatch(/Never hint at a good answer/);
   });
 });
 
