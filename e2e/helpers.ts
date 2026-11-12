@@ -16,9 +16,14 @@ export const toast = (page: Page, text: string | RegExp): Locator =>
 export const uniqueEmail = (prefix: string) =>
   `${prefix}-${randomUUID().slice(0, 8)}@${E2E_EMAIL_DOMAIN}`;
 
-export async function signUp(page: Page, role: "user" | "organisation", email: string) {
+export async function signUp(
+  page: Page,
+  role: "user" | "organisation",
+  email: string,
+  name = `E2E ${role}`,
+) {
   await page.goto(role === "user" ? "/sign-up" : "/organisation/sign-up");
-  await page.getByLabel(role === "user" ? "Name" : "Your name").fill(`E2E ${role}`);
+  await page.getByLabel(role === "user" ? "Name" : "Your name").fill(name);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Create account" }).click();
@@ -26,8 +31,13 @@ export async function signUp(page: Page, role: "user" | "organisation", email: s
 }
 
 /** Signs up, verifies the email and lands on the role's dashboard. */
-export async function signUpVerified(page: Page, role: "user" | "organisation", email: string) {
-  await signUp(page, role, email);
+export async function signUpVerified(
+  page: Page,
+  role: "user" | "organisation",
+  email: string,
+  name?: string,
+) {
+  await signUp(page, role, email, name);
   await page.goto(await getVerificationLink(email));
   await expect(page).toHaveURL(new RegExp(`/${role}$`), { timeout: 15_000 });
 }

@@ -56,3 +56,4 @@ next-env.d.ts
 
 # Agent worktrees (parallel builds)
 .claude/worktrees/
+e2e/screenshots/
