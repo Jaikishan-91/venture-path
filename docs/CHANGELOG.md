@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-13 — Hiring board, offer step, AI interview room and stricter reports
+
+Plan: `plan/2026-11-12-hiring-and-ai-interview-v2.md` (user decisions D1–D3).
+
+Added:
+- Hiring board: stage tabs with counts, one row per candidate with one next-step button, search and sort, bulk Send AI interview / Not selected, Compare (2–4); candidate page with one action bar and Previous/Next; one-click "Use recommended steps" (ADR-047).
+- Offer step: Make offer (message, stipend, start date) → student Accept / Decline in My Applications → Hired; withdraw offer; kind "Not selected" reasons (ADR-047).
+- AI interview room: focused layout, before-you-start screen, mic check, chat bubbles, typing indicator, Enter to send, saved drafts, retry on failed send, clear finish screen; business-specific questions; Start / Continue interview from My Applications (ADR-049).
+- Report: anchored 0–5 rubric, per-question scores with reasons, interview score /100, automatic retries before "failed", compare page (ADR-048).
+- Tests: `tests/{offers,hiring-board,interview-room,interview-compare}.test.ts`, extended interview/report/pipeline tests; e2e specs updated for the board and offer flow.
+
+Changed:
+- "Accept" no longer exists; hiring happens only when the student accepts an offer. Advancing from the last stage returns `last_stage` (ADR-047, supersedes parts of ADR-037).
+- Removed the four-dropdown applicant filter bar (`applicant-filters`).
+
 ## 2026-11-12 — VenturePath v2: challenges, proof cards, AI interviewer
 
 Product spec: `docs/PRODUCT.md` (renamed from Pramaan). Plan: `plan/2026-11-12-venturepath-v2.md`. Built as Module 0 (foundation) plus four parallel work packages.
