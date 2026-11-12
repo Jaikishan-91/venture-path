@@ -73,9 +73,10 @@ test("organisation builds a pipeline, candidate is scheduled and progressed to a
 
     const step1 = page.getByRole("listitem").filter({ hasText: "Step 1" });
     await step1.getByLabel("Name").fill("Interview");
+    // The AI interviewer is a stage kind now (docs/PRODUCT.md Module 5), not a disabled option.
     await expect(
-      step1.getByRole("radio", { name: "AI Hiring Manager — coming soon" }),
-    ).toBeDisabled();
+      step1.getByLabel("Kind").locator("option", { hasText: "AI interview" }),
+    ).toHaveCount(1);
 
     const step2 = page.getByRole("listitem").filter({ hasText: "Step 2" });
     await step2.getByLabel("Name").fill("Test");
@@ -126,7 +127,9 @@ test("organisation builds a pipeline, candidate is scheduled and progressed to a
     await openPipelinePanel(card);
     const scheduleForm = card.getByRole("form", { name: "Schedule an interview or test" });
     await scheduleForm.getByLabel("Start").fill(tomorrowIstLocal());
-    await scheduleForm.getByLabel("Interviewers").selectOption({ label: "E2E organisation (Owner)" });
+    await scheduleForm
+      .getByLabel("Interviewers")
+      .selectOption({ label: "E2E organisation (Owner)" });
     await scheduleForm.getByRole("button", { name: "Schedule" }).click();
     await expect(toast(page, "Interview scheduled.")).toBeVisible();
 
@@ -148,9 +151,7 @@ test("organisation builds a pipeline, candidate is scheduled and progressed to a
 
     await openPipelinePanel(card);
     await card.getByRole("button", { name: "Pass final stage & accept" }).click();
-    await expect(
-      toast(page, "Candidate passed the final stage and was accepted."),
-    ).toBeVisible();
+    await expect(toast(page, "Candidate passed the final stage and was accepted.")).toBeVisible();
     await expect(card).toContainText("Accepted");
     await expect(card).toContainText(userEmail);
 

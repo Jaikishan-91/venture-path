@@ -56,7 +56,9 @@ export default async function HiringManagerHomePage() {
   return (
     <RoleHome title="Dashboard" name={session.user.name}>
       <DashboardSection title={`Hiring manager at ${membership.organisationName}`}>
-        <p className="text-sm text-[#4a4d53]">AI Hiring Manager — coming soon.</p>
+        <p className="text-sm text-[#4a4d53]">
+          Candidates may also do an AI interview first; the organisation owner sees its report.
+        </p>
       </DashboardSection>
 
       <StatGrid>
