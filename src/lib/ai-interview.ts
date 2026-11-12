@@ -9,7 +9,7 @@ import { getLogger } from "./logger";
 import { asData } from "./llm/json";
 import { buildPrompt, getPromptContent } from "./llm/prompts";
 import { createLlmClient, type LlmClient } from "./llm/provider";
-import { startInterviewReport } from "./ai-interview-report";
+import { STALE_PENDING_MS, startInterviewReport } from "./ai-interview-report";
 import {
   answerInputSchema,
   fallbackQuestions,
@@ -607,6 +607,12 @@ export type OrgInterviewView = {
   report: InterviewReport | null;
   reportStatus: "pending" | "done" | "failed" | null;
   recommendation: InterviewRecommendation | null;
+  /** When the student started (duration = completedAt − startedAt). Optional: added for the report header. */
+  startedAt?: Date | null;
+  /** Background report attempts so far (retries before "failed"). */
+  reportAttempts?: number;
+  /** A `pending` report that hasn't moved for a while (e.g. the server restarted): offer Retry. */
+  reportStale?: boolean;
 };
 
 /** Interviews for the organisation's own applications, newest first per application. */
@@ -627,6 +633,7 @@ export async function listInterviewsForApplications(
     },
     orderBy: { createdAt: "desc" },
   });
+  const now = Date.now();
   for (const row of rows) {
     const view: OrgInterviewView = {
       id: row.id,
@@ -650,13 +657,20 @@ export async function listInterviewsForApplications(
       report: row.reportStatus === "done" ? (row.report as InterviewReport | null) : null,
       reportStatus: row.reportStatus,
       recommendation: row.recommendation,
+      startedAt: row.startedAt,
+      reportAttempts: row.reportAttempts,
+      reportStale:
+        row.reportStatus === "pending" && row.updatedAt.getTime() < now - STALE_PENDING_MS,
     };
     map.set(row.applicationId, [...(map.get(row.applicationId) ?? []), view]);
   }
   return map;
 }
 
-/** "Retry report" for a completed interview whose report failed (owner only). */
+/**
+ * "Retry report" for a completed interview whose report failed or is stuck (owner only). Starts
+ * a fresh round of attempts; a report that is still running is left alone (idempotent).
+ */
 export async function retryInterviewReport(
   orgUserId: string,
   sessionId: string,
@@ -672,7 +686,7 @@ export async function retryInterviewReport(
   if (session.status !== "completed" || session.reportStatus === "done") {
     return { ok: false, reason: "invalid" };
   }
-  startInterviewReport(sessionId);
+  startInterviewReport(sessionId, { resetAttempts: true });
   return { ok: true };
 }
 
