@@ -141,7 +141,7 @@ export async function applyToOpportunity(
     throw err;
   }
 
-  if (existing && existing.resumeStorageKey !== resume.storageKey) {
+  if (existing?.resumeStorageKey && existing.resumeStorageKey !== resume.storageKey) {
     await deleteStoredFileIfUnreferenced(existing.resumeStorageKey);
   }
   getLogger().info(

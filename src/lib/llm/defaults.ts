@@ -1,4 +1,7 @@
 /** Default prompt templates, used when the admin hasn't customized them or the DB is empty. */
+import { CHALLENGES_PROMPTS } from "./defaults-v2/challenges";
+import { INTERVIEW_PROMPTS } from "./defaults-v2/interview";
+import { PROOFS_PROMPTS } from "./defaults-v2/proofs";
 
 export const DEFAULT_PROMPTS = {
   resume_analysis: `You are a hiring assistant. Analyze the following resume text against the job listing below. Return JSON only with keys: score (0-100), summary (2-3 sentences), matchedSkills (array of job skills the candidate has), missingSkills (array of job skills the candidate lacks).
@@ -53,4 +56,7 @@ Job Description:`,
 Return JSON only: {"stages": [{"name": "...", "kind": "interview", "instructions": "...", "durationMinutes": 45}]}
 
 {{listing}}`,
+  ...CHALLENGES_PROMPTS,
+  ...PROOFS_PROMPTS,
+  ...INTERVIEW_PROMPTS,
 };

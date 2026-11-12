@@ -6,6 +6,8 @@ Deferred:
 - B-001 (2026-09-25): `/graphify` skill. Deferred by the user on 2026-09-25 ("ignore graphify for now"). Skill files now exist untracked in `.agents/skills/graphify/` (not added by the agent, not committed).
 
 Known Limitations (not blocking):
+- Pre-existing test failure (seen 2026-11-12, before v2 changes): `tests/resumes.test.ts > resumeFileError > strips a path from the display name` expects `..\\..\\secret.pdf` → `secret.pdf`, but `path.basename` on macOS doesn't split on backslashes. Not caused by v2; left as is.
+- Local Postgres port: a Homebrew `postgresql@16` holds 5432 on the developer Mac, so the Docker Postgres runs on 5433 (`POSTGRES_HOST_PORT`, ADR-039).
 - Google Calendar / Meet (ADR-035) is not configured locally: it needs the Calendar API enabled, the `calendar.events` scope and `http://localhost:53682/oauth2callback` on the OAuth client, and `GOOGLE_CALENDAR_REFRESH_TOKEN` from `npm run google:calendar-token`. Until then scheduling works without Meet links. Only stubbed Google responses are tested; a live event has not been created. In "Testing" publishing status the token expires after 7 days; publish the app "In production" (unverified: one-time warning, 100-user cap). Consumer Gmail's daily invitation limits are not confirmed from a Google source.
 - Hiring pipeline suggestions (`pipeline_suggest`) are tested with stubbed LLM replies only.
 - Logs still in pino-loki's 2-second batch are lost if the process exits first (e.g. when Playwright stops the dev server). Stdout receives every line. See ADR-011.

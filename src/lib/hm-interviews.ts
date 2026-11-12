@@ -135,7 +135,8 @@ export type AssignedEventDetail = AssignedEventSummary & {
   listingSkills: string[];
   candidateInstitution: string;
   candidateCourse: string;
-  resumeFileName: string;
+  /** Null when the candidate applied with proof only. */
+  resumeFileName: string | null;
   screeningAnswers: ScreeningAnswer[];
   myFeedback: {
     rating: number;
@@ -179,7 +180,7 @@ type DetailRow = Omit<SummaryRow, "stage" | "application" | "feedback"> & {
   stage: { name: string; kind: StageKind; instructions: string | null; externalUrl: string | null };
   application: {
     id: string;
-    resumeFileName: string;
+    resumeFileName: string | null;
     opportunity: {
       title: string;
       description: string;
@@ -267,7 +268,7 @@ export async function canHiringManagerReadResume(
 /** The stored resume file for an application, for the resume route once access is confirmed. */
 export async function getApplicationResumeFile(
   applicationId: string,
-): Promise<{ resumeFileName: string; resumeStorageKey: string } | null> {
+): Promise<{ resumeFileName: string | null; resumeStorageKey: string | null } | null> {
   return getDb().application.findUnique({
     where: { id: applicationId },
     select: { resumeFileName: true, resumeStorageKey: true },

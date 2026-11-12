@@ -185,10 +185,12 @@ export type ListingForPrompt = {
 
 async function analyzeResumePart(
   client: LlmClient,
-  storageKey: string,
+  storageKey: string | null,
   opportunity: ListingForPrompt,
   applicationId: string,
 ): Promise<PartResult<ResumeAnalysisSummary>> {
+  // Applications made with proof only have no resume (docs/PRODUCT.md Module 4).
+  if (!storageKey) return { ok: false, reason: "no_resume" };
   const resumeText = await readResumeText(storageKey);
   if (!resumeText) {
     logger.warn(

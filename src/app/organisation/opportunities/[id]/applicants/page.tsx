@@ -108,9 +108,11 @@ export default async function ApplicantsPage({
               {application.status === "accepted" && (
                 <p>Email: {application.userProfile.user.email}</p>
               )}
-              <a href={`/api/applications/${application.id}/resume`} className="underline">
-                Download {application.resumeFileName}
-              </a>
+              {application.resumeFileName && (
+                <a href={`/api/applications/${application.id}/resume`} className="underline">
+                  Download {application.resumeFileName}
+                </a>
+              )}
               {hasPipeline && (
                 <PipelinePanel
                   applicationId={application.id}

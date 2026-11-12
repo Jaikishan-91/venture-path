@@ -90,12 +90,14 @@ export default async function HiringManagerInterviewDetailPage({
           <p className="text-[#4a4d53]">
             {event.candidateCourse}, {event.candidateInstitution}
           </p>
-          <a
-            href={`/api/applications/${event.applicationId}/resume`}
-            className={buttonVariants({ variant: "outline", className: "self-start" })}
-          >
-            Download resume ({event.resumeFileName})
-          </a>
+          {event.resumeFileName && (
+            <a
+              href={`/api/applications/${event.applicationId}/resume`}
+              className={buttonVariants({ variant: "outline", className: "self-start" })}
+            >
+              Download resume ({event.resumeFileName})
+            </a>
+          )}
         </div>
       </DashboardSection>
 

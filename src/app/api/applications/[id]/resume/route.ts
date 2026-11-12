@@ -13,7 +13,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const allowed = await canHiringManagerReadResume(session.user.id, applicationId);
     if (allowed) application = await getApplicationResumeFile(applicationId);
   }
-  if (!application) return new Response("Not found", { status: 404 });
+  if (!application?.resumeStorageKey || !application.resumeFileName) {
+    return new Response("Not found", { status: 404 });
+  }
 
   const bytes = await readResume(application.resumeStorageKey);
   const extension = resumeExtension(application.resumeStorageKey) ?? "pdf";

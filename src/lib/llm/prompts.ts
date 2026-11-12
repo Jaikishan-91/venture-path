@@ -21,6 +21,13 @@ export const PROMPT_KEYS = [
   "answer_scoring",
   "job_description",
   "pipeline_suggest",
+  // VenturePath v2 (docs/PRODUCT.md); defaults live in `defaults-v2/`.
+  "challenge_assist",
+  "challenge_scoring",
+  "proof_check",
+  "interview_questions",
+  "interview_followup",
+  "interview_report",
 ] as const;
 export type PromptKey = (typeof PROMPT_KEYS)[number];
 
@@ -56,6 +63,24 @@ export const DEFAULT_PROMPT_TEMPLATES: Record<PromptKey, { name: string; content
     name: "Hiring pipeline suggestion",
     content: DEFAULT_PROMPTS.pipeline_suggest,
   },
+  challenge_assist: {
+    name: "Challenge: make it clearer",
+    content: DEFAULT_PROMPTS.challenge_assist,
+  },
+  challenge_scoring: {
+    name: "Challenge: submission scoring",
+    content: DEFAULT_PROMPTS.challenge_scoring,
+  },
+  proof_check: { name: "Proof card check", content: DEFAULT_PROMPTS.proof_check },
+  interview_questions: {
+    name: "AI interview: question plan",
+    content: DEFAULT_PROMPTS.interview_questions,
+  },
+  interview_followup: {
+    name: "AI interview: follow-up",
+    content: DEFAULT_PROMPTS.interview_followup,
+  },
+  interview_report: { name: "AI interview: report", content: DEFAULT_PROMPTS.interview_report },
 };
 
 /** Return all prompts, using the DB row when present and falling back to defaults. */

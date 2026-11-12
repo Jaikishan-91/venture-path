@@ -12,7 +12,7 @@ export type Result<T, R extends string> = Ok<T> | Fail<R>;
 // Pipeline stages (WP2: `src/lib/pipeline-schemas.ts`, `src/lib/pipelines.ts`, `pipeline-assist.ts`)
 // ---------------------------------------------------------------------------------------------
 
-export const STAGE_KINDS = ["interview", "test", "assignment", "other"] as const;
+export const STAGE_KINDS = ["interview", "test", "assignment", "other", "ai_interview"] as const;
 export type StageKind = (typeof STAGE_KINDS)[number];
 
 export const STAGE_KIND_LABELS: Record<StageKind, string> = {
@@ -20,7 +20,11 @@ export const STAGE_KIND_LABELS: Record<StageKind, string> = {
   test: "Test",
   assignment: "Assignment",
   other: "Other",
+  ai_interview: "AI interview",
 };
+
+/** Kinds that are run by the platform, never scheduled on a calendar (docs/PRODUCT.md Module 5). */
+export const UNSCHEDULED_STAGE_KINDS: readonly StageKind[] = ["ai_interview"];
 
 /** Kinds that get a Google Meet link when scheduled. Other kinds get a calendar event only. */
 export const MEET_STAGE_KINDS: readonly StageKind[] = ["interview"];

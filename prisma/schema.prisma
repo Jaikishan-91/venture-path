@@ -36,6 +36,7 @@ model User {
   /// Set when this account is a hiring manager of an organisation.
   organisationMember  OrganisationMember?
   stageEvents         StageEvent[]
+  challengeDecisions  ChallengeSubmission[] @relation("ChallengeDecidedBy")
   createdEvents       ScheduledEvent[]      @relation("ScheduledEventCreatedBy")
   interviewerOf       EventInterviewer[]
   interviewFeedback   InterviewFeedback[]
@@ -51,19 +52,21 @@ enum OrganisationStatus {
 }
 
 model UserProfile {
-  id             String        @id @default(uuid())
-  userId         String        @unique
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  institution    String
-  course         String
-  graduationYear Int
-  skills         String[]
-  bio            String?
-  links          String[]
-  applications   Application[]
-  resumes        Resume[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                   String                @id @default(uuid())
+  userId               String                @unique
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution          String
+  course               String
+  graduationYear       Int
+  skills               String[]
+  bio                  String?
+  links                String[]
+  applications         Application[]
+  resumes              Resume[]
+  proofs               Proof[]
+  challengeSubmissions ChallengeSubmission[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@map("user_profile")
 }
@@ -86,6 +89,7 @@ model OrganisationProfile {
   rejectionReason String?
   opportunities   Opportunity[]
   members         OrganisationMember[]
+  challenges      Challenge[]
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
 
@@ -216,6 +220,8 @@ model Opportunity {
   stages                PipelineStage[]
   /// Last time the AI suggested a pipeline for this listing (`src/lib/pipeline-assist.ts`).
   pipelineAssistedAt    DateTime?
+  /// Optional 30–60 minute task applicants must answer; the answer becomes a Proof (docs/PRODUCT.md Module 4).
+  applyTask             String?
 
   @@index([organisationProfileId])
   @@index([status])
@@ -232,31 +238,34 @@ enum ApplicationStatus {
 }
 
 model Application {
-  id               String              @id @default(uuid())
-  opportunityId    String
-  opportunity      Opportunity         @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  userProfileId    String
-  userProfile      UserProfile         @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
-  note             String?
-  /// Original file name, shown in the download link.
-  resumeFileName   String
-  /// Generated storage key. Never taken from the client. Snapshot of the resume used; may be shared with a library `Resume`.
-  resumeStorageKey String
+  id                String              @id @default(uuid())
+  opportunityId     String
+  opportunity       Opportunity         @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  userProfileId     String
+  userProfile       UserProfile         @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  note              String?
+  /// Original file name, shown in the download link. Null when the student applied with proof only (docs/PRODUCT.md Module 4).
+  resumeFileName    String?
+  /// Generated storage key. Never taken from the client. Snapshot of the resume used; may be shared with a library `Resume`. Null with resumeFileName.
+  resumeStorageKey  String?
   /// Library resume chosen for this application. Null for applications made before the library existed, or after that resume was deleted.
-  resumeId         String?
-  resume           Resume?             @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  status           ApplicationStatus   @default(submitted)
-  appliedAt        DateTime            @default(now())
-  decidedAt        DateTime?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  analysis         Analysis?           @relation("ApplicationAnalysis")
-  answers          ApplicationAnswer[]
+  resumeId          String?
+  resume            Resume?             @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  status            ApplicationStatus   @default(submitted)
+  appliedAt         DateTime            @default(now())
+  decidedAt         DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  analysis          Analysis?           @relation("ApplicationAnalysis")
+  answers           ApplicationAnswer[]
   /// Pipeline stage the candidate is in. Null = "Applied" (not yet in any stage) (ADR-037).
-  currentStageId   String?
-  currentStage     PipelineStage?      @relation("ApplicationCurrentStage", fields: [currentStageId], references: [id], onDelete: Restrict)
-  stageEvents      StageEvent[]
-  scheduledEvents  ScheduledEvent[]
+  currentStageId    String?
+  currentStage      PipelineStage?      @relation("ApplicationCurrentStage", fields: [currentStageId], references: [id], onDelete: Restrict)
+  stageEvents       StageEvent[]
+  scheduledEvents   ScheduledEvent[]
+  /// Proof cards attached when applying (1–3).
+  proofs            Proof[]
+  interviewSessions InterviewSession[]
 
   @@unique([opportunityId, userProfileId])
   @@index([opportunityId])
@@ -371,28 +380,31 @@ enum StageKind {
   test
   assignment
   other
+  /// AI interviewer (chat or voice) that writes a report; never decides (docs/PRODUCT.md Modules 5–6).
+  ai_interview
 }
 
 /// One step of a listing's hiring pipeline (ADR-037).
 model PipelineStage {
-  id              String           @id @default(uuid())
-  opportunityId   String
-  opportunity     Opportunity      @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  position        Int
-  name            String
-  kind            StageKind
+  id                String             @id @default(uuid())
+  opportunityId     String
+  opportunity       Opportunity        @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  position          Int
+  name              String
+  kind              StageKind
   /// Shown to the candidate (e.g. what to prepare).
-  instructions    String?
+  instructions      String?
   /// Optional external link (e.g. a coding test), http/https only.
-  externalUrl     String?
+  externalUrl       String?
   /// Default length when this stage is scheduled.
-  durationMinutes Int?
-  source          QuestionSource
-  applications    Application[]    @relation("ApplicationCurrentStage")
-  stageEvents     StageEvent[]
-  scheduledEvents ScheduledEvent[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  durationMinutes   Int?
+  source            QuestionSource
+  applications      Application[]      @relation("ApplicationCurrentStage")
+  stageEvents       StageEvent[]
+  scheduledEvents   ScheduledEvent[]
+  interviewSessions InterviewSession[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@unique([opportunityId, position])
   @@map("pipeline_stage")
@@ -528,4 +540,219 @@ model InterviewFeedback {
 
   @@unique([scheduledEventId, interviewerUserId])
   @@map("interview_feedback")
+}
+
+// ---------------------------------------------------------------------------
+// VenturePath v2 (docs/PRODUCT.md): challenges, proof cards, AI interviewer.
+// ---------------------------------------------------------------------------
+
+enum ChallengeStatus {
+  draft
+  /// Accepting submissions until the deadline.
+  open
+  /// Deadline passed or closed early; the organisation is picking winners.
+  judging
+  /// Winners picked and any money reward marked paid.
+  done
+}
+
+/// A real business problem posted by an approved organisation. Must carry a reward (money and/or hire).
+model Challenge {
+  id                    String                @id @default(uuid())
+  organisationProfileId String
+  organisationProfile   OrganisationProfile   @relation(fields: [organisationProfileId], references: [id], onDelete: Cascade)
+  title                 String
+  /// The problem in the owner's own words (optionally clarified by AI, then edited by the owner).
+  problem               String
+  /// What a good solution looks like. Optional.
+  goodSolution          String?
+  /// Up to 3 judging points. Locked once the first submission arrives.
+  criteria              String[]              @default([])
+  /// Whole INR. Null = no money reward.
+  rewardMoneyInr        Int?
+  /// True = the winner is offered an internship/job.
+  rewardHire            Boolean               @default(false)
+  /// Last moment submissions are accepted.
+  deadline              DateTime
+  /// Optional attachment from the organisation (generated storage key, never from the client).
+  fileKey               String?
+  fileName              String?
+  status                ChallengeStatus       @default(draft)
+  criteriaLockedAt      DateTime?
+  publishedAt           DateTime?
+  closedAt              DateTime?
+  aiAssistedAt          DateTime?
+  submissions           ChallengeSubmission[]
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  @@index([organisationProfileId])
+  @@index([status, deadline])
+  @@map("challenge")
+}
+
+enum ChallengePlacement {
+  none
+  winner
+  runner_up
+}
+
+enum RewardStatus {
+  none
+  /// Money paid outside the app (UPI/cash), recorded by the organisation.
+  paid
+  /// Hire offer sent to the student.
+  hire_offered
+}
+
+enum AiScoreStatus {
+  pending
+  done
+  failed
+  skipped
+}
+
+/// One student's solution to one challenge. Editable until the deadline.
+model ChallengeSubmission {
+  id            String             @id @default(uuid())
+  challengeId   String
+  challenge     Challenge          @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userProfileId String
+  userProfile   UserProfile        @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  text          String
+  link          String?
+  fileKey       String?
+  fileName      String?
+  /// 0–10, computed by AI in the background. Organisation-only.
+  aiScore       Int?
+  aiScoreStatus AiScoreStatus      @default(pending)
+  /// One-line reason for the score.
+  aiReason      String?
+  /// Short quote from the student's own text backing the score.
+  aiQuote       String?
+  /// Per judging point: [{ criterion, score (0–5), quote }].
+  aiBreakdown   Json?
+  aiModel       String?
+  /// Submission this one is near-identical to (embedding similarity), if any.
+  similarToId   String?
+  placement     ChallengePlacement @default(none)
+  rewardStatus  RewardStatus       @default(none)
+  /// Optional message sent with a hire offer.
+  hireMessage   String?
+  /// Human who picked the placement / recorded the reward.
+  decidedById   String?
+  decidedBy     User?              @relation("ChallengeDecidedBy", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt     DateTime?
+  proof         Proof?
+  submittedAt   DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@unique([challengeId, userProfileId])
+  @@index([userProfileId])
+  @@map("challenge_submission")
+}
+
+enum ProofSource {
+  manual
+  challenge
+  apply_task
+}
+
+enum ProofLevel {
+  /// Added by the student.
+  added
+  /// Link responds and AI judged the description plausible for the skills.
+  checked
+  /// Won or placed in a challenge (set only by challenge judging code).
+  verified
+}
+
+/// A proof card: something the student made, with what they did. Level is written only by app code.
+model Proof {
+  id                    String               @id @default(uuid())
+  userProfileId         String
+  userProfile           UserProfile          @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  title                 String
+  whatIDid              String
+  link                  String?
+  fileKey               String?
+  fileName              String?
+  skills                String[]             @default([])
+  source                ProofSource          @default(manual)
+  /// Set when source = challenge.
+  challengeSubmissionId String?              @unique
+  challengeSubmission   ChallengeSubmission? @relation(fields: [challengeSubmissionId], references: [id], onDelete: Cascade)
+  level                 ProofLevel           @default(added)
+  /// 0–5 from the AI check.
+  aiScore               Int?
+  aiScoreStatus         AiScoreStatus        @default(pending)
+  aiReason              String?
+  checkedAt             DateTime?
+  applications          Application[]
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@index([userProfileId])
+  @@map("proof")
+}
+
+enum InterviewMode {
+  chat
+  voice
+}
+
+enum InterviewStatus {
+  invited
+  in_progress
+  completed
+  expired
+}
+
+enum InterviewRecommendation {
+  strong
+  maybe
+  not_fit
+}
+
+enum ReportStatus {
+  pending
+  done
+  failed
+}
+
+/// One AI interview for one application at an ai_interview stage. Never decides; only reports.
+model InterviewSession {
+  id             String                   @id @default(uuid())
+  applicationId  String
+  application    Application              @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageId        String
+  stage          PipelineStage            @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  /// SHA-256 (hex) of the invite token. The token itself is never stored.
+  tokenHash      String                   @unique
+  status         InterviewStatus          @default(invited)
+  mode           InterviewMode?
+  expiresAt      DateTime
+  consentedAt    DateTime?
+  /// [{ id, text, kind: "skill"|"proof"|"situation"|"motivation", skill? }] — 6 questions.
+  questions      Json
+  /// [{ role: "ai"|"student", text, questionId, followUp?: boolean, at }]
+  transcript     Json                     @default("[]")
+  /// Index of the current question (0-based).
+  currentIndex   Int                      @default(0)
+  pasteCount     Int                      @default(0)
+  tabLeaveCount  Int                      @default(0)
+  /// { skills: [{ skill, score 0–5, quote }], strengths[], concerns[], summary }
+  report         Json?
+  reportStatus   ReportStatus?
+  /// Computed in code from the report scores, never by the AI.
+  recommendation InterviewRecommendation?
+  reportModel    String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@unique([applicationId, stageId])
+  @@index([applicationId])
+  @@map("interview_session")
 }

@@ -520,7 +520,7 @@ describe("applying with the library and answers", () => {
     if (!first.ok) throw new Error(first.reason);
     await settleBackground();
     const firstKey = (await getDb().application.findUniqueOrThrow({ where: { id: first.id } }))
-      .resumeStorageKey;
+      .resumeStorageKey!;
     await withdrawApplication(user.id, first.id);
 
     const second = await applyToOpportunity(user.id, id, {
