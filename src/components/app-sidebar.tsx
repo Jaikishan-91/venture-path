@@ -1,15 +1,16 @@
 "use client";
 
 import {
+  BadgeCheck,
   Briefcase,
   CalendarClock,
-  FileStack,
   FileText,
   LayoutDashboard,
   type LucideIcon,
   Search,
   Settings,
   ShieldCheck,
+  Trophy,
   Users,
   UserRound,
 } from "lucide-react";
@@ -18,21 +19,24 @@ import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/sign-out-button";
 import type { Role } from "@/lib/roles";
 
-/** `short` replaces `label` in the phone tab bar, where five full labels don't fit at 320px. */
+/** `short` replaces `label` in the phone tab bar, where six full labels don't fit at 320px. */
 type NavItem = { href: string; label: string; short?: string; icon: LucideIcon };
 
 /** One entry per link; add a link to a role's nav by adding a line here. */
 const NAV: Record<Role, NavItem[]> = {
   user: [
-    { href: "/user", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/user", label: "Dashboard", short: "Home", icon: LayoutDashboard },
+    { href: "/challenges", label: "Challenges", short: "Solve", icon: Trophy },
     { href: "/opportunities", label: "Explore jobs", short: "Jobs", icon: Search },
+    // Resumes are optional now (docs/PRODUCT.md Module 4); the library is linked from My Proof.
+    { href: "/user/proof", label: "My Proof", short: "Proof", icon: BadgeCheck },
     { href: "/user/applications", label: "Applications", short: "Applied", icon: FileText },
-    { href: "/user/resumes", label: "Resumes", icon: FileStack },
     { href: "/user/profile", label: "Profile", icon: UserRound },
   ],
   organisation: [
-    { href: "/organisation", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/organisation/opportunities", label: "Listings", icon: Briefcase },
+    { href: "/organisation", label: "Dashboard", short: "Home", icon: LayoutDashboard },
+    { href: "/organisation/challenges", label: "Challenges", icon: Trophy },
+    { href: "/organisation/opportunities", label: "Jobs", icon: Briefcase },
     { href: "/organisation/team", label: "Team", icon: Users },
     { href: "/organisation/profile", label: "Profile", icon: UserRound },
   ],
