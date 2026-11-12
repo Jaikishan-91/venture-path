@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { expect, test, type Browser, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
 import {
   createPendingOrganisation,
   getEmailText,
@@ -28,11 +28,6 @@ async function expectNoHorizontalScroll(page: Page) {
   expect(overflow).toBeLessThanOrEqual(0);
 }
 
-async function openPipelinePanel(card: Locator) {
-  const summary = card.getByText("Pipeline & scheduling");
-  if (await summary.isVisible()) await summary.click();
-}
-
 /**
  * Invites a hiring manager from an already-approved organisation's `/organisation/team` page,
  * reads the invite email from Mailpit, signs up with the invited (fixed) email, verifies via the
@@ -56,7 +51,7 @@ async function inviteAndAcceptHiringManager(
 
   const hmPage = await (await browser.newContext()).newPage();
   await hmPage.goto(inviteLink);
-  await hmPage.getByLabel("Password").fill(PASSWORD);
+  await hmPage.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await hmPage.getByLabel("Confirm password").fill(PASSWORD);
   await hmPage.getByRole("button", { name: "Create account" }).click();
   await expect(hmPage.getByText("Check your inbox")).toBeVisible();
@@ -91,6 +86,8 @@ test("hiring manager: invited, assigned an interview, sees it, and is deactivate
     // Save-as-draft redirects to the listing page, or (when the AI assist adds skills/questions)
     // straight to the edit page; either way, go to the listing page to publish.
     await page.getByRole("button", { name: "Save as draft" }).click();
+    // Wait for the save to finish before leaving the page (same as pipeline.spec.ts).
+    await page.waitForURL((url) => !url.pathname.endsWith("/new"), { timeout: 60_000 });
     await page.goto("/organisation/opportunities");
     const article = page.getByRole("article", { name: title });
     await article.getByRole("button", { name: "Publish" }).click();
@@ -132,13 +129,17 @@ test("hiring manager: invited, assigned an interview, sees it, and is deactivate
 
     // Organisation: advance the candidate to Interview and schedule with the HM as interviewer.
     await page.goto(`/organisation/opportunities/${opportunityId}/applicants`);
-    const card = page.getByRole("article", { name: "E2E user" });
-    await openPipelinePanel(card);
-    await card.getByRole("button", { name: "Advance to Interview" }).click();
-    await expect(toast(page, "Candidate advanced to the next stage.")).toBeVisible();
+    const row = page.getByRole("listitem", { name: "E2E user" });
+    await row.getByRole("button", { name: "Move to Interview" }).click();
+    await expect(toast(page, "Candidate moved to the next step.")).toBeVisible();
 
-    await openPipelinePanel(card);
-    const scheduleForm = card.getByRole("form", { name: "Schedule an interview or test" });
+    // The board switches to the Interview tab only by link; open the candidate page there.
+    await page.getByRole("link", { name: /^Interview/ }).click();
+    await page
+      .getByRole("listitem", { name: "E2E user" })
+      .getByRole("link", { name: "E2E user" })
+      .click();
+    const scheduleForm = page.getByRole("form", { name: "Schedule an interview or test" });
     await scheduleForm.getByLabel("Start").fill(tomorrowIstLocal());
     await scheduleForm
       .getByLabel("Interviewers")
@@ -207,7 +208,7 @@ test("hiring manager: invited, assigned an interview, sees it, and is deactivate
 
     await hmPage.goto("/hiring-manager");
     await expect(hmPage).toHaveURL(/\/hiring-manager\/inactive$/, { timeout: 15_000 });
-    await expect(hmPage.getByRole("heading", { name: "Your access was removed" })).toBeVisible();
+    await expect(hmPage.getByText("Your access was removed")).toBeVisible();
   } finally {
     await rm(resume, { force: true });
   }

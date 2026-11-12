@@ -13,10 +13,7 @@ import {
 
 // Runs with the LLM disabled (as in every e2e spec): no AI skills, drafts or scores, so the
 // organisation writes its own question and scores show "-".
-test("resume library, screening questions, answers and applicant filters", async ({
-  page,
-  browser,
-}) => {
+test("resume library, screening questions, answers and board search", async ({ page, browser }) => {
   test.setTimeout(120_000);
   const organisationEmail = uniqueEmail("screen-organisation");
   const userEmail = uniqueEmail("screen-user");
@@ -90,26 +87,27 @@ test("resume library, screening questions, answers and applicant filters", async
     await user.getByRole("button", { name: "Apply" }).click();
     await expect(user.getByText("waiting for a decision")).toBeVisible();
 
-    // Organisation: sees the answer and "-" scores, and filters by time.
+    // Organisation: the board searches by name; the candidate page shows the answer and "-" scores.
     await page
       .getByRole("article", { name: title })
       .getByRole("link", { name: "Applicants" })
       .click();
-    const card = page.getByRole("article", { name: "E2E user" });
-    await card.getByText("Answers (1)").click();
-    await expect(card).toContainText("A shop for my family's bakery in Next.js.");
-    await expect(card.getByRole("definition").first()).toHaveText("-");
-    await expect(card.getByRole("link", { name: "Download Design CV.pdf" })).toBeVisible();
+    const search = page.getByRole("searchbox", { name: "Search by name" });
+    await search.fill("nobody-like-this");
+    await page.getByRole("button", { name: "Search" }).click();
+    await expect(page).toHaveURL(/q=nobody-like-this/);
+    await expect(page.getByRole("listitem", { name: "E2E user" })).toHaveCount(0);
+    await page.getByRole("searchbox", { name: "Search by name" }).fill("e2e");
+    await page.getByRole("button", { name: "Search" }).click();
+    const row = page.getByRole("listitem", { name: "E2E user" });
+    await expect(row).toBeVisible();
+    await row.getByRole("link", { name: "E2E user" }).click();
 
-    await page.getByLabel("Applied").selectOption("24h");
-    await page.getByRole("button", { name: "Apply filters" }).click();
-    await expect(page).toHaveURL(/applied=24h/);
-    await expect(page.getByRole("article", { name: "E2E user" })).toBeVisible();
-
-    await page.getByLabel("Minimum score").selectOption("50");
-    await page.getByRole("button", { name: "Apply filters" }).click();
-    await expect(page.getByRole("article", { name: "E2E user" })).toHaveCount(0);
-    await expect(page.getByText("1 not yet scored is hidden by the score filter.")).toBeVisible();
+    const answers = page.getByRole("region", { name: "Screening answers" });
+    await expect(answers).toContainText("Tell us about a website you built.");
+    await expect(answers).toContainText("A shop for my family's bakery in Next.js.");
+    await expect(page.getByRole("definition").first()).toHaveText("-");
+    await expect(page.getByRole("link", { name: "Download Design CV.pdf" })).toBeVisible();
 
     // The question is locked now that someone applied.
     await page.goto("/organisation/opportunities");

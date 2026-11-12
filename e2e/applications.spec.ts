@@ -12,7 +12,7 @@ import {
   uniqueEmail,
 } from "./helpers";
 
-test("user applies with a resume; organisation accepts and both see contact email", async ({
+test("user applies with a resume; organisation makes an offer, the student accepts and both see contact email", async ({
   page,
   browser,
 }) => {
@@ -51,18 +51,36 @@ test("user applies with a resume; organisation accepts and both see contact emai
     await expect(user.getByText("waiting for a decision")).toBeVisible();
 
     await page.getByRole("link", { name: "Applicants" }).click();
-    const card = page.getByRole("article", { name: "E2E user" });
-    await expect(card).toContainText("IIT Delhi");
-    await expect(card).not.toContainText(userEmail);
-    await card.getByRole("button", { name: "Accept" }).click();
-    await expect(toast(page, "Application accepted")).toBeVisible();
-    await expect(card).toContainText(userEmail);
+    // No hiring steps: the board suggests them, and offers come straight from Applied.
+    await expect(page.getByRole("region", { name: "Add hiring steps" })).toBeVisible();
+    const row = page.getByRole("listitem", { name: "E2E user" });
+    await expect(row).toContainText("IIT Delhi");
+    await expect(row).not.toContainText(userEmail);
+    await expect(row.getByRole("button", { name: "Accept" })).toHaveCount(0);
+    await row.getByRole("link", { name: "Make offer" }).click();
+
+    const dialog = page.getByRole("dialog", { name: "Make offer" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel("Message to the student").fill("Come be our campus ambassador!");
+    await dialog.getByRole("button", { name: "Send offer" }).click();
+    await expect(toast(page, /Offer sent/)).toBeVisible();
+    await expect(page.getByText(userEmail)).toHaveCount(0);
 
     await user.goto("/user/applications");
-    await expect(user.getByText("Accepted")).toBeVisible();
+    const offerCard = user.getByRole("region", { name: "Your offer" });
+    await expect(offerCard).toContainText("Come be our campus ambassador!");
+    await offerCard.getByRole("button", { name: "Accept" }).click();
+    await offerCard.getByRole("button", { name: "Yes, accept" }).click();
+    await expect(toast(user, /you're hired/)).toBeVisible();
+    await expect(user.getByText("Hired", { exact: true })).toBeVisible();
     await expect(user.getByText(organisationEmail)).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText(`Email: ${userEmail}`)).toBeVisible();
     expect(await getEmailText(organisationEmail, "New application")).toContain("Campus ambassador");
-    expect(await getEmailText(userEmail, "Application accepted")).toContain(organisationEmail);
+    expect(await getEmailText(userEmail, "Offer from")).toContain("Come be our campus ambassador!");
+    expect(await getEmailText(userEmail, "You're hired")).toContain(organisationEmail);
+    expect(await getEmailText(organisationEmail, "accepted your offer")).toContain(userEmail);
   } finally {
     await rm(resume, { force: true });
   }

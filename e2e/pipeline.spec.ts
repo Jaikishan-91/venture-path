@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   createPendingOrganisation,
   setOrganisationStatus,
@@ -26,16 +26,7 @@ async function expectNoHorizontalScroll(page: Page) {
   expect(overflow).toBeLessThanOrEqual(0);
 }
 
-/** Opens the collapsed "Pipeline & scheduling" panel on an applicant card, if not already open. */
-async function openPipelinePanel(card: Locator) {
-  // A <details> keeps its open state across the server action's re-render; only open it if closed.
-  const details = card.locator("details", { hasText: "Pipeline & scheduling" });
-  if (!(await details.evaluate((element) => (element as HTMLDetailsElement).open))) {
-    await card.getByText("Pipeline & scheduling").click();
-  }
-}
-
-test("organisation builds a pipeline, candidate is scheduled and progressed to accepted", async ({
+test("organisation builds a pipeline, schedules the candidate, makes an offer; the student accepts", async ({
   page,
   browser,
 }) => {
@@ -119,52 +110,77 @@ test("organisation builds a pipeline, candidate is scheduled and progressed to a
     await user.getByRole("button", { name: "Apply" }).click();
     await expect(user.getByText("waiting for a decision")).toBeVisible();
 
-    // Organisation: applicants page shows the pipeline panel; advance to Interview and schedule.
-    await page.goto(`/organisation/opportunities/${opportunityId}/applicants`);
-    const card = page.getByRole("article", { name: "E2E user" });
-    await expect(card).toContainText("Applied");
+    // Organisation: the board shows the candidate at Applied with one next step.
+    const boardUrl = `/organisation/opportunities/${opportunityId}/applicants`;
+    await page.goto(boardUrl);
+    await expect(page.getByRole("link", { name: /^Applied\s*1$/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    const row = page.getByRole("listitem", { name: "E2E user" });
+    await row.getByRole("button", { name: "Move to Interview" }).click();
+    await expect(toast(page, "Candidate moved to the next step.")).toBeVisible();
 
-    await openPipelinePanel(card);
-    await card.getByRole("button", { name: "Advance to Interview" }).click();
-    await expect(toast(page, "Candidate advanced to the next stage.")).toBeVisible();
-    await expect(card).toContainText("Interview");
-
-    await openPipelinePanel(card);
-    const scheduleForm = card.getByRole("form", { name: "Schedule an interview or test" });
+    // Candidate page: schedule the live interview.
+    await page
+      .getByRole("listitem", { name: "E2E user" })
+      .getByRole("link", { name: "E2E user" })
+      .click();
+    await expect(page).toHaveURL(/\/applicants\/[^/?]+/);
+    const scheduleForm = page.getByRole("form", { name: "Schedule an interview or test" });
     await scheduleForm.getByLabel("Start").fill(tomorrowIstLocal());
     await scheduleForm
       .getByLabel("Interviewers")
       .selectOption({ label: "E2E organisation (Owner)" });
     await scheduleForm.getByRole("button", { name: "Schedule" }).click();
     await expect(toast(page, "Interview scheduled.")).toBeVisible();
-
-    await openPipelinePanel(card);
-    await expect(card).toContainText("Calendar not configured");
-    await expect(card.getByRole("link", { name: "Join Google Meet" })).toHaveCount(0);
-    await expect(card).toContainText("E2E organisation");
+    const live = page.getByRole("region", { name: "Live interview" });
+    await expect(live).toContainText("Calendar not configured");
+    await expect(live.getByRole("link", { name: "Join Google Meet" })).toHaveCount(0);
+    await expect(live).toContainText("E2E organisation");
+    const candidateUrl = page.url();
 
     // Candidate: sees the upcoming interview, no Meet link.
     await user.goto("/user/applications");
     await expect(user.getByText(/Interview \(Interview\)/)).toBeVisible();
     await expect(user.getByRole("link", { name: "Join Google Meet" })).toHaveCount(0);
 
-    // Organisation: advance through the last stage; the application is accepted.
-    await openPipelinePanel(card);
-    await card.getByRole("button", { name: "Advance to Test" }).click();
-    await expect(toast(page, "Candidate advanced to the next stage.")).toBeVisible();
-    await expect(card).toContainText("Test");
+    // Organisation: one action bar. Move to Test; the last step offers "Make offer" (no Accept).
+    const bar = page.getByRole("region", { name: "Decide" });
+    await bar.getByRole("button", { name: "Move to Test" }).click();
+    await expect(toast(page, "Candidate moved to the next step.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Accept" })).toHaveCount(0);
+    await bar.getByRole("button", { name: "Make offer" }).click();
+    const dialog = page.getByRole("dialog", { name: "Make offer" });
+    await dialog.getByLabel("Message to the student").fill("Welcome aboard! Start with our app.");
+    await dialog.getByLabel("Stipend (₹ / month, optional)").fill("12000");
+    await dialog.getByRole("button", { name: "Send offer" }).click();
+    await expect(toast(page, /Offer sent/)).toBeVisible();
+    await expect(bar).toContainText("Waiting for the student to answer.");
 
-    await openPipelinePanel(card);
-    await card.getByRole("button", { name: "Pass final stage & accept" }).click();
-    await expect(toast(page, "Candidate passed the final stage and was accepted.")).toBeVisible();
-    await expect(card).toContainText("Accepted");
-    await expect(card).toContainText(userEmail);
+    // Student: offer card with Accept / Decline and a confirm step.
+    await user.goto("/user/applications");
+    const offerCard = user.getByRole("region", { name: "Your offer" });
+    await expect(offerCard).toContainText("Welcome aboard! Start with our app.");
+    await expect(offerCard).toContainText("₹12,000 / month");
+    await offerCard.getByRole("button", { name: "Accept" }).click();
+    await offerCard.getByRole("button", { name: "Yes, accept" }).click();
+    await expect(toast(user, /you're hired/)).toBeVisible();
+    await expect(user.getByText("Hired", { exact: true })).toBeVisible();
+
+    // Organisation: the candidate is on the Hired tab and their email is visible.
+    await page.goto(candidateUrl);
+    await expect(page.getByText(`Email: ${userEmail}`)).toBeVisible();
+    await page.goto(`${boardUrl}?tab=hired`);
+    await expect(page.getByRole("listitem", { name: "E2E user" })).toBeVisible();
 
     // Responsive: pipeline editor and applicants panel at 320px, no horizontal scroll.
     await page.setViewportSize({ width: 320, height: 800 });
     await page.goto(`/organisation/opportunities/${opportunityId}/edit`);
     await expectNoHorizontalScroll(page);
-    await page.goto(`/organisation/opportunities/${opportunityId}/applicants`);
+    await page.goto(boardUrl);
+    await expectNoHorizontalScroll(page);
+    await page.goto(candidateUrl);
     await expectNoHorizontalScroll(page);
   } finally {
     await rm(resume, { force: true });

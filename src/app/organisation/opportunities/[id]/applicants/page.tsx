@@ -129,7 +129,12 @@ export default async function ApplicantsPage({
 
       {total > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <form method="get" action={basePath} role="search" className="flex min-w-0 flex-1 gap-2">
+          <form
+            method="get"
+            action={basePath}
+            role="search"
+            className="flex w-full min-w-0 gap-2 sm:w-auto sm:flex-1"
+          >
             <input type="hidden" name="tab" value={tab} />
             {query.sort !== "best" && <input type="hidden" name="sort" value={query.sort} />}
             <Input
@@ -138,7 +143,7 @@ export default async function ApplicantsPage({
               defaultValue={query.q}
               placeholder="Search by name"
               aria-label="Search by name"
-              className="min-w-0 flex-1 basis-40"
+              className="min-w-0 flex-1"
             />
             <Button type="submit" size="sm" variant="outline">
               Search

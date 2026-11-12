@@ -198,11 +198,8 @@ export default async function CandidatePage({
         </Section>
       )}
 
-      {interview && (
-        <Section title="AI interview">
-          <AiInterviewSection interview={interview} />
-        </Section>
-      )}
+      {/* The report panel has its own heading. */}
+      {interview && <AiInterviewSection interview={interview} />}
 
       <ResumeAnalysis
         applicationId={candidate.id}
