@@ -1,0 +1,20 @@
+VenturePath voice agent
+
+This directory contains code adapted from DeepInterview
+(https://github.com/ngoanpv/DeepInterview, v0.3.0), licensed under the Apache License 2.0.
+A copy of that license is in LICENSE-APACHE.
+
+DeepInterview's NOTICE:
+
+  DeepInterview
+  Copyright 2026 Pham Van Ngoan and the DeepInterview contributors
+
+Adapted files (each keeps a header naming its source and what changed):
+  src/voice_agent/director.py     from apps/agent/src/deepinterview_agent/live/state.py and live/director.py
+  src/voice_agent/guard.py        from apps/agent/src/deepinterview_agent/live/guard.py
+  src/voice_agent/flusher.py      from apps/agent/src/deepinterview_agent/live/flusher.py
+  src/voice_agent/interviewer.py  from apps/agent/src/deepinterview_agent/live/interviewer.py
+  src/voice_agent/worker.py       from apps/agent/src/deepinterview_agent/worker.py
+
+Only DeepInterview's live interview part was used. Its CV preparation, LangGraph planner, coach,
+knowledge sidecar, Supabase storage and scoring were not.
