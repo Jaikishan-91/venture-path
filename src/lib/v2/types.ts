@@ -130,7 +130,22 @@ export type InterviewReport = {
   strengths: string[];
   concerns: string[];
   summary: string;
+  /**
+   * Per-question view (plan 2026-11-12-hiring-and-ai-interview-v2, Part 3). Optional so reports
+   * written before it still render. `score` 0–5 against the anchored rubric; `reason` one line.
+   */
+  questions?: { questionId: string; score: number; reason: string }[];
 };
+
+/**
+ * Interview score 0–100 from the skill scores (0–5), computed in code so every screen agrees.
+ * Null when there are no scores. Pure; safe on the client.
+ */
+export function interviewScore(report: Pick<InterviewReport, "skills"> | null): number | null {
+  const scores = report?.skills.map((skill) => skill.score) ?? [];
+  if (scores.length === 0) return null;
+  return Math.round((scores.reduce((sum, score) => sum + score, 0) / scores.length / 5) * 100);
+}
 
 export type InterviewRecommendation = "strong" | "maybe" | "not_fit";
 export const INTERVIEW_RECOMMENDATION_LABELS: Record<InterviewRecommendation, string> = {
@@ -207,3 +222,66 @@ export type VoiceJoin = { url: string; token: string; roomName: string };
  *      VoiceRoom(props: { token: string; onSwitchToChat: () => void })
  *    WP-C creates a placeholder; WP-D's real component replaces it at merge.
  */
+
+// ---------------------------------------------------------------------------------------------
+// Hiring board, candidate page and offer (plan 2026-11-12-hiring-and-ai-interview-v2)
+//  WP-F Hiring board + offer: applicants board/candidate page, src/lib/hiring-board.ts, src/lib/offers.ts,
+//       pipeline-progress last-stage behaviour, "Use recommended steps", student offer accept/decline.
+//  WP-G Interview room (student): src/app/interview/**, question/follow-up prompts, student-side ai-interview.ts.
+//  WP-H Report: ai-interview-report*.ts, evidence/report prompts, components/hiring/ai-interview-report.tsx,
+//       compare page `src/app/organisation/opportunities/[id]/applicants/compare/` (owned by WP-H).
+// The report component keeps its props: AiInterviewReport({ interview, actions?, retry?, aiAvailable? }).
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Board tabs. A pipeline stage id is its own tab between "applied" and "offer".
+ *  applied      submitted, currentStageId null, no offer
+ *  <stageId>    submitted, at that pipeline stage, no offer
+ *  offer        submitted, offerStatus pending or declined
+ *  hired        status accepted
+ *  not_selected status rejected (withdrawn applications are not shown on the board)
+ */
+export type BoardTab = "applied" | "offer" | "hired" | "not_selected" | { stageId: string };
+
+export const MAX_OFFER_MESSAGE_LENGTH = 2000;
+export const MAX_NOT_SELECTED_REASON_LENGTH = 500;
+export const MAX_OFFER_STIPEND_INR = 10_00_000;
+/** Candidates the compare view takes at once. */
+export const MIN_COMPARE = 2;
+export const MAX_COMPARE = 4;
+
+export type OfferStatus = "pending" | "accepted" | "declined" | "withdrawn";
+export const OFFER_STATUS_LABELS: Record<OfferStatus, string> = {
+  pending: "Offer sent",
+  accepted: "Offer accepted",
+  declined: "Offer declined",
+  withdrawn: "Offer withdrawn",
+};
+
+export type OfferFailure =
+  | "not_found"
+  | "invalid"
+  /** Not at the last pipeline stage (or the listing has stages and the candidate is still at Applied). */
+  | "not_ready"
+  /** An offer is already pending, or the application is decided. */
+  | "wrong_state"
+  | "stale";
+
+/** "Use recommended steps" (D3): created only when the listing has no stages. */
+export const RECOMMENDED_STAGES = [
+  {
+    name: "AI interview",
+    kind: "ai_interview",
+    instructions: "A short chat or voice interview with our AI assistant, about 15 minutes.",
+    durationMinutes: null,
+  },
+  {
+    name: "Live interview",
+    kind: "interview",
+    instructions: "A short video call with the team.",
+    durationMinutes: 30,
+  },
+] as const;
+
+/** Report retries before "failed" (WP-H): delays in ms after attempt 1 and 2. */
+export const REPORT_RETRY_DELAYS_MS = [20_000, 60_000] as const;

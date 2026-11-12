@@ -22,3 +22,4 @@ All implementation plans are stored here. See `AGENTS.md` → Project Operating 
 | 2026-09-26 | [Resume library, AI skills, recommendations and screening](2026-09-26-resume-library-and-screening.md) | shipped |
 | 2026-09-26 | [Hiring pipelines, interviews and Hiring Managers](2026-09-26-hiring-pipelines-and-interviews.md) | in-progress |
 | 2026-11-12 | [VenturePath v2 — Challenges, Proof cards, AI interviewer](2026-11-12-venturepath-v2.md) | in-progress |
+| 2026-11-12 | [Hiring board and AI interview, made proper](2026-11-12-hiring-and-ai-interview-v2.md) | in-progress |

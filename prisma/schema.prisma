@@ -37,6 +37,7 @@ model User {
   organisationMember  OrganisationMember?
   stageEvents         StageEvent[]
   challengeDecisions  ChallengeSubmission[] @relation("ChallengeDecidedBy")
+  offersMade          Application[]         @relation("ApplicationOfferedBy")
   createdEvents       ScheduledEvent[]      @relation("ScheduledEventCreatedBy")
   interviewerOf       EventInterviewer[]
   interviewFeedback   InterviewFeedback[]
@@ -263,6 +264,18 @@ model Application {
   currentStage      PipelineStage?      @relation("ApplicationCurrentStage", fields: [currentStageId], references: [id], onDelete: Restrict)
   stageEvents       StageEvent[]
   scheduledEvents   ScheduledEvent[]
+  /// Offer (plan 2026-11-12-hiring-and-ai-interview-v2, D2). Set when the owner makes an offer after the last stage.
+  offerStatus       OfferStatus?
+  offerMessage      String?
+  /// Whole INR per month; null = as in the listing / unpaid.
+  offerStipendInr   Int?
+  offerStartDate    DateTime?           @db.Date
+  offeredAt         DateTime?
+  offerRespondedAt  DateTime?
+  offeredById       String?
+  offeredBy         User?               @relation("ApplicationOfferedBy", fields: [offeredById], references: [id], onDelete: SetNull)
+  /// Optional reason sent kindly with "Not selected".
+  notSelectedReason String?
   /// Proof cards attached when applying (1–3).
   proofs            Proof[]
   interviewSessions InterviewSession[]
@@ -546,6 +559,17 @@ model InterviewFeedback {
 // VenturePath v2 (docs/PRODUCT.md): challenges, proof cards, AI interviewer.
 // ---------------------------------------------------------------------------
 
+enum OfferStatus {
+  /// Sent; waiting for the student.
+  pending
+  /// Student accepted → application accepted (Hired).
+  accepted
+  /// Student declined; the owner can make a new offer or mark not selected.
+  declined
+  /// Owner withdrew it before the student answered.
+  withdrawn
+}
+
 enum ChallengeStatus {
   draft
   /// Accepting submissions until the deadline.
@@ -744,6 +768,8 @@ model InterviewSession {
   /// { skills: [{ skill, score 0–5, quote }], strengths[], concerns[], summary }
   report         Json?
   reportStatus   ReportStatus?
+  /// Background report attempts so far (retries with backoff before "failed").
+  reportAttempts Int                      @default(0)
   /// Computed in code from the report scores, never by the AI.
   recommendation InterviewRecommendation?
   reportModel    String?
