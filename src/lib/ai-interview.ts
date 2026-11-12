@@ -327,6 +327,37 @@ async function prepareAndInvite(sessionId: string, tokenHash: string, token: str
 // Student side (/interview/[token])
 // ---------------------------------------------------------------------------------------------
 
+/**
+ * Signed-in shortcut from My Applications (`/interview/open/[applicationId]`). Only the token hash
+ * is stored, so the emailed link can't be rebuilt: this issues a fresh token for the student's open
+ * interview and returns it. The emailed link stops working; its page points back to My Applications.
+ */
+export async function reissueInterviewLink(
+  userId: string,
+  applicationId: string,
+  now = new Date(),
+): Promise<string | null> {
+  const db = getDb();
+  const session = await db.interviewSession.findFirst({
+    where: {
+      applicationId,
+      status: { in: ["invited", "in_progress"] },
+      application: { userProfile: { userId } },
+    },
+    orderBy: { createdAt: "desc" },
+    include: sessionInclude,
+  });
+  if (!session) return null;
+  const status = await settleStatus(session, now);
+  if (status !== "invited" && status !== "in_progress") return null;
+  const token = randomBytes(32).toString("base64url");
+  const { count } = await db.interviewSession.updateMany({
+    where: { id: session.id, tokenHash: session.tokenHash, status },
+    data: { tokenHash: hashInterviewToken(token) },
+  });
+  return count === 1 ? token : null;
+}
+
 type ViewBase = { listingTitle: string; businessName: string };
 export type ChatTurnView = { role: TranscriptTurn["role"]; text: string; followUp: boolean };
 

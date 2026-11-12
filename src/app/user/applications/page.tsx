@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import { RoleHome } from "@/components/role-home";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,8 +28,8 @@ const STATUS_STYLE: Record<StudentStatus["kind"], string> = {
 
 const AI_INTERVIEW_TEXT = {
   invited:
-    "We emailed you a private link to start your AI interview (about 15 minutes, one attempt). Open it from your email.",
-  in_progress: "You started the AI interview. Open the link from your email to continue.",
+    "Your AI interview is ready: about 15 minutes, one attempt. Start it here or from the link we emailed you.",
+  in_progress: "You started the AI interview. Continue where you left off.",
   completed: "Interview done. The business will get back to you.",
   expired: "The interview link has expired. Contact the business if you still want to take it.",
 } as const;
@@ -115,7 +116,19 @@ export default async function UserApplicationsPage() {
               {status.kind === "applied" && (
                 <p className="text-[#4a4d53]">Waiting for {business} to review your application.</p>
               )}
-              {status.kind === "ai_interview" && <p>{AI_INTERVIEW_TEXT[status.interview]}</p>}
+              {status.kind === "ai_interview" && (
+                <div className="flex flex-col gap-2">
+                  <p>{AI_INTERVIEW_TEXT[status.interview]}</p>
+                  {(status.interview === "invited" || status.interview === "in_progress") && (
+                    // POST: it issues a fresh private link (the emailed one stops working).
+                    <form method="post" action={`/interview/open/${application.id}`}>
+                      <button type="submit" className={buttonVariants({ className: "w-fit" })}>
+                        {status.interview === "invited" ? "Start interview" : "Continue interview"}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
               {status.kind === "offer" && (
                 <section
                   aria-label="Your offer"

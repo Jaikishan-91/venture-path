@@ -12,6 +12,7 @@ vi.mock("@/lib/embeddings", async (importActual) => {
 import {
   findSessionByToken,
   getInterviewForStudent,
+  reissueInterviewLink,
   hashInterviewToken,
   listInterviewsForApplications,
   sendAiInterviews,
@@ -327,6 +328,18 @@ describe("chat interview", () => {
     const stranger = await createStudent();
     expect((await getInterviewForStudent(stranger.id, token)).state).toBe("not_found");
     expect((await getInterviewForStudent(owner.id, token)).state).toBe("not_found");
+  });
+
+  it("My Applications issues a fresh link and the emailed one stops working", async () => {
+    const { student, application, token } = await invite();
+    const stranger = await createStudent();
+    expect(await reissueInterviewLink(stranger.id, application.id)).toBeNull();
+
+    const fresh = await reissueInterviewLink(student.id, application.id);
+    expect(fresh).toBeTruthy();
+    expect(fresh).not.toBe(token);
+    expect((await getInterviewForStudent(student.id, fresh!)).state).toBe("intro");
+    expect((await getInterviewForStudent(student.id, token)).state).toBe("not_found");
   });
 
   it("needs consent and refuses voice when disabled", async () => {

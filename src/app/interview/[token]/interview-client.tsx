@@ -66,7 +66,12 @@ export function InterviewClient({
         <InterviewFrame>
           <Message title="This interview link isn't valid">
             Check that you opened the whole link from your email, and that you are signed in with
-            the account you applied with.
+            the account you applied with. If you opened the interview from My Applications before,
+            the emailed link was replaced: continue from{" "}
+            <a href="/user/applications" className="underline">
+              My Applications
+            </a>
+            .
           </Message>
         </InterviewFrame>
       );
