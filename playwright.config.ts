@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3000;
+// E2E_PORT runs the app on another port (e.g. when 3000 is taken); emailed links follow it.
+const PORT = Number(process.env.E2E_PORT ?? 3000);
 const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -16,8 +17,9 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run dev",
+    command: process.env.E2E_PORT ? `npx next dev --port ${PORT}` : "npm run dev",
     url: baseURL,
+    env: process.env.E2E_PORT ? { BETTER_AUTH_URL: baseURL } : undefined,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
