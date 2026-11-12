@@ -38,6 +38,13 @@ export default async function MyProofPage() {
       <RefreshWhilePending
         pending={proofs.some((p) => p.source === "manual" && p.aiScoreStatus === "pending")}
       />
+      <p className="text-sm text-muted-foreground">
+        Businesses see your proof first. A resume is optional:{" "}
+        <Link href="/user/resumes" className="underline">
+          manage your resumes
+        </Link>
+        .
+      </p>
       <DashboardSection title={`Add proof (${manualCount}/${MAX_MANUAL_PROOFS})`}>
         <div className="flex flex-col gap-4">
           <p className="text-sm text-[#4a4d53]">
