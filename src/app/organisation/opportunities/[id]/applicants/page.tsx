@@ -18,7 +18,7 @@ import { getOwnOpportunity } from "@/lib/opportunities";
 import { recommendedStepsAction } from "./actions";
 import { BoardList } from "./board-list";
 
-export const metadata: Metadata = { title: "Applicants · VenturePath" };
+export const metadata: Metadata = { title: "Applicants · Venture Path" };
 
 const EMPTY_TEXT: Record<string, string> = {
   applied: "Nobody new. New applications show up here.",
@@ -74,10 +74,10 @@ export default async function ApplicantsPage({
       {stages.length === 0 && (
         <section
           aria-label="Add hiring steps"
-          className="flex flex-col gap-3 rounded-xl border border-[#ecedef] bg-white p-4"
+          className="flex flex-col gap-3 rounded-xl border border-[#e5e5e5] bg-white p-4"
         >
           <h2 className="text-base font-medium">Add hiring steps</h2>
-          <p className="text-sm text-[#4a4d53]">
+          <p className="text-sm text-[#737373]">
             Recommended: a short <strong>AI interview</strong> first, then a{" "}
             <strong>Live interview</strong> with you. After the last step you send an offer. Without
             steps you can still make an offer straight from Applied.
@@ -110,13 +110,13 @@ export default async function ApplicantsPage({
                   aria-current={active ? "page" : undefined}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm whitespace-nowrap ${
                     active
-                      ? "bg-[#26594a] text-white"
-                      : "border border-[#ecedef] bg-white text-[#33363b] hover:border-[#c9ccd2]"
+                      ? "bg-[#00bf63] text-white"
+                      : "border border-[#e5e5e5] bg-white text-[#262626] hover:border-[#d4d4d4]"
                   }`}
                 >
                   {item.label}
                   <span
-                    className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-white/20" : "bg-[#f1f2f4]"}`}
+                    className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-white/20" : "bg-[#f5f5f5]"}`}
                   >
                     {counts[item.key] ?? 0}
                   </span>

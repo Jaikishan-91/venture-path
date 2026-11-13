@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/authz";
 import { getAllPrompts } from "@/lib/llm/prompts";
 import { PromptEditor } from "./prompt-editor";
 
-export const metadata: Metadata = { title: "Settings · VenturePath" };
+export const metadata: Metadata = { title: "Settings · Venture Path" };
 
 export default async function AdminSettingsPage() {
   const session = await requireRole("admin");

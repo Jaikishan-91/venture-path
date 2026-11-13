@@ -12,7 +12,7 @@ import { getOrganisationDashboard } from "@/lib/dashboard/organisation";
 import type { OrganisationStatus } from "@/lib/profile-schemas";
 import { getOrganisationProfile } from "@/lib/profiles";
 
-export const metadata: Metadata = { title: "Organisation · VenturePath" };
+export const metadata: Metadata = { title: "Organisation · Venture Path" };
 
 const STATUS_TEXT: Record<OrganisationStatus, { label: string; detail: string }> = {
   pending: {
@@ -133,7 +133,7 @@ export default async function OrganisationHomePage() {
                 <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-[#ecedef] text-xs tracking-wide text-[#4a4d53] uppercase">
+                      <tr className="border-b border-[#e5e5e5] text-xs tracking-wide text-[#737373] uppercase">
                         <th scope="col" className="py-2 pr-3 font-medium">
                           Listing
                         </th>
@@ -159,11 +159,11 @@ export default async function OrganisationHomePage() {
                     </thead>
                     <tbody>
                       {dashboard.listings.map((listing) => (
-                        <tr key={listing.id} className="border-b border-[#ecedef] last:border-0">
+                        <tr key={listing.id} className="border-b border-[#e5e5e5] last:border-0">
                           <td className="max-w-[220px] truncate py-2 pr-3">
                             <Link
                               href={`/organisation/opportunities/${listing.id}/applicants`}
-                              className="text-[#26594a] underline-offset-4 hover:underline"
+                              className="text-[#00994f] underline-offset-4 hover:underline"
                             >
                               {listing.title}
                             </Link>
@@ -171,7 +171,7 @@ export default async function OrganisationHomePage() {
                           <td className="py-2 pr-3">
                             <StatusPill status={listing.status} />
                           </td>
-                          <td className="py-2 pr-3 text-[#4a4d53]">
+                          <td className="py-2 pr-3 text-[#737373]">
                             {listing.deadline ? formatDeadline(listing.deadline) : "—"}
                           </td>
                           <td className="py-2 pr-3 tabular-nums">{listing.total}</td>
@@ -185,22 +185,22 @@ export default async function OrganisationHomePage() {
                 </div>
                 <ul className="flex flex-col gap-3 md:hidden">
                   {dashboard.listings.map((listing) => (
-                    <li key={listing.id} className="min-w-0 rounded-xl bg-[#f7f7f9] p-3">
+                    <li key={listing.id} className="min-w-0 rounded-xl bg-[#f5f5f5] p-3">
                       <div className="flex items-center justify-between gap-2">
                         <Link
                           href={`/organisation/opportunities/${listing.id}/applicants`}
-                          className="min-w-0 truncate font-medium text-[#26594a] underline-offset-4 hover:underline"
+                          className="min-w-0 truncate font-medium text-[#00994f] underline-offset-4 hover:underline"
                         >
                           {listing.title}
                         </Link>
                         <StatusPill status={listing.status} />
                       </div>
-                      <p className="mt-1 text-xs text-[#4a4d53]">
+                      <p className="mt-1 text-xs text-[#737373]">
                         {listing.deadline
                           ? `Deadline ${formatDeadline(listing.deadline)}`
                           : "No deadline"}
                       </p>
-                      <p className="mt-1 text-xs text-[#4a4d53]">
+                      <p className="mt-1 text-xs text-[#737373]">
                         Total {listing.total} · Under review {listing.underReview} · Accepted{" "}
                         {listing.accepted} · Not selected {listing.notSelected}
                       </p>
@@ -219,20 +219,20 @@ export default async function OrganisationHomePage() {
                 {dashboard.recentApplicants.map((applicant) => (
                   <li
                     key={applicant.id}
-                    className="flex flex-wrap items-center justify-between gap-2 border-b border-[#ecedef] pb-3 last:border-0 last:pb-0"
+                    className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e5e5e5] pb-3 last:border-0 last:pb-0"
                   >
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-[#1b2a26]">
+                      <p className="truncate font-medium text-[#121212]">
                         {applicant.applicantName}
                       </p>
                       <Link
                         href={`/organisation/opportunities/${applicant.opportunityId}/applicants`}
-                        className="block truncate text-xs text-[#26594a] underline-offset-4 hover:underline"
+                        className="block truncate text-xs text-[#00994f] underline-offset-4 hover:underline"
                       >
                         {applicant.opportunityTitle}
                       </Link>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2 text-xs text-[#4a4d53]">
+                    <div className="flex shrink-0 items-center gap-2 text-xs text-[#737373]">
                       <span>{formatAppliedAt(applicant.appliedAt)}</span>
                       {applicant.score !== null && <span>Score {applicant.score}</span>}
                       <StatusPill status={applicant.status} />
@@ -252,11 +252,11 @@ export default async function OrganisationHomePage() {
                   <li key={listing.id} className="flex items-center justify-between gap-2 text-sm">
                     <Link
                       href={`/organisation/opportunities/${listing.id}/edit`}
-                      className="min-w-0 truncate text-[#26594a] underline-offset-4 hover:underline"
+                      className="min-w-0 truncate text-[#00994f] underline-offset-4 hover:underline"
                     >
                       {listing.title}
                     </Link>
-                    <span className="shrink-0 text-xs text-[#4a4d53]">
+                    <span className="shrink-0 text-xs text-[#737373]">
                       Apply by {formatDeadline(listing.deadline)}
                     </span>
                   </li>

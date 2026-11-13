@@ -7,7 +7,7 @@ import { RoleHome } from "@/components/role-home";
 import { requireRole } from "@/lib/authz";
 import { getAdminDashboard } from "@/lib/dashboard/admin";
 
-export const metadata: Metadata = { title: "Admin · VenturePath" };
+export const metadata: Metadata = { title: "Admin · Venture Path" };
 
 const formatDate = (date: Date) =>
   date.toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" });
@@ -47,12 +47,12 @@ export default async function AdminHomePage() {
             {reviewQueue.map((entry) => (
               <li
                 key={entry.id}
-                className="flex min-w-0 flex-col gap-0.5 rounded-xl bg-[#f7f7f9] px-4 py-3"
+                className="flex min-w-0 flex-col gap-0.5 rounded-xl bg-[#f5f5f5] px-4 py-3"
               >
-                <p className="truncate text-sm font-medium text-[#1b2a26]">
-                  {entry.businessName} <span className="text-[#4a4d53]">· {entry.ownerName}</span>
+                <p className="truncate text-sm font-medium text-[#121212]">
+                  {entry.businessName} <span className="text-[#737373]">· {entry.ownerName}</span>
                 </p>
-                <p className="truncate text-xs text-[#4a4d53]">
+                <p className="truncate text-xs text-[#737373]">
                   {entry.industry} · {entry.location} · waiting since {formatDate(entry.updatedAt)}
                 </p>
               </li>
@@ -80,7 +80,7 @@ export default async function AdminHomePage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="text-xs text-[#4a4d53]">
+              <tr className="text-xs text-[#737373]">
                 <th scope="col" className="py-1.5 font-normal">
                   New
                 </th>
@@ -101,12 +101,12 @@ export default async function AdminHomePage() {
                   ["Applications", growth.applications],
                 ] as const
               ).map(([label, counts]) => (
-                <tr key={label} className="border-t border-[#ecedef]">
-                  <th scope="row" className="py-1.5 font-medium text-[#1b2a26]">
+                <tr key={label} className="border-t border-[#e5e5e5]">
+                  <th scope="row" className="py-1.5 font-medium text-[#121212]">
                     {label}
                   </th>
-                  <td className="py-1.5 text-right tabular-nums text-[#1b2a26]">{counts.last7}</td>
-                  <td className="py-1.5 text-right tabular-nums text-[#1b2a26]">{counts.last30}</td>
+                  <td className="py-1.5 text-right tabular-nums text-[#121212]">{counts.last7}</td>
+                  <td className="py-1.5 text-right tabular-nums text-[#121212]">{counts.last30}</td>
                 </tr>
               ))}
             </tbody>
@@ -117,23 +117,23 @@ export default async function AdminHomePage() {
       <DashboardSection title="AI analysis" action={{ href: "/admin/settings", label: "Prompts" }}>
         <dl className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
           <div>
-            <dt className="text-xs text-[#4a4d53]">Analyses</dt>
-            <dd className="mt-0.5 tabular-nums text-[#1b2a26]">{ai.analysisCount}</dd>
+            <dt className="text-xs text-[#737373]">Analyses</dt>
+            <dd className="mt-0.5 tabular-nums text-[#121212]">{ai.analysisCount}</dd>
           </div>
           <div>
-            <dt className="text-xs text-[#4a4d53]">Average score</dt>
-            <dd className="mt-0.5 tabular-nums text-[#1b2a26]">{ai.averageScore ?? "—"}</dd>
+            <dt className="text-xs text-[#737373]">Average score</dt>
+            <dd className="mt-0.5 tabular-nums text-[#121212]">{ai.averageScore ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-[#4a4d53]">Provider</dt>
-            <dd className="mt-0.5 text-[#1b2a26]">
+            <dt className="text-xs text-[#737373]">Provider</dt>
+            <dd className="mt-0.5 text-[#121212]">
               {ai.provider.kind === "openai" ? "OpenAI" : "Disabled"}
             </dd>
           </div>
           {ai.provider.kind !== "disabled" && (
             <div className="min-w-0">
-              <dt className="text-xs text-[#4a4d53]">Model</dt>
-              <dd className="mt-0.5 truncate text-[#1b2a26]">{ai.provider.model}</dd>
+              <dt className="text-xs text-[#737373]">Model</dt>
+              <dd className="mt-0.5 truncate text-[#121212]">{ai.provider.model}</dd>
             </div>
           )}
         </dl>

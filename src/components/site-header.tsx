@@ -1,45 +1,63 @@
 import Link from "next/link";
 import { HeaderAuthLinks } from "@/components/auth-nav-links";
+import { BrandLogo } from "@/components/brand-logo";
 import { getSession } from "@/lib/authz";
 import { homePathFor, isRole } from "@/lib/roles";
 
-export async function SiteHeader({ tone = "plain" }: { tone?: "plain" | "hero" }) {
+const NAV = [
+  { href: "/opportunities", label: "Explore jobs" },
+  { href: "/challenges", label: "Challenges" },
+];
+
+const linkClass =
+  "rounded-full px-3 py-2 text-[14px] font-medium text-[#737373] transition-colors duration-200 hover:bg-[#f5f5f5] hover:text-[#121212]";
+const signInClass =
+  "inline-flex h-10 items-center rounded-full bg-[#00bf63] px-5 text-[14px] font-medium text-white transition-colors duration-200 hover:bg-[#00994f]";
+
+export async function SiteHeader() {
   const session = await getSession();
   const role = isRole(session?.user.role) ? session.user.role : null;
-  const onHero = tone === "hero";
-  const linkClass = onHero
-    ? "text-[13px] text-[#f4eddd]/85 transition-colors duration-300 hover:text-[#f4eddd]"
-    : "text-[13px] text-[#4a4d53] transition-colors duration-300 hover:text-[#1b2a26]";
-  const signInClass = onHero
-    ? "inline-flex items-center rounded-full border border-[#f4eddd]/35 px-4 py-2 text-xs text-[#f4eddd] transition-colors duration-300 hover:bg-[#f4eddd]/10"
-    : "inline-flex items-center rounded-full border border-[#26594a] px-4 py-2 text-xs text-[#26594a] transition-colors duration-300 hover:bg-[#26594a] hover:text-[#f4eddd]";
 
   return (
-    <header
-      className={`flex flex-wrap items-center justify-between gap-4 px-6 py-5 md:px-8 ${onHero ? "" : "border-b border-[#ecedef]"}`}
-    >
-      <Link href="/" className="flex items-center gap-3">
-        <span
-          className={`font-heading text-lg leading-none ${onHero ? "text-[#f4eddd]" : "text-[#26594a]"}`}
-        >
-          VenturePath
-        </span>
-        <span
-          className={`border-l pl-2.5 text-[10px] uppercase tracking-[0.18em] ${onHero ? "border-[#f4eddd]/25 text-[#a8c4b0]" : "border-[#26594a]/25 text-[#4a4d53]"}`}
-        >
-          Careers
-        </span>
-      </Link>
-      <nav className="flex items-center gap-4">
-        <Link href="/opportunities" className={linkClass}>
-          Opportunities
-        </Link>
-        {role ? (
-          <Link href={homePathFor(role)} className={signInClass}>
-            Dashboard
+    <header className="sticky top-[env(safe-area-inset-top,0px)] z-40 border-b border-[#e5e5e5] bg-white/85 backdrop-blur-md">
+      <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between gap-4 px-4 md:px-8">
+        <div className="flex items-center gap-6">
+          <BrandLogo />
+          <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+            {NAV.map((item) => (
+              <Link key={item.href} href={item.href} className={linkClass}>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <nav className="flex items-center gap-1.5">
+          {role ? (
+            <Link href={homePathFor(role)} className={signInClass}>
+              Dashboard
+            </Link>
+          ) : (
+            <HeaderAuthLinks
+              linkClass={`${linkClass} hidden sm:inline-flex`}
+              signInClass={signInClass}
+            />
+          )}
+        </nav>
+      </div>
+      {/* Phones: the main links stay one tap away instead of hiding in a menu. */}
+      <nav
+        aria-label="Main mobile"
+        className="flex gap-1 overflow-x-auto border-t border-[#e5e5e5] px-3 py-2 md:hidden"
+      >
+        {NAV.map((item) => (
+          <Link key={item.href} href={item.href} className={`${linkClass} shrink-0`}>
+            {item.label}
           </Link>
-        ) : (
-          <HeaderAuthLinks linkClass={linkClass} signInClass={signInClass} />
+        ))}
+        {!role && (
+          <Link href="/organisation/sign-in" className={`${linkClass} shrink-0`}>
+            For organisations
+          </Link>
         )}
       </nav>
     </header>

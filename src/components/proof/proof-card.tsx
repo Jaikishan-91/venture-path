@@ -38,13 +38,13 @@ export function ProofCard({
   return (
     <div
       aria-label={proof.title}
-      className="flex min-w-0 flex-col gap-2 rounded-xl bg-white p-3 ring-1 ring-[#ecedef]"
+      className="flex min-w-0 flex-col gap-2 rounded-xl bg-white p-3 border border-[#e5e5e5] shadow-card"
     >
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
-        <p className="min-w-0 font-medium break-words text-[#1b2a26]">{proof.title}</p>
+        <p className="min-w-0 font-medium break-words text-[#121212]">{proof.title}</p>
         <ProofBadge level={proof.level} />
       </div>
-      {source && <p className="text-xs text-[#4a4d53]">{source}</p>}
+      {source && <p className="text-xs text-[#737373]">{source}</p>}
       {compact && proof.whatIDid.length > COMPACT_CHARS ? (
         <details className="text-sm">
           <summary className="cursor-pointer break-words whitespace-pre-line">
@@ -72,13 +72,13 @@ export function ProofCard({
               href={proof.link}
               target="_blank"
               rel="noopener noreferrer nofollow"
-              className="truncate text-[#26594a] underline"
+              className="truncate text-[#00994f] underline"
             >
               {proof.link}
             </a>
           )}
           {proof.fileName && (
-            <a href={`/api/proofs/${proof.id}/file`} className="truncate text-[#26594a] underline">
+            <a href={`/api/proofs/${proof.id}/file`} className="truncate text-[#00994f] underline">
               Download {proof.fileName}
             </a>
           )}

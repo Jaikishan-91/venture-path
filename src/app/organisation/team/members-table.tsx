@@ -4,8 +4,8 @@ import { memberAction, reinviteAction } from "./actions";
 
 const STATUS_STYLES: Record<MemberStatus | "expired", { label: string; className: string }> = {
   invited: { label: "Invited", className: "bg-[#fbf3e6] text-[#7a5212]" },
-  active: { label: "Active", className: "bg-[#e3efe8] text-[#26594a]" },
-  deactivated: { label: "Deactivated", className: "bg-[#f0f1f3] text-[#4a4d53]" },
+  active: { label: "Active", className: "bg-[#e6f9ef] text-[#00994f]" },
+  deactivated: { label: "Deactivated", className: "bg-[#f5f5f5] text-[#737373]" },
   expired: { label: "Expired", className: "bg-[#f7e6e2] text-[#a24b3a]" },
 };
 
@@ -72,7 +72,7 @@ function MemberActions({ member }: { member: MemberView }) {
 
 export function MembersTable({ members }: { members: MemberView[] }) {
   if (members.length === 0) {
-    return <p className="text-sm text-[#4a4d53]">No hiring managers invited yet.</p>;
+    return <p className="text-sm text-[#737373]">No hiring managers invited yet.</p>;
   }
 
   return (
@@ -80,7 +80,7 @@ export function MembersTable({ members }: { members: MemberView[] }) {
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-[#ecedef] text-xs tracking-wide text-[#4a4d53] uppercase">
+            <tr className="border-b border-[#e5e5e5] text-xs tracking-wide text-[#737373] uppercase">
               <th scope="col" className="py-2 pr-3 font-medium">
                 Name
               </th>
@@ -103,14 +103,14 @@ export function MembersTable({ members }: { members: MemberView[] }) {
           </thead>
           <tbody>
             {members.map((member) => (
-              <tr key={member.id} className="border-b border-[#ecedef] last:border-0">
+              <tr key={member.id} className="border-b border-[#e5e5e5] last:border-0">
                 <td className="max-w-[180px] truncate py-2 pr-3">{member.name}</td>
-                <td className="max-w-[220px] truncate py-2 pr-3 text-[#4a4d53]">{member.email}</td>
+                <td className="max-w-[220px] truncate py-2 pr-3 text-[#737373]">{member.email}</td>
                 <td className="py-2 pr-3">
                   <MemberStatusPill member={member} />
                 </td>
-                <td className="py-2 pr-3 text-[#4a4d53]">{formatDate(member.invitedAt)}</td>
-                <td className="py-2 pr-3 text-[#4a4d53]">{formatDate(member.acceptedAt)}</td>
+                <td className="py-2 pr-3 text-[#737373]">{formatDate(member.invitedAt)}</td>
+                <td className="py-2 pr-3 text-[#737373]">{formatDate(member.acceptedAt)}</td>
                 <td className="py-2">
                   <MemberActions member={member} />
                 </td>
@@ -121,13 +121,13 @@ export function MembersTable({ members }: { members: MemberView[] }) {
       </div>
       <ul className="flex flex-col gap-3 md:hidden">
         {members.map((member) => (
-          <li key={member.id} className="min-w-0 rounded-xl bg-[#f7f7f9] p-3">
+          <li key={member.id} className="min-w-0 rounded-xl bg-[#f5f5f5] p-3">
             <div className="flex items-center justify-between gap-2">
-              <p className="min-w-0 truncate font-medium text-[#1b2a26]">{member.name}</p>
+              <p className="min-w-0 truncate font-medium text-[#121212]">{member.name}</p>
               <MemberStatusPill member={member} />
             </div>
-            <p className="mt-1 truncate text-xs text-[#4a4d53]">{member.email}</p>
-            <p className="mt-1 text-xs text-[#4a4d53]">
+            <p className="mt-1 truncate text-xs text-[#737373]">{member.email}</p>
+            <p className="mt-1 text-xs text-[#737373]">
               Invited {formatDate(member.invitedAt)} · Accepted {formatDate(member.acceptedAt)}
             </p>
             <div className="mt-2">

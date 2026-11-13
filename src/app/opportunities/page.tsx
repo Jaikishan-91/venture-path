@@ -14,10 +14,9 @@ import {
 import { listVisibleCities, searchOpportunities } from "@/lib/search";
 import { browseHref, parseBrowseParams, type BrowseParams } from "@/lib/search-params";
 
-export const metadata: Metadata = { title: "Opportunities · VenturePath" };
+export const metadata: Metadata = { title: "Opportunities · Venture Path" };
 
-const selectClass =
-  "h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm dark:bg-input/30";
+const selectClass = "h-10 rounded-[8px] border border-input bg-white px-3 text-sm dark:bg-input/30";
 
 const TYPE_LABELS: Record<OpportunityType, string> = {
   internship: "Internship",
@@ -30,7 +29,7 @@ function Filters({ params, cities }: { params: BrowseParams; cities: string[] })
   return (
     <form
       method="get"
-      className="flex flex-col gap-3 rounded-2xl bg-white p-4 ring-1 ring-[#e2e5e7]"
+      className="flex flex-col gap-3 rounded-2xl bg-white p-4 border border-[#e5e5e5] shadow-card"
     >
       <div className="flex flex-col gap-2">
         <Label htmlFor="q">Search</Label>
@@ -108,9 +107,11 @@ export default async function OpportunitiesPage({
 
   return (
     <PublicFrame>
-      <main className="flex flex-col gap-6 px-6 py-8 md:px-8">
+      <main className="flex flex-col gap-6 px-4 py-10 md:px-8">
         <header className="flex flex-col gap-1">
-          <h1 className="text-3xl font-medium tracking-tight text-[#26594a]">Opportunities</h1>
+          <h1 className="text-[26px] leading-[1.15] font-medium tracking-tight text-[#121212] lg:text-[32px]">
+            Opportunities
+          </h1>
           <p className="text-sm text-muted-foreground">
             Freelance work and internships from approved organisations.
           </p>
@@ -121,15 +122,17 @@ export default async function OpportunitiesPage({
           <p className="text-sm text-muted-foreground">No opportunities match.</p>
         )}
         {results.length > 0 && (
-          <div className="flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-[#e2e5e7]">
+          <div className="flex flex-col overflow-hidden rounded-2xl bg-white border border-[#e5e5e5] shadow-card">
             {results.map((opportunity) => (
               <Link
                 key={opportunity.id}
                 href={`/opportunities/${opportunity.id}`}
-                className="flex flex-col gap-1 border-b border-[#ecedef] px-5 py-4 transition-colors duration-300 last:border-b-0 hover:bg-[#f7f7f9]"
+                className="flex flex-col gap-1 border-b border-[#e5e5e5] px-5 py-4 transition-colors duration-300 last:border-b-0 hover:bg-[#f5f5f5]"
               >
-                <span className="font-heading text-lg text-[#1b2a26]">{opportunity.title}</span>
-                <span className="text-sm text-[#4a4d53]">
+                <span className="font-heading text-[16px] font-medium text-[#121212]">
+                  {opportunity.title}
+                </span>
+                <span className="text-sm text-[#737373]">
                   {opportunity.businessName} · {TYPE_LABELS[opportunity.type]} ·{" "}
                   {formatPay(opportunity)} · {WORK_MODE_LABELS[opportunity.workMode as WorkMode]}
                   {opportunity.city && `, ${opportunity.city}`}

@@ -80,7 +80,7 @@ export function ApplyForm({
             <ProofBadge level={proof.level} />
           </label>
         ))}
-        <Link href="/user/proof" className="text-sm text-[#26594a] underline">
+        <Link href="/user/proof" className="text-sm text-[#00994f] underline">
           {proofs.length === 0 ? "Add a proof card" : "Manage your proof cards"}
         </Link>
       </fieldset>
@@ -90,7 +90,7 @@ export function ApplyForm({
           <Label htmlFor="taskAnswer" className="leading-snug">
             Task from the business
           </Label>
-          <p className="whitespace-pre-line rounded-lg bg-[#f7f7f9] p-3 text-sm">{applyTask}</p>
+          <p className="whitespace-pre-line rounded-lg bg-[#f5f5f5] p-3 text-sm">{applyTask}</p>
           <Textarea
             id="taskAnswer"
             name="taskAnswer"

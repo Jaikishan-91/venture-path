@@ -12,7 +12,7 @@ import { getOrganisationProfile } from "@/lib/profiles";
 import { NotApproved } from "../../not-approved";
 import { ChallengeForm } from "../../challenge-form";
 
-export const metadata: Metadata = { title: "Edit challenge · VenturePath" };
+export const metadata: Metadata = { title: "Edit challenge · Venture Path" };
 
 export default async function EditChallengePage({
   params,

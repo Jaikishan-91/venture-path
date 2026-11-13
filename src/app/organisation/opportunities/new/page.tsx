@@ -7,7 +7,7 @@ import { getOrganisationProfile } from "@/lib/profiles";
 import { NotApproved } from "../not-approved";
 import { OpportunityForm } from "../opportunity-form";
 
-export const metadata: Metadata = { title: "New listing · VenturePath" };
+export const metadata: Metadata = { title: "New listing · Venture Path" };
 
 export default async function NewOpportunityPage() {
   const session = await requireRole("organisation");

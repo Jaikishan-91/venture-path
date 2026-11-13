@@ -69,7 +69,7 @@ export function QuestionsEditor({
               <Label htmlFor={id} className="flex items-center gap-1.5">
                 Question {index + 1}
                 {item.source === "ai" && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-[#e8f0ed] px-1.5 py-0.5 text-xs font-normal text-[#26594a]">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[#e6f9ef] px-1.5 py-0.5 text-xs font-normal text-[#00994f]">
                     <Sparkles className="size-3" strokeWidth={1.75} aria-hidden />
                     AI draft
                   </span>

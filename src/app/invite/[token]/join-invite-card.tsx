@@ -36,7 +36,7 @@ export function JoinInviteCard({
   return (
     <>
       <CardHeader>
-        <CardTitle>Join {organisationName} on VenturePath</CardTitle>
+        <CardTitle>Join {organisationName} on Venture Path</CardTitle>
         <CardDescription>
           You&apos;ve been invited as a hiring manager. Create an account with {email} to accept.
         </CardDescription>

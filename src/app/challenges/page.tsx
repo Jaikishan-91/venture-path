@@ -5,11 +5,12 @@ import { getSession } from "@/lib/authz";
 import { daysLeftLabel, formatReward, studentResultLabel } from "@/lib/challenge-schemas";
 import { listOpenChallenges, listOwnSubmissions } from "@/lib/challenges";
 
-export const metadata: Metadata = { title: "Challenges · VenturePath" };
+export const metadata: Metadata = { title: "Challenges · Venture Path" };
 
-const listClass = "flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-[#e2e5e7]";
+const listClass =
+  "flex flex-col overflow-hidden rounded-2xl bg-white border border-[#e5e5e5] shadow-card";
 const rowClass =
-  "flex flex-col gap-1 border-b border-[#ecedef] px-5 py-4 transition-colors duration-300 last:border-b-0 hover:bg-[#f7f7f9]";
+  "flex flex-col gap-1 border-b border-[#e5e5e5] px-5 py-4 transition-colors duration-300 last:border-b-0 hover:bg-[#f5f5f5]";
 
 export default async function ChallengesPage() {
   const session = await getSession();
@@ -20,9 +21,11 @@ export default async function ChallengesPage() {
 
   return (
     <PublicFrame>
-      <main className="flex flex-col gap-6 px-6 py-8 md:px-8">
+      <main className="flex flex-col gap-6 px-4 py-10 md:px-8">
         <header className="flex flex-col gap-1">
-          <h1 className="text-3xl font-medium tracking-tight text-[#26594a]">Challenges</h1>
+          <h1 className="text-[26px] leading-[1.15] font-medium tracking-tight text-[#121212] lg:text-[32px]">
+            Challenges
+          </h1>
           <p className="text-sm text-muted-foreground">
             Real problems from local businesses. Send your solution; the best one wins money or a
             job.
@@ -44,10 +47,10 @@ export default async function ChallengesPage() {
                     href={`/challenges/${submission.challenge.id}`}
                     className={rowClass}
                   >
-                    <span className="font-heading text-lg text-[#1b2a26]">
+                    <span className="font-heading text-[16px] font-medium text-[#121212]">
                       {submission.challenge.title}
                     </span>
-                    <span className="text-sm text-[#4a4d53]">
+                    <span className="text-sm text-[#737373]">
                       {submission.challenge.organisationProfile.businessName} ·{" "}
                       {result ??
                         `Submitted · ${daysLeftLabel(submission.challenge.deadline)} to edit`}
@@ -68,8 +71,10 @@ export default async function ChallengesPage() {
             <div className={listClass}>
               {challenges.map((challenge) => (
                 <Link key={challenge.id} href={`/challenges/${challenge.id}`} className={rowClass}>
-                  <span className="font-heading text-lg text-[#1b2a26]">{challenge.title}</span>
-                  <span className="text-sm text-[#4a4d53]">
+                  <span className="font-heading text-[16px] font-medium text-[#121212]">
+                    {challenge.title}
+                  </span>
+                  <span className="text-sm text-[#737373]">
                     {challenge.organisationProfile.businessName} · {formatReward(challenge)} ·{" "}
                     {daysLeftLabel(challenge.deadline)}
                   </span>

@@ -10,7 +10,7 @@ import { requireRole } from "@/lib/authz";
 import { getUserDashboard, type OpportunityCard } from "@/lib/dashboard/user";
 import { WORK_MODE_LABELS } from "@/lib/opportunity-schemas";
 
-export const metadata: Metadata = { title: "User · VenturePath" };
+export const metadata: Metadata = { title: "User · Venture Path" };
 
 /** Deadlines are `@db.Date` (UTC midnight); timestamps are shown in India time. */
 const formatDeadline = (date: Date) =>
@@ -21,23 +21,23 @@ const formatDate = (date: Date) =>
 
 function JobCard({ opportunity, applied }: { opportunity: OpportunityCard; applied?: boolean }) {
   return (
-    <li className="min-w-0 rounded-xl bg-[#f7f7f9] p-3">
+    <li className="min-w-0 rounded-xl bg-[#f5f5f5] p-3">
       <Link
         href={`/opportunities/${opportunity.id}`}
-        className="block min-w-0 truncate font-medium text-[#1b2a26] underline-offset-4 hover:underline"
+        className="block min-w-0 truncate font-medium text-[#121212] underline-offset-4 hover:underline"
       >
         {opportunity.title}
       </Link>
-      <p className="mt-0.5 truncate text-sm text-[#4a4d53]">
+      <p className="mt-0.5 truncate text-sm text-[#737373]">
         {opportunity.businessName} · {WORK_MODE_LABELS[opportunity.workMode]}
         {opportunity.city && `, ${opportunity.city}`}
       </p>
-      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#4a4d53]">
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#737373]">
         {opportunity.match !== undefined && (
-          <span className="font-medium text-[#26594a]">{opportunity.match}% match</span>
+          <span className="font-medium text-[#00994f]">{opportunity.match}% match</span>
         )}
         {opportunity.deadline && <span>Apply by {formatDeadline(opportunity.deadline)}</span>}
-        {applied && <span className="font-medium text-[#26594a]">Applied</span>}
+        {applied && <span className="font-medium text-[#00994f]">Applied</span>}
       </div>
     </li>
   );
@@ -55,7 +55,7 @@ export default async function UserHomePage() {
           <Link href="/opportunities" className={buttonVariants({ className: "self-start" })}>
             Explore jobs
           </Link>
-          <p className="text-sm text-[#4a4d53]">{dashboard.newThisWeek} new this week</p>
+          <p className="text-sm text-[#737373]">{dashboard.newThisWeek} new this week</p>
         </div>
       </DashboardSection>
 
@@ -87,15 +87,15 @@ export default async function UserHomePage() {
         {profile ? (
           <div className="flex flex-col gap-4">
             <div className="min-w-0">
-              <p className="font-medium text-[#1b2a26]">{session.user.name}</p>
-              <p className="truncate text-sm text-[#4a4d53]">
+              <p className="font-medium text-[#121212]">{session.user.name}</p>
+              <p className="truncate text-sm text-[#737373]">
                 {profile.course}, {profile.institution} · Class of {profile.graduationYear}
               </p>
             </div>
             {profile.skills.length > 0 && (
               <ul aria-label="Skills" className="flex flex-wrap gap-2 text-sm">
                 {profile.skills.map((skill) => (
-                  <li key={skill} className="rounded-md bg-[#f0f1f3] px-2 py-0.5 text-[#1b2a26]">
+                  <li key={skill} className="rounded-md bg-[#f5f5f5] px-2 py-0.5 text-[#121212]">
                     {skill}
                   </li>
                 ))}
@@ -109,7 +109,7 @@ export default async function UserHomePage() {
                       href={link}
                       target="_blank"
                       rel="noopener noreferrer nofollow"
-                      className="break-all text-[#26594a] underline"
+                      className="break-all text-[#00994f] underline"
                     >
                       {link}
                     </a>
@@ -118,7 +118,7 @@ export default async function UserHomePage() {
               </ul>
             )}
             <div>
-              <div className="flex items-baseline justify-between gap-2 text-xs text-[#4a4d53]">
+              <div className="flex items-baseline justify-between gap-2 text-xs text-[#737373]">
                 <span>Profile completeness</span>
                 <span className="tabular-nums">{completeness.percent}%</span>
               </div>
@@ -128,15 +128,15 @@ export default async function UserHomePage() {
                 aria-valuenow={completeness.percent}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                className="mt-1 h-2 overflow-hidden rounded-full bg-[#f0f1f3]"
+                className="mt-1 h-2 overflow-hidden rounded-full bg-[#f5f5f5]"
               >
                 <div
-                  className="h-full rounded-full bg-[#26594a]"
+                  className="h-full rounded-full bg-[#00bf63]"
                   style={{ width: `${completeness.percent}%` }}
                 />
               </div>
               {completeness.missing.length > 0 && (
-                <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#4a4d53]">
+                <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#737373]">
                   {completeness.missing.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -152,7 +152,7 @@ export default async function UserHomePage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            <p className="text-sm text-[#4a4d53]">
+            <p className="text-sm text-[#737373]">
               Tell organisations where you study and what you can do. You&apos;ll need a profile to
               apply.
             </p>
@@ -205,16 +205,16 @@ export default async function UserHomePage() {
             {dashboard.recentApplications.map((application) => (
               <li
                 key={application.id}
-                className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f7f7f9] p-3"
+                className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f5f5f5] p-3"
               >
                 <div className="min-w-0">
                   <Link
                     href={`/opportunities/${application.opportunityId}`}
-                    className="block truncate font-medium text-[#1b2a26] underline-offset-4 hover:underline"
+                    className="block truncate font-medium text-[#121212] underline-offset-4 hover:underline"
                   >
                     {application.opportunityTitle}
                   </Link>
-                  <p className="truncate text-sm text-[#4a4d53]">
+                  <p className="truncate text-sm text-[#737373]">
                     {application.businessName} · Applied {formatDate(application.appliedAt)}
                   </p>
                 </div>

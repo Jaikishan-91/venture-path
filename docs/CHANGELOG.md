@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-13 — UI redesign (ADR-050)
+
+Changed:
+- New design system: Poppins, white canvas, `#00bf63` green accent, pill buttons, taller inputs, soft-shadow cards (`globals.css`, `components/ui/*`).
+- New landing page (hero with product preview, How it works, Why Venture Path, organisation CTA) and a "Venture Path" logo (`components/brand-logo.tsx`).
+- Sticky public header with phone link row; new footer; public pages no longer sit inside a framed card.
+- Dashboards: sticky sidebar on desktop, bottom tab bar on phones, black page titles, refreshed stat tiles and sections.
+- Old hard-coded palette colours remapped to the new palette across all pages; UI copy says "Venture Path".
+- e2e smoke test now checks the new home heading.
+- AI interview room (chat and voice): two-panel layout — interviewer orb card (status chip, animated orb, question dashes) beside a live transcript (INTERVIEWER / YOU), pill answer box; voice adds a mic mute toggle and End pill. Phones get a compact sticky orb strip (`components/interview/interview-stage.tsx`).
+
 ## 2026-11-13 — Hiring board, offer step, AI interview room and stricter reports
 
 Plan: `plan/2026-11-12-hiring-and-ai-interview-v2.md` (user decisions D1–D3).

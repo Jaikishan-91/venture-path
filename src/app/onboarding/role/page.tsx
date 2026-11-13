@@ -7,7 +7,7 @@ import { requireSession } from "@/lib/authz";
 import { homePathFor, isRole } from "@/lib/roles";
 import { chooseRole } from "./actions";
 
-export const metadata: Metadata = { title: "Choose your role · VenturePath" };
+export const metadata: Metadata = { title: "Choose your role · Venture Path" };
 
 export default async function ChooseRolePage() {
   const session = await requireSession();
@@ -18,7 +18,7 @@ export default async function ChooseRolePage() {
       <main className="flex flex-1 items-center justify-center px-6 py-16">
         <Card className="w-full max-w-sm">
           <CardHeader>
-            <CardTitle>How will you use VenturePath?</CardTitle>
+            <CardTitle>How will you use Venture Path?</CardTitle>
             <CardDescription>You can&apos;t change this later.</CardDescription>
           </CardHeader>
           <CardContent>

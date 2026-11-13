@@ -234,7 +234,7 @@ export function PipelineEditor({
               </Label>
               <select
                 id="pipeline-copy-source"
-                className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-base md:text-sm disabled:opacity-50 dark:bg-input/30"
+                className="h-10 rounded-[8px] border border-input bg-white px-3 text-base md:text-sm disabled:opacity-50 dark:bg-input/30"
                 disabled={pending}
                 defaultValue=""
                 onChange={(event) => {
@@ -257,7 +257,7 @@ export function PipelineEditor({
         </div>
 
         {stages.length === 0 ? (
-          <div className="flex flex-col gap-2 rounded-lg bg-[#f7f7f9] p-3 text-sm">
+          <div className="flex flex-col gap-2 rounded-lg bg-[#f5f5f5] p-3 text-sm">
             <p>
               No steps yet. Recommended: a short <strong>AI interview</strong>, then a{" "}
               <strong>Live interview</strong>.

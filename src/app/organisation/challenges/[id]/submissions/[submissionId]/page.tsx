@@ -11,7 +11,7 @@ import { CHALLENGE_SCORE_MAX } from "@/lib/v2/types";
 import { DecisionPanel } from "../decision-panel";
 import { PLACEMENT_BADGES, ScoreText } from "../score";
 
-export const metadata: Metadata = { title: "Submission · VenturePath" };
+export const metadata: Metadata = { title: "Submission · Venture Path" };
 
 export default async function SubmissionPage({
   params,
@@ -28,7 +28,7 @@ export default async function SubmissionPage({
     <RoleHome title={student.user.name} name={session.user.name}>
       <Link
         href={`/organisation/challenges/${challenge.id}/submissions`}
-        className="text-sm text-[#26594a] underline"
+        className="text-sm text-[#00994f] underline"
       >
         All submissions to “{challenge.title}”
       </Link>
@@ -40,7 +40,7 @@ export default async function SubmissionPage({
               {formatIndiaDateTime(submission.updatedAt)}
             </span>
             {submission.placement !== "none" && (
-              <span className="rounded-md bg-[#e3efe9] px-2 py-0.5 text-xs text-[#26594a]">
+              <span className="rounded-md bg-[#e6f9ef] px-2 py-0.5 text-xs text-[#00994f]">
                 {PLACEMENT_BADGES[submission.placement]}
               </span>
             )}
@@ -81,7 +81,7 @@ export default async function SubmissionPage({
             )}
           </section>
 
-          <section className="flex flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-[#e2e5e7]">
+          <section className="flex flex-col gap-3 rounded-2xl bg-white p-5 border border-[#e5e5e5] shadow-card">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-medium">AI breakdown</h2>
               <ScoreText

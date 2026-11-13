@@ -13,7 +13,7 @@ import { RefreshWhilePending } from "../resumes/upload-form";
 import { deleteProofAction } from "./actions";
 import { ProofForm } from "./proof-form";
 
-export const metadata: Metadata = { title: "My Proof · VenturePath" };
+export const metadata: Metadata = { title: "My Proof · Venture Path" };
 
 /** Check status for the student. Scores are never shown to students (docs/PRODUCT.md §3). */
 function checkStatus(proof: { level: ProofLevel; aiScoreStatus: string }): string | null {
@@ -47,14 +47,14 @@ export default async function MyProofPage() {
       </p>
       <DashboardSection title={`Add proof (${manualCount}/${MAX_MANUAL_PROOFS})`}>
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-[#4a4d53]">
+          <p className="text-sm text-[#737373]">
             Show what you have made. Businesses see your proof cards first when you apply.
           </p>
           <ul className="flex flex-col gap-1.5 text-sm" aria-label="What the badges mean">
             {levels.map((level) => (
               <li key={level} className="flex flex-wrap items-center gap-2">
                 <ProofBadge level={level} />
-                <span className="text-[#4a4d53]">{PROOF_LEVEL_HINTS[level]}</span>
+                <span className="text-[#737373]">{PROOF_LEVEL_HINTS[level]}</span>
               </li>
             ))}
           </ul>
@@ -65,7 +65,7 @@ export default async function MyProofPage() {
           ) : manualCount < MAX_MANUAL_PROOFS ? (
             <ProofForm />
           ) : (
-            <p className="text-sm text-[#4a4d53]">
+            <p className="text-sm text-[#737373]">
               You have {MAX_MANUAL_PROOFS} proof cards. Delete one to add another.
             </p>
           )}
@@ -82,16 +82,16 @@ export default async function MyProofPage() {
             return (
               <li key={proof.id}>
                 <ProofCard proof={proof}>
-                  {status && <p className="text-xs text-[#4a4d53]">{status}</p>}
+                  {status && <p className="text-xs text-[#737373]">{status}</p>}
                   {proof.source === "manual" &&
                     (locked ? (
-                      <p className="text-xs text-[#4a4d53]">
+                      <p className="text-xs text-[#737373]">
                         Attached to an application, so it can&apos;t be changed. Withdraw the
                         application to edit it.
                       </p>
                     ) : (
                       <div className="flex flex-col gap-2">
-                        <details className="rounded-lg bg-[#f7f7f9] p-3">
+                        <details className="rounded-lg bg-[#f5f5f5] p-3">
                           <summary className="cursor-pointer text-sm font-medium">Edit</summary>
                           <div className="pt-3">
                             <ProofForm

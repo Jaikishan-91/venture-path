@@ -1,39 +1,31 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Newsreader } from "next/font/google";
+import { Geist_Mono, Poppins } from "next/font/google";
 import { Suspense } from "react";
 import { AppToaster } from "@/components/app-toaster";
 import { readFlash } from "@/lib/flash";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "VenturePath",
+  title: "Venture Path",
   description: "Freelance work and internships from organisations, for users.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const flash = await readFlash();
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} h-full antialiased`}
-    >
-      <body className="flex min-h-full flex-col bg-[#e8e9ec] font-sans text-foreground">
+    <html lang="en" className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col bg-white font-sans text-foreground">
         {children}
         {/* useSearchParams needs a Suspense boundary. */}
         <Suspense>

@@ -31,7 +31,7 @@ import { ScheduleForm } from "../schedule-form";
 import { ScheduledEventsList } from "../scheduled-events-list";
 import { CandidateActionBar } from "./candidate-actions";
 
-export const metadata: Metadata = { title: "Candidate · VenturePath" };
+export const metadata: Metadata = { title: "Candidate · Venture Path" };
 
 /** Stage kinds whose step is a live session the owner schedules (Google Meet for interviews). */
 const LIVE_KINDS: readonly StageKind[] = ["interview", "test", "assignment"];
@@ -44,7 +44,7 @@ const OUTCOME_TEXT = { passed: "Passed", failed: "Not selected at", moved: "Move
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section aria-label={title} className="flex flex-col gap-2">
-      <h2 className="text-sm font-medium text-[#4a4d53]">{title}</h2>
+      <h2 className="text-sm font-medium text-[#737373]">{title}</h2>
       {children}
     </section>
   );
@@ -149,8 +149,8 @@ export default async function CandidatePage({
         </div>
       </div>
 
-      <header className="flex flex-col gap-2 rounded-xl border border-[#ecedef] bg-white p-4">
-        <p className="text-sm text-[#4a4d53]">
+      <header className="flex flex-col gap-2 rounded-xl border border-[#e5e5e5] bg-white p-4">
+        <p className="text-sm text-[#737373]">
           {candidate.userProfile.course}, {candidate.userProfile.institution}
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -159,7 +159,7 @@ export default async function CandidatePage({
           <ScreeningChip score={row.screeningScore} />
           <InterviewChip interview={row.interview} />
         </div>
-        <p className="text-sm text-[#4a4d53]">Applied {formatIndiaDateTime(candidate.appliedAt)}</p>
+        <p className="text-sm text-[#737373]">Applied {formatIndiaDateTime(candidate.appliedAt)}</p>
         {/* Contact only once hired (ADR-013 rule kept). */}
         {candidate.status === "accepted" && (
           <p className="text-sm">Email: {candidate.userProfile.user.email}</p>
@@ -174,7 +174,7 @@ export default async function CandidatePage({
           </a>
         )}
         {candidate.offerStatus && candidate.offerMessage && (
-          <div className="flex flex-col gap-1 rounded-lg bg-[#f7f7f9] p-3 text-sm">
+          <div className="flex flex-col gap-1 rounded-lg bg-[#f5f5f5] p-3 text-sm">
             <p className="font-medium">Your offer</p>
             <p className="whitespace-pre-line">{candidate.offerMessage}</p>
             {formatStipend(candidate.offerStipendInr) && (
@@ -186,7 +186,7 @@ export default async function CandidatePage({
           </div>
         )}
         {candidate.status === "rejected" && candidate.notSelectedReason && (
-          <p className="text-sm text-[#4a4d53]">Note sent: {candidate.notSelectedReason}</p>
+          <p className="text-sm text-[#737373]">Note sent: {candidate.notSelectedReason}</p>
         )}
       </header>
 
@@ -234,7 +234,7 @@ export default async function CandidatePage({
 
       {candidate.answers.length > 0 && (
         <Section title="Screening answers">
-          <ol className="flex flex-col gap-3 rounded-xl border border-[#ecedef] bg-white p-4 text-sm">
+          <ol className="flex flex-col gap-3 rounded-xl border border-[#e5e5e5] bg-white p-4 text-sm">
             {candidate.answers.map((answer, index) => (
               <li key={answer.id} className="flex min-w-0 flex-col gap-1">
                 <p className="font-medium break-words">
@@ -242,7 +242,7 @@ export default async function CandidatePage({
                 </p>
                 <p className="whitespace-pre-line break-words">{answer.answer}</p>
                 {(answer.score !== null || answer.feedback) && (
-                  <p className="text-xs text-[#4a4d53]">
+                  <p className="text-xs text-[#737373]">
                     {answer.score !== null && `AI score ${answer.score}`}
                     {answer.score !== null && answer.feedback && " · "}
                     {answer.feedback}
@@ -255,17 +255,17 @@ export default async function CandidatePage({
       )}
 
       <Section title="Timeline">
-        <ol className="flex flex-col gap-1.5 rounded-xl border border-[#ecedef] bg-white p-4 text-sm">
+        <ol className="flex flex-col gap-1.5 rounded-xl border border-[#e5e5e5] bg-white p-4 text-sm">
           {timeline.map((item, index) => (
             <li key={index} className="flex flex-wrap gap-x-2">
-              <span className="text-[#4a4d53] tabular-nums">{formatIndiaDateTime(item.at)}</span>
+              <span className="text-[#737373] tabular-nums">{formatIndiaDateTime(item.at)}</span>
               <span>{item.text}</span>
             </li>
           ))}
         </ol>
         {submitted && board.stages.length > 0 && candidate.offerStatus !== "pending" && (
           <details className="text-sm">
-            <summary className="cursor-pointer text-[#4a4d53] underline">
+            <summary className="cursor-pointer text-[#737373] underline">
               Move to a different step
             </summary>
             <form action={moveAction} className="mt-2 flex max-w-md gap-2">

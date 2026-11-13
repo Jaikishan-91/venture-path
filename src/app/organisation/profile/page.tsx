@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/authz";
 import { getOrganisationProfile } from "@/lib/profiles";
 import { OrganisationProfileForm } from "./organisation-profile-form";
 
-export const metadata: Metadata = { title: "Business profile · VenturePath" };
+export const metadata: Metadata = { title: "Business profile · Venture Path" };
 
 export default async function OrganisationProfilePage() {
   const session = await requireRole("organisation");

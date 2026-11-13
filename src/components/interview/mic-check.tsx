@@ -81,7 +81,7 @@ export function MicCheck({
         <p className="flex items-center gap-2 font-medium text-[#8a3b1f]">
           <MicOff className="size-4" /> We couldn&apos;t use your microphone
         </p>
-        <p className="text-[#4a4d53]">
+        <p className="text-[#737373]">
           Allow the microphone in your browser settings and check again, or answer in chat instead.
           Chat works on any phone.
         </p>
@@ -99,11 +99,11 @@ export function MicCheck({
 
   if (status === "ready") {
     return (
-      <div className="flex flex-col gap-2 rounded-xl bg-white p-3 text-sm ring-1 ring-[#ecedef]">
-        <p className="flex items-center gap-2 font-medium text-[#1b2a26]">
+      <div className="flex flex-col gap-2 rounded-xl bg-white p-3 text-sm border border-[#e5e5e5] shadow-card">
+        <p className="flex items-center gap-2 font-medium text-[#121212]">
           {heard ? (
             <>
-              <CheckCircle2 className="size-4 text-[#26594a]" /> We can hear you
+              <CheckCircle2 className="size-4 text-[#00994f]" /> We can hear you
             </>
           ) : (
             <>
@@ -113,15 +113,15 @@ export function MicCheck({
         </p>
         <span
           aria-hidden
-          className="block h-2 overflow-hidden rounded-full bg-[#26594a]/12"
+          className="block h-2 overflow-hidden rounded-full bg-[#00bf63]/12"
           title="Microphone level"
         >
           <span
             ref={barRef}
-            className="block h-full origin-left scale-x-0 rounded-full bg-[#26594a]"
+            className="block h-full origin-left scale-x-0 rounded-full bg-[#00bf63]"
           />
         </span>
-        <p className="text-xs text-[#4a4d53]">Nothing is recorded during this check.</p>
+        <p className="text-xs text-[#737373]">Nothing is recorded during this check.</p>
       </div>
     );
   }

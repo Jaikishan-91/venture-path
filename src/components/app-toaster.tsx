@@ -46,23 +46,23 @@ export function AppToaster({ flash }: { flash: Flash | null }) {
           "--normal-bg": "var(--card)",
           "--normal-text": "var(--foreground)",
           "--normal-border": "var(--border)",
-          "--success-bg": "#e7efe9",
-          "--success-text": "#1f4138",
-          "--success-border": "#bcd3c5",
+          "--success-bg": "#e6f9ef",
+          "--success-text": "#121212",
+          "--success-border": "#b8efd2",
           "--error-bg": "#f8ece9",
           "--error-text": "#7f3326",
           "--error-border": "#e6c3bb",
-          "--info-bg": "#f4eddd",
-          "--info-text": "#1b2a26",
+          "--info-bg": "#ffffff",
+          "--info-text": "#121212",
           "--info-border": "#e3d7bd",
           "--border-radius": "var(--radius)",
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
-          toast: "shadow-[0_18px_40px_-28px_rgba(22,24,29,0.45)] text-sm",
+          toast: "shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)] text-sm",
           title: "font-medium",
-          actionButton: "!bg-[#26594a] !text-[#f4eddd]",
+          actionButton: "!bg-[#00bf63] !text-[#ffffff]",
         },
       }}
     />

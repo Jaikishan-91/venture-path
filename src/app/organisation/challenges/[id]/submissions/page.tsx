@@ -10,7 +10,7 @@ import { CHALLENGE_SCORE_MAX, CHALLENGE_STATUS_LABELS } from "@/lib/v2/types";
 import { StatusButtons } from "../../status-buttons";
 import { PLACEMENT_BADGES, ScoreText } from "./score";
 
-export const metadata: Metadata = { title: "Submissions · VenturePath" };
+export const metadata: Metadata = { title: "Submissions · Venture Path" };
 
 export default async function ChallengeSubmissionsPage({
   params,
@@ -23,7 +23,7 @@ export default async function ChallengeSubmissionsPage({
 
   return (
     <RoleHome title={challenge.title} name={session.user.name}>
-      <Link href="/organisation/challenges" className="text-sm text-[#26594a] underline">
+      <Link href="/organisation/challenges" className="text-sm text-[#00994f] underline">
         All challenges
       </Link>
       <div className="flex flex-col gap-2 text-sm">
@@ -54,15 +54,15 @@ export default async function ChallengeSubmissionsPage({
           <p className="text-sm text-muted-foreground">No submissions yet.</p>
         )}
         {submissions.length > 0 && (
-          <div className="flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-[#e2e5e7]">
+          <div className="flex flex-col overflow-hidden rounded-2xl bg-white border border-[#e5e5e5] shadow-card">
             {submissions.map((submission) => (
               <Link
                 key={submission.id}
                 href={`/organisation/challenges/${challenge.id}/submissions/${submission.id}`}
-                className="flex flex-col gap-1 border-b border-[#ecedef] px-5 py-4 transition-colors last:border-b-0 hover:bg-[#f7f7f9]"
+                className="flex flex-col gap-1 border-b border-[#e5e5e5] px-5 py-4 transition-colors last:border-b-0 hover:bg-[#f5f5f5]"
               >
                 <span className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-[#1b2a26]">
+                  <span className="font-medium text-[#121212]">
                     {submission.userProfile.user.name}
                   </span>
                   <ScoreText
@@ -71,7 +71,7 @@ export default async function ChallengeSubmissionsPage({
                     max={CHALLENGE_SCORE_MAX}
                   />
                   {submission.placement !== "none" && (
-                    <span className="rounded-md bg-[#e3efe9] px-2 py-0.5 text-xs text-[#26594a]">
+                    <span className="rounded-md bg-[#e6f9ef] px-2 py-0.5 text-xs text-[#00994f]">
                       {PLACEMENT_BADGES[submission.placement]}
                     </span>
                   )}
@@ -82,7 +82,7 @@ export default async function ChallengeSubmissionsPage({
                   )}
                 </span>
                 {submission.aiReason && (
-                  <span className="text-sm text-[#4a4d53]">{submission.aiReason}</span>
+                  <span className="text-sm text-[#737373]">{submission.aiReason}</span>
                 )}
                 {submission.aiQuote ? (
                   <span className="text-sm italic text-muted-foreground">

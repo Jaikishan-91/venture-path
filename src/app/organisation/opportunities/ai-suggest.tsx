@@ -20,10 +20,10 @@ export function AiSuggest({ id, canDraftQuestions }: { id: string; canDraftQuest
   return (
     <form
       action={assistOpportunityAction}
-      className="flex flex-col gap-2 rounded-xl bg-[#f7f7f9] p-3 sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-2 rounded-xl bg-[#f5f5f5] p-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <input type="hidden" name="id" value={id} />
-      <p className="text-sm text-[#4a4d53]">
+      <p className="text-sm text-[#737373]">
         AI adds missing skills from your description
         {canDraftQuestions ? " and drafts screening questions" : ""}. Save your edits first.
       </p>

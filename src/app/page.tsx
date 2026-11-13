@@ -1,41 +1,99 @@
+import { ArrowRight, BadgeCheck, Briefcase, Building2, Mic, Search, Trophy } from "lucide-react";
 import Link from "next/link";
 import { PublicFrame } from "@/components/public-frame";
-import { SiteHeader } from "@/components/site-header";
 import { buttonVariants } from "@/components/ui/button";
 import { getSession } from "@/lib/authz";
 
-const PATHS = [
+const QUICK_LINKS = [
+  { href: "/opportunities", label: "Internships", icon: Briefcase },
+  { href: "/opportunities", label: "Freelance work", icon: Search },
+  { href: "/challenges", label: "Paid challenges", icon: Trophy },
+];
+
+const STEPS = [
   {
-    href: "/opportunities",
-    title: "Find an open role",
-    body: "Browse internships and freelance work from approved businesses. Apply when a listing fits.",
+    icon: Trophy,
+    title: "Solve a real challenge",
+    body: "Pick a problem posted by a local business and send your solution before the deadline.",
   },
   {
-    href: "/user/applications",
-    title: "Follow your application",
-    body: "Sign in as a user to see which listings you have applied to and what the business decided.",
+    icon: BadgeCheck,
+    title: "Earn verified proof",
+    body: "Winning work becomes a green Proof card on your profile, so businesses see what you can do.",
   },
   {
-    href: "/organisation/sign-up",
-    title: "Post work as an organisation",
-    body: "Organisations create a profile, get approved, and publish internships or paid freelance listings.",
+    icon: Briefcase,
+    title: "Apply and get hired",
+    body: "Attach your proof to applications, take a short AI interview, and hear back fast.",
   },
 ];
 
-const NOTES = [
+const FEATURES = [
   {
-    title: "Internships with a real brief",
-    body: "Listings name the work, the skills, the city or remote setup, and when applications close.",
+    icon: BadgeCheck,
+    title: "Proof over resumes",
+    body: "Show real work instead of a list of claims. Verified proof stands out to every reviewer.",
   },
   {
-    title: "Freelance tasks that pay",
-    body: "Short pieces of work from small businesses, with a pay range shown before you apply.",
+    icon: Mic,
+    title: "AI interviews, any time",
+    body: "A short voice interview you can take when it suits you, with a fair, structured report.",
   },
   {
-    title: "Businesses reviewed first",
-    body: "An admin approves an organisation before users can see its published listings.",
+    icon: Building2,
+    title: "Reviewed businesses",
+    body: "Every organisation is approved by our team before its listings go live.",
   },
 ];
+
+/** Decorative product preview beside the hero copy: a proof card and an application update. */
+function HeroPreview() {
+  return (
+    <div aria-hidden="true" className="relative hidden h-[420px] lg:block">
+      <div className="absolute top-0 right-0 w-[340px] rounded-2xl border border-[#e5e5e5] bg-white p-5 shadow-pop">
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f9ef] px-2.5 py-1 text-[12px] font-medium text-[#00994f]">
+            <BadgeCheck className="size-3.5" /> Verified proof
+          </span>
+          <span className="text-[12px] text-[#a3a3a3]">Challenge winner</span>
+        </div>
+        <p className="mt-4 text-[16px] font-medium text-[#121212]">
+          Redesigned checkout for a local bakery
+        </p>
+        <p className="mt-1 text-[13px] leading-relaxed text-[#737373]">
+          Cut drop-offs by simplifying the order form to one page.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {["Figma", "UX research", "React"].map((skill) => (
+            <span
+              key={skill}
+              className="rounded-full border border-[#e5e5e5] px-2.5 py-1 text-[12px] text-[#121212]"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="absolute bottom-6 left-0 w-[300px] rounded-2xl border border-[#e5e5e5] bg-white p-4 shadow-pop">
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 items-center justify-center rounded-full bg-[#00bf63] text-white">
+            <Briefcase className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[14px] font-medium text-[#121212]">UI Design Intern</p>
+            <p className="text-[12px] text-[#737373]">Application update</p>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-[#f5f5f5] px-3 py-2.5">
+          <span className="text-[13px] text-[#737373]">Status</span>
+          <span className="rounded-full bg-[#e6f9ef] px-2.5 py-0.5 text-[12px] font-medium text-[#00994f]">
+            Shortlisted
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default async function Home() {
   const session = await getSession();
@@ -43,84 +101,119 @@ export default async function Home() {
   return (
     <PublicFrame
       hero={
-        <>
-          <SiteHeader tone="hero" />
-          <div className="flex flex-col gap-6 px-6 pt-4 pb-12 md:px-10 md:pb-16">
-            <h1 className="text-4xl font-medium tracking-tight text-[#f4eddd] md:text-5xl">
-              VenturePath
-            </h1>
-            <p className="max-w-xl text-lg leading-snug text-[#f4eddd] md:text-2xl">
-              Find freelance work and internships from growing businesses.
-            </p>
-            <p className="max-w-md text-sm leading-relaxed text-[#f4eddd]/75">
-              Users apply to organisation listings. Businesses post the work and review who applied.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/opportunities"
-                className={buttonVariants({
-                  variant: "outline",
-                  className:
-                    "border-[#f4eddd]/40 bg-transparent text-[#f4eddd] hover:bg-[#f4eddd]/10 hover:text-[#f4eddd]",
-                })}
-              >
-                Browse opportunities
-              </Link>
-              {session ? (
+        <section className="relative overflow-hidden border-b border-[#e5e5e5]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_80%_0%,#e6f9ef_0%,transparent_70%)]"
+          />
+          <div className="relative mx-auto grid w-full max-w-[1280px] items-center gap-12 px-4 pt-14 pb-16 md:px-8 md:pt-24 md:pb-24 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="flex flex-col items-start gap-6">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-[12px] font-medium text-[#737373]">
+                <span className="size-1.5 rounded-full bg-[#00bf63]" aria-hidden="true" />
+                Internships · Freelance · Challenges
+              </span>
+              <h1 className="max-w-3xl text-[40px] leading-[1.08] font-semibold tracking-tight text-[#121212] md:text-[64px]">
+                Prove your skills.
+                <br />
+                <span className="text-[#00bf63]">Get hired faster.</span>
+              </h1>
+              <p className="max-w-xl text-[16px] leading-relaxed text-[#737373] md:text-[18px]">
+                Solve real problems from growing businesses, build verified proof of your work, and
+                land internships and freelance gigs.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {session ? (
+                  <Link href="/dashboard" className={buttonVariants({ size: "lg" })}>
+                    Go to dashboard <ArrowRight data-icon="inline-end" />
+                  </Link>
+                ) : (
+                  <Link href="/sign-up" className={buttonVariants({ size: "lg" })}>
+                    Get started free <ArrowRight data-icon="inline-end" />
+                  </Link>
+                )}
                 <Link
-                  href="/dashboard"
-                  className={buttonVariants({
-                    className: "bg-[#f4eddd] text-[#1f4138] hover:bg-[#f4eddd]/90",
-                  })}
+                  href="/opportunities"
+                  className={buttonVariants({ size: "lg", variant: "outline" })}
                 >
-                  Go to dashboard
+                  Explore jobs
                 </Link>
-              ) : (
-                <>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-2">
+                {QUICK_LINKS.map(({ href, label, icon: Icon }) => (
                   <Link
-                    href="/sign-up"
-                    className={buttonVariants({
-                      className: "bg-[#f4eddd] text-[#1f4138] hover:bg-[#f4eddd]/90",
-                    })}
+                    key={label}
+                    href={href}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-medium text-[#121212] transition-colors duration-200 hover:border-[#00bf63] hover:text-[#00994f]"
                   >
-                    Sign up
+                    <Icon className="size-4 text-[#00bf63]" aria-hidden="true" />
+                    {label}
                   </Link>
-                  <Link
-                    href="/sign-in"
-                    className={buttonVariants({
-                      variant: "outline",
-                      className:
-                        "border-[#f4eddd]/40 bg-transparent text-[#f4eddd] hover:bg-[#f4eddd]/10 hover:text-[#f4eddd]",
-                    })}
-                  >
-                    Sign in
-                  </Link>
-                </>
-              )}
+                ))}
+              </div>
             </div>
+            <HeroPreview />
           </div>
-        </>
+        </section>
       }
     >
-      <section className="grid gap-4 px-6 py-10 md:grid-cols-3 md:px-8">
-        {PATHS.map((path) => (
-          <Link
-            key={path.href}
-            href={path.href}
-            className="flex flex-col gap-2 rounded-2xl bg-white p-5 ring-1 ring-[#e2e5e7] transition-colors duration-300 hover:ring-[#26594a]"
-          >
-            <h2 className="text-xl font-medium text-[#26594a]">{path.title}</h2>
-            <p className="text-sm leading-relaxed text-[#4a4d53]">{path.body}</p>
-          </Link>
-        ))}
+      <section className="flex flex-col gap-8 px-4 py-16 md:px-8 md:py-20">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-[26px] leading-[1.15] font-medium text-[#121212] lg:text-[36px]">
+            How it works?
+          </h2>
+          <p className="text-[14px] text-[#737373]">
+            Three steps from your first challenge to your first offer.
+          </p>
+        </div>
+        <ol className="grid gap-4 md:grid-cols-3">
+          {STEPS.map(({ icon: Icon, title, body }, i) => (
+            <li
+              key={title}
+              className="flex flex-col gap-4 rounded-2xl border border-[#e5e5e5] bg-white p-6 shadow-card"
+            >
+              <div className="flex items-center justify-between">
+                <span className="flex size-11 items-center justify-center rounded-xl bg-[#e6f9ef] text-[#00994f]">
+                  <Icon className="size-5" aria-hidden="true" />
+                </span>
+                <span className="text-[13px] font-medium text-[#a3a3a3]">Step {i + 1}</span>
+              </div>
+              <h3 className="text-[18px] font-medium text-[#121212]">{title}</h3>
+              <p className="text-[14px] leading-relaxed text-[#737373]">{body}</p>
+            </li>
+          ))}
+        </ol>
       </section>
-      <section className="grid gap-8 border-t border-[#ecedef] px-6 py-10 md:grid-cols-3 md:px-8">
-        {NOTES.map((note) => (
-          <div key={note.title} className="flex flex-col gap-2">
-            <h2 className="text-lg font-medium text-[#1b2a26]">{note.title}</h2>
-            <p className="text-sm leading-relaxed text-[#4a4d53]">{note.body}</p>
+
+      <section className="flex flex-col gap-8 px-4 pb-16 md:px-8 md:pb-20">
+        <h2 className="text-[26px] leading-[1.15] font-medium text-[#121212] lg:text-[36px]">
+          Why Venture Path
+        </h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          {FEATURES.map(({ icon: Icon, title, body }) => (
+            <div key={title} className="flex flex-col gap-3 rounded-2xl bg-[#f5f5f5] p-6">
+              <Icon className="size-6 text-[#00bf63]" aria-hidden="true" />
+              <h3 className="text-[18px] font-medium text-[#121212]">{title}</h3>
+              <p className="text-[14px] leading-relaxed text-[#737373]">{body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-4 pb-20 md:px-8">
+        <div className="flex flex-col items-start gap-6 rounded-[24px] bg-[#121212] p-8 md:flex-row md:items-center md:justify-between md:p-12">
+          <div className="flex max-w-xl flex-col gap-2">
+            <h2 className="text-[26px] leading-[1.15] font-medium text-white lg:text-[32px]">
+              Hiring for your business?
+            </h2>
+            <p className="text-[14px] leading-relaxed text-white/70">
+              Post a challenge or a job in one form. Review proof, run AI interviews, and hire the
+              right person.
+            </p>
           </div>
-        ))}
+          <Link href="/organisation/sign-up" className={buttonVariants({ size: "lg" })}>
+            Post work for free <ArrowRight data-icon="inline-end" />
+          </Link>
+        </div>
       </section>
     </PublicFrame>
   );

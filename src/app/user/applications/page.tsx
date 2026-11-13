@@ -13,17 +13,17 @@ import { studentStatus, type StudentStatus } from "@/lib/student-application-sta
 import { withdrawAction } from "@/app/opportunities/[id]/actions";
 import { OfferAnswer } from "./offer-answer";
 
-export const metadata: Metadata = { title: "Your applications · VenturePath" };
+export const metadata: Metadata = { title: "Your applications · Venture Path" };
 
 const STATUS_STYLE: Record<StudentStatus["kind"], string> = {
-  applied: "bg-[#eef0f4] text-[#33363b]",
+  applied: "bg-[#f5f5f5] text-[#262626]",
   ai_interview: "bg-[#e8f0fb] text-[#1d4f8f]",
   stage: "bg-[#e8f0fb] text-[#1d4f8f]",
-  offer: "bg-[#e6f4ec] text-[#1f6b43]",
-  offer_declined: "bg-[#f1f2f4] text-[#4a4d53]",
-  hired: "bg-[#e6f4ec] text-[#1f6b43]",
-  not_selected: "bg-[#f1f2f4] text-[#4a4d53]",
-  withdrawn: "bg-[#f1f2f4] text-[#4a4d53]",
+  offer: "bg-[#e6f9ef] text-[#00803f]",
+  offer_declined: "bg-[#f5f5f5] text-[#737373]",
+  hired: "bg-[#e6f9ef] text-[#00803f]",
+  not_selected: "bg-[#f5f5f5] text-[#737373]",
+  withdrawn: "bg-[#f5f5f5] text-[#737373]",
 };
 
 const AI_INTERVIEW_TEXT = {
@@ -36,7 +36,7 @@ const AI_INTERVIEW_TEXT = {
 
 function ScheduledEvent({ event }: { event: CandidateEventView }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg bg-[#f7f7f9] p-3">
+    <div className="flex flex-col gap-1 rounded-lg bg-[#f5f5f5] p-3">
       <p className="font-medium">
         {event.stageName} ({STAGE_KIND_LABELS[event.stageKind]}) ·{" "}
         {formatIndiaDateTime(event.startsAt)} · {event.durationMinutes} min
@@ -114,7 +114,7 @@ export default async function UserApplicationsPage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-3 text-sm">
               {status.kind === "applied" && (
-                <p className="text-[#4a4d53]">Waiting for {business} to review your application.</p>
+                <p className="text-[#737373]">Waiting for {business} to review your application.</p>
               )}
               {status.kind === "ai_interview" && (
                 <div className="flex flex-col gap-2">
@@ -132,9 +132,9 @@ export default async function UserApplicationsPage() {
               {status.kind === "offer" && (
                 <section
                   aria-label="Your offer"
-                  className="flex flex-col gap-2 rounded-xl border border-[#cfe6d8] bg-[#f3faf6] p-4"
+                  className="flex flex-col gap-2 rounded-xl border border-[#b8efd2] bg-[#f2fcf6] p-4"
                 >
-                  <p className="text-base font-medium text-[#1f6b43]">
+                  <p className="text-base font-medium text-[#00803f]">
                     🎉 {business} is offering you this role
                   </p>
                   {application.offerMessage && (
@@ -156,7 +156,7 @@ export default async function UserApplicationsPage() {
                 </section>
               )}
               {status.kind === "offer_declined" && (
-                <p className="text-[#4a4d53]">You declined {business}&apos;s offer.</p>
+                <p className="text-[#737373]">You declined {business}&apos;s offer.</p>
               )}
               {status.kind === "hired" && (
                 <p>
@@ -166,11 +166,11 @@ export default async function UserApplicationsPage() {
               )}
               {status.kind === "not_selected" && (
                 <div className="flex flex-col gap-1">
-                  <p className="text-[#4a4d53]">
+                  <p className="text-[#737373]">
                     {business} went with someone else this time. Keep adding proof and applying.
                   </p>
                   {application.notSelectedReason && (
-                    <p className="rounded-lg bg-[#f7f7f9] p-3 whitespace-pre-line break-words">
+                    <p className="rounded-lg bg-[#f5f5f5] p-3 whitespace-pre-line break-words">
                       {application.notSelectedReason}
                     </p>
                   )}
@@ -178,7 +178,7 @@ export default async function UserApplicationsPage() {
               )}
               {applicationEvents.length > 0 && (
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs font-medium text-[#4a4d53]">Live interview</p>
+                  <p className="text-xs font-medium text-[#737373]">Live interview</p>
                   {applicationEvents.map((event) => (
                     <ScheduledEvent key={event.id} event={event} />
                   ))}

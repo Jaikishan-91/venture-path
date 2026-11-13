@@ -27,7 +27,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const opportunity = await getVisibleOpportunity((await params).id);
   return {
-    title: opportunity ? `${opportunity.title} · VenturePath` : "Opportunity · VenturePath",
+    title: opportunity ? `${opportunity.title} · Venture Path` : "Opportunity · Venture Path",
   };
 }
 
@@ -63,11 +63,11 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
     <PublicFrame>
       <main className="grid gap-8 px-6 py-8 md:grid-cols-[minmax(0,1fr)_320px] md:px-8">
         <div className="flex flex-col gap-6">
-          <Link href="/opportunities" className="text-sm text-[#26594a] underline">
+          <Link href="/opportunities" className="text-sm text-[#00994f] underline">
             All opportunities
           </Link>
           <header className="flex flex-col gap-1">
-            <h1 className="text-3xl font-medium tracking-tight text-[#26594a]">
+            <h1 className="text-[26px] leading-[1.15] font-medium tracking-tight text-[#121212] lg:text-[32px]">
               {opportunity.title}
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -158,7 +158,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
         </div>
 
         <section
-          className={`flex h-fit min-w-0 flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-[#e2e5e7] ${
+          className={`flex h-fit min-w-0 flex-col gap-3 rounded-2xl bg-white p-5 border border-[#e5e5e5] shadow-card ${
             // A tall form (screening questions) can't be sticky: its end would be unreachable.
             questions.length === 0 && !opportunity.applyTask ? "md:sticky md:top-6" : ""
           }`}

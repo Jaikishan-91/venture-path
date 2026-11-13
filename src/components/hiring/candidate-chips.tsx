@@ -12,7 +12,7 @@ const chip =
   "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap";
 
 const RECOMMENDATION: Record<InterviewRecommendation, { dot: string; className: string }> = {
-  strong: { dot: "🟢", className: "bg-[#e8f0ed] text-[#26594a]" },
+  strong: { dot: "🟢", className: "bg-[#e6f9ef] text-[#00994f]" },
   maybe: { dot: "🟡", className: "bg-[#fbf3dc] text-[#6b5310]" },
   not_fit: { dot: "🔴", className: "bg-[#f8ece9] text-[#7f3326]" },
 };
@@ -47,7 +47,7 @@ export function InterviewChip({ interview }: { interview: BoardInterview | null 
         ? "AI interview: report failed"
         : "AI interview: writing report"
       : INTERVIEW_STATUS[interview.status];
-  return <span className={`${chip} bg-[#f1f2f4] text-[#4a4d53]`}>{label}</span>;
+  return <span className={`${chip} bg-[#f5f5f5] text-[#737373]`}>{label}</span>;
 }
 
 /** AI screening overall score, or nothing when not scored. */
@@ -55,7 +55,7 @@ export function ScreeningChip({ score }: { score: number | null }) {
   if (score === null) return null;
   return (
     <span
-      className={`${chip} bg-[#eef0f4] text-[#33363b]`}
+      className={`${chip} bg-[#f5f5f5] text-[#262626]`}
       title="AI screening score (advice only)"
     >
       Screening <span className="tabular-nums">{score}</span>
@@ -65,9 +65,9 @@ export function ScreeningChip({ score }: { score: number | null }) {
 
 const OFFER_STYLE: Record<OfferStatus, string> = {
   pending: "bg-[#e8f0fb] text-[#1d4f8f]",
-  accepted: "bg-[#e6f4ec] text-[#1f6b43]",
+  accepted: "bg-[#e6f9ef] text-[#00803f]",
   declined: "bg-[#f8ece9] text-[#7f3326]",
-  withdrawn: "bg-[#f1f2f4] text-[#4a4d53]",
+  withdrawn: "bg-[#f5f5f5] text-[#737373]",
 };
 
 export function OfferChip({ status }: { status: OfferStatus }) {
@@ -76,5 +76,5 @@ export function OfferChip({ status }: { status: OfferStatus }) {
 
 /** Plain stage / status pill. */
 export function StagePill({ label }: { label: string }) {
-  return <span className={`${chip} bg-[#eef0f4] text-[#33363b]`}>{label}</span>;
+  return <span className={`${chip} bg-[#f5f5f5] text-[#262626]`}>{label}</span>;
 }

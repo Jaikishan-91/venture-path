@@ -7,7 +7,7 @@ import { getOrganisationProfile } from "@/lib/profiles";
 import { NotApproved } from "../not-approved";
 import { ChallengeForm } from "../challenge-form";
 
-export const metadata: Metadata = { title: "Post a challenge · VenturePath" };
+export const metadata: Metadata = { title: "Post a challenge · Venture Path" };
 
 export default async function NewChallengePage() {
   const session = await requireRole("organisation");

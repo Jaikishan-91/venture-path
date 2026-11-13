@@ -18,7 +18,7 @@ export const RECOMMENDATION_STYLE: Record<
   InterviewRecommendation,
   { dot: string; className: string }
 > = {
-  strong: { dot: "🟢", className: "bg-[#e8f0ed] text-[#26594a]" },
+  strong: { dot: "🟢", className: "bg-[#e6f9ef] text-[#00994f]" },
   maybe: { dot: "🟡", className: "bg-[#fbf3dc] text-[#6b5310]" },
   not_fit: { dot: "🔴", className: "bg-[#f8ece9] text-[#7f3326]" },
 };
@@ -49,11 +49,11 @@ export function ScoreDots({ score }: { score: number }) {
         {[1, 2, 3, 4, 5].map((step) => (
           <span
             key={step}
-            className={`h-2 w-3 rounded-sm ${step <= score ? "bg-[#26594a]" : "bg-[#e3e5e8]"}`}
+            className={`h-2 w-3 rounded-sm ${step <= score ? "bg-[#00bf63]" : "bg-[#e5e5e5]"}`}
           />
         ))}
       </span>
-      <span className="text-xs text-[#4a4d53]">{score}/5</span>
+      <span className="text-xs text-[#737373]">{score}/5</span>
     </span>
   );
 }
@@ -85,7 +85,7 @@ function Transcript({ interview }: { interview: OrgInterviewView }) {
           key={index}
           className={
             turn.role === "ai"
-              ? "rounded-lg bg-[#f7f7f9] p-2 break-words"
+              ? "rounded-lg bg-[#f5f5f5] p-2 break-words"
               : "ml-4 rounded-lg border border-border p-2 break-words whitespace-pre-line"
           }
         >
@@ -158,7 +158,7 @@ function QuestionCards({
             </div>
             <Answer turn={card.answer} />
             {card.followUpQuestion && (
-              <div className="ml-2 flex min-w-0 flex-col gap-1 border-l-2 border-[#e3e5e8] pl-3">
+              <div className="ml-2 flex min-w-0 flex-col gap-1 border-l-2 border-[#e5e5e5] pl-3">
                 <p className="text-xs font-medium break-words text-muted-foreground">
                   Follow-up: {card.followUpQuestion.text}
                 </p>
@@ -166,7 +166,7 @@ function QuestionCards({
               </div>
             )}
             {card.score?.reason && (
-              <p className="text-xs break-words text-[#4a4d53]">
+              <p className="text-xs break-words text-[#737373]">
                 <span className="font-medium">Why:</span> {card.score.reason}
               </p>
             )}
@@ -226,12 +226,12 @@ export function AiInterviewReport({
           {done && recommendation && <RecommendationChip recommendation={recommendation} />}
         </div>
         {(score !== null || interview.mode || interview.completedAt) && (
-          <dl className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-[#4a4d53]">
+          <dl className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-[#737373]">
             {score !== null && (
               <div className="flex items-baseline gap-1">
                 <dt className="sr-only">Interview score</dt>
                 <dd>
-                  <span className="text-2xl font-semibold text-[#1b2a26]">{score}</span>/100
+                  <span className="text-2xl font-semibold text-[#121212]">{score}</span>/100
                 </dd>
               </div>
             )}
@@ -278,7 +278,7 @@ export function AiInterviewReport({
           {(report.strengths.length > 0 || report.concerns.length > 0) && (
             <div className="grid gap-3 sm:grid-cols-2">
               {report.strengths.length > 0 && (
-                <div className="min-w-0 rounded-lg bg-[#f3f8f5] p-3">
+                <div className="min-w-0 rounded-lg bg-[#f2fcf6] p-3">
                   <p className="font-medium">✅ Strengths</p>
                   <ul className="mt-1 list-disc pl-5 break-words">
                     {report.strengths.map((item) => (
@@ -309,7 +309,7 @@ export function AiInterviewReport({
                     <span className="min-w-0 font-medium break-words">{entry.skill}</span>
                     <ScoreDots score={entry.score} />
                   </div>
-                  <span className="min-w-0 break-words text-[#4a4d53]">
+                  <span className="min-w-0 break-words text-[#737373]">
                     {entry.quote ? (
                       <q>{entry.quote}</q>
                     ) : (

@@ -1,6 +1,7 @@
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
+/** Public pages: sticky header, a centred content column, footer. `hero` renders full-width above it. */
 export async function PublicFrame({
   hero,
   children,
@@ -9,12 +10,11 @@ export async function PublicFrame({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-3.5 py-7">
-      <div className="overflow-hidden rounded-[28px] bg-[#f7f7f9] shadow-[0_18px_40px_-28px_rgba(22,24,29,0.28)]">
-        {hero ? <section className="bg-[#1f4138] text-[#f4eddd]">{hero}</section> : <SiteHeader />}
-        {children}
-        <SiteFooter />
-      </div>
+    <div className="flex min-h-dvh flex-col bg-white">
+      <SiteHeader />
+      {hero}
+      <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col">{children}</div>
+      <SiteFooter />
     </div>
   );
 }

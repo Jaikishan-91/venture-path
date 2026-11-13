@@ -3,7 +3,7 @@ import { toast, uniqueEmail } from "./helpers";
 
 test("home page renders", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "VenturePath" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Prove your skills/ })).toBeVisible();
 });
 
 test("health endpoint reports the database is up", async ({ request }) => {

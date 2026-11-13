@@ -11,7 +11,7 @@ import {
 import { ORGANISATION_STATUSES, type OrganisationStatus } from "@/lib/profile-schemas";
 import { ReviewActions } from "./review-actions";
 
-export const metadata: Metadata = { title: "Organisation reviews · VenturePath" };
+export const metadata: Metadata = { title: "Organisation reviews · Venture Path" };
 
 const TAB_LABELS: Record<OrganisationStatus, string> = {
   pending: "Pending",

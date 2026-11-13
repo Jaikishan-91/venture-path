@@ -17,7 +17,7 @@ export function ScoreText({
 }) {
   if (score !== null) {
     return (
-      <span className="rounded-md bg-[#f1f2f4] px-2 py-0.5 text-xs font-medium">
+      <span className="rounded-md bg-[#f5f5f5] px-2 py-0.5 text-xs font-medium">
         AI score {score}/{max}
       </span>
     );

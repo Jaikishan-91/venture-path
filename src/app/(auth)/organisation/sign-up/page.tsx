@@ -4,7 +4,7 @@ import { getSession } from "@/lib/authz";
 import { getEnv } from "@/lib/env";
 import { SignUpForm } from "../../sign-up/sign-up-form";
 
-export const metadata: Metadata = { title: "Organisation sign up · VenturePath" };
+export const metadata: Metadata = { title: "Organisation sign up · Venture Path" };
 
 export default async function OrganisationSignUpPage() {
   if (await getSession()) redirect("/dashboard");

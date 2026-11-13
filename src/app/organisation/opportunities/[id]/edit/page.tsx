@@ -12,7 +12,7 @@ import { NotApproved } from "../../not-approved";
 import { OpportunityForm } from "../../opportunity-form";
 import { PipelineEditor } from "../../pipeline-editor";
 
-export const metadata: Metadata = { title: "Edit listing · VenturePath" };
+export const metadata: Metadata = { title: "Edit listing · Venture Path" };
 
 export default async function EditOpportunityPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requireRole("organisation");

@@ -108,7 +108,7 @@ export function SignInForm({
         {googleEnabled && isGoogleContinueRole(role) && <GoogleButton role={role} />}
         {isSignupRole(role) && (
           <p className="text-center text-sm text-muted-foreground">
-            New to VenturePath?{" "}
+            New to Venture Path?{" "}
             <Link href={SIGN_UP_PATHS[role]} className="underline">
               Create {role === "organisation" ? "an organisation" : "an"} account
             </Link>

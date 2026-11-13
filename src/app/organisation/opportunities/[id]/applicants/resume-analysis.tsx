@@ -40,7 +40,7 @@ interface Props {
 
 const scoreColor = (score: number | null) =>
   score === null
-    ? "text-[#4a4d53]"
+    ? "text-[#737373]"
     : score >= 80
       ? "text-green-700"
       : score >= 60
@@ -53,12 +53,12 @@ const show = (score: number | null) => (score === null ? "-" : String(score));
 function Score({ label, score, large }: { label: string; score: number | null; large?: boolean }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs text-[#4a4d53]">{label}</dt>
+      <dt className="text-xs text-[#737373]">{label}</dt>
       <dd
         className={`tabular-nums font-semibold ${large ? "text-2xl" : "text-lg"} ${scoreColor(score)}`}
       >
         {show(score)}
-        {score !== null && <span className="text-xs font-normal text-[#4a4d53]">/100</span>}
+        {score !== null && <span className="text-xs font-normal text-[#737373]">/100</span>}
       </dd>
     </div>
   );
@@ -110,10 +110,10 @@ export function ResumeAnalysis({
           </p>
         )}
         {showAnswers && answers.length > 0 && (
-          <details className="rounded-lg bg-[#f7f7f9] p-3">
+          <details className="rounded-lg bg-[#f5f5f5] p-3">
             <summary className="cursor-pointer font-medium">Answers ({answers.length})</summary>
             {analysis?.answersSummary && (
-              <p className="mt-2 whitespace-pre-line text-[#4a4d53]">{analysis.answersSummary}</p>
+              <p className="mt-2 whitespace-pre-line text-[#737373]">{analysis.answersSummary}</p>
             )}
             <ol className="mt-2 flex flex-col gap-3">
               {answers.map((answer, index) => (
@@ -122,7 +122,7 @@ export function ResumeAnalysis({
                     {index + 1}. {answer.question.prompt}
                   </p>
                   <p className="whitespace-pre-line break-words">{answer.answer}</p>
-                  <p className="text-xs text-[#4a4d53]">
+                  <p className="text-xs text-[#737373]">
                     Score{" "}
                     <span className={`font-semibold tabular-nums ${scoreColor(answer.score)}`}>
                       {show(answer.score)}

@@ -13,19 +13,19 @@ import {
 import { formatIndiaDateTime } from "@/lib/hiring/time";
 import { STAGE_KIND_LABELS } from "@/lib/hiring/types";
 
-export const metadata: Metadata = { title: "Hiring manager · VenturePath" };
+export const metadata: Metadata = { title: "Hiring manager · Venture Path" };
 
 function EventRow({ event }: { event: HiringManagerDashboardEvent }) {
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f7f7f9] p-3">
+    <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f5f5f5] p-3">
       <div className="min-w-0">
         <Link
           href={`/hiring-manager/interviews/${event.id}`}
-          className="block truncate font-medium text-[#1b2a26] underline-offset-4 hover:underline"
+          className="block truncate font-medium text-[#121212] underline-offset-4 hover:underline"
         >
           {event.candidateName} · {event.listingTitle}
         </Link>
-        <p className="truncate text-sm text-[#4a4d53]">
+        <p className="truncate text-sm text-[#737373]">
           {STAGE_KIND_LABELS[event.stageKind]} · {event.stageName} ·{" "}
           {formatIndiaDateTime(event.startsAt)}
         </p>
@@ -40,7 +40,7 @@ function EventRow({ event }: { event: HiringManagerDashboardEvent }) {
           Join Meet
         </a>
       ) : (
-        <span className="shrink-0 text-xs text-[#4a4d53]">-</span>
+        <span className="shrink-0 text-xs text-[#737373]">-</span>
       )}
     </li>
   );
@@ -56,7 +56,7 @@ export default async function HiringManagerHomePage() {
   return (
     <RoleHome title="Dashboard" name={session.user.name}>
       <DashboardSection title={`Hiring manager at ${membership.organisationName}`}>
-        <p className="text-sm text-[#4a4d53]">
+        <p className="text-sm text-[#737373]">
           Candidates may also do an AI interview first; the organisation owner sees its report.
         </p>
       </DashboardSection>

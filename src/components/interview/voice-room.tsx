@@ -9,10 +9,17 @@ import {
   useTranscriptions,
   useVoiceAssistant,
 } from "@livekit/components-react";
-import { Loader2, Mic, MessageSquare, PhoneOff } from "lucide-react";
+import { Loader2, Mic, MicOff, MessageSquare, PhoneOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  InterviewStage,
+  InterviewerOrb,
+  TranscriptEntry,
+  TranscriptPanel,
+  type OrbStatus,
+} from "@/components/interview/interview-stage";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { VoiceJoin } from "@/lib/v2/types";
 
@@ -39,10 +46,19 @@ const MIC_DENIED =
 const CONNECTION_FAILED =
   "The voice connection didn't work. Your answers so far are saved — let's continue in chat from the same question.";
 
+type StageInfo = {
+  businessName: string;
+  listingTitle: string;
+  /** 1-based question number when the room opened. */
+  current: number;
+  total: number;
+};
+
 export function VoiceRoom({
   token,
   onSwitchToChat,
-}: {
+  ...info
+}: StageInfo & {
   token: string;
   onSwitchToChat: () => void;
 }) {
@@ -80,7 +96,7 @@ export function VoiceRoom({
 
   if (phase.kind === "ended") {
     return (
-      <Card>
+      <CenteredCard>
         <CardHeader>
           <CardTitle>{phase.early ? "Voice interview stopped" : "Thank you!"}</CardTitle>
           <CardDescription>
@@ -96,7 +112,7 @@ export function VoiceRoom({
             </Button>
           </CardContent>
         ) : null}
-      </Card>
+      </CenteredCard>
     );
   }
 
@@ -114,9 +130,11 @@ export function VoiceRoom({
           if (endedByStudent.current) setPhase({ kind: "ended", early: true });
           else if (!finished.current) fail(CONNECTION_FAILED);
         }}
+        className="flex flex-1 flex-col"
       >
         <RoomAudioRenderer />
         <LiveInterview
+          info={info}
           onConnectionLost={() => fail(CONNECTION_FAILED)}
           onFinished={() => {
             if (endedByStudent.current) return;
@@ -133,26 +151,52 @@ export function VoiceRoom({
     );
   }
 
+  const starting = phase.kind === "starting";
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Voice interview</CardTitle>
-        <CardDescription>
-          The AI interviewer will ask its questions out loud. Answer in your own words; captions
-          show what was heard. Find a quiet place. Only the text of the conversation is saved, never
-          the audio.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        <Button className="h-11 w-full" onClick={start} disabled={phase.kind === "starting"}>
-          {phase.kind === "starting" ? <Loader2 className="animate-spin" /> : <Mic />}
-          {phase.kind === "starting" ? "Connecting…" : "Allow microphone and start"}
-        </Button>
-        <Button variant="ghost" className="h-11 w-full" onClick={onSwitchToChat}>
-          <MessageSquare /> Switch to chat
-        </Button>
-      </CardContent>
-    </Card>
+    <InterviewStage
+      orb={<Orb info={info} status={starting ? "connecting" : "ready"} />}
+      transcript={
+        <TranscriptPanel>
+          <p className="my-auto text-center text-[14px] leading-relaxed text-[#737373]">
+            The AI interviewer will ask its questions out loud. Answer in your own words; captions
+            of both sides appear here. Find a quiet place. Only the text is saved, never the audio.
+          </p>
+        </TranscriptPanel>
+      }
+      controls={
+        <div className="flex flex-col items-center gap-2">
+          <Button size="lg" onClick={start} disabled={starting}>
+            {starting ? <Loader2 className="animate-spin" /> : <Mic />}
+            {starting ? "Connecting…" : "Allow microphone and start"}
+          </Button>
+          <Button variant="ghost" onClick={onSwitchToChat}>
+            <MessageSquare /> Switch to chat
+          </Button>
+        </div>
+      }
+    />
+  );
+}
+
+function Orb({ info, status }: { info: StageInfo; status: OrbStatus }) {
+  return (
+    <InterviewerOrb
+      status={status}
+      title="AI Interviewer"
+      subtitle={`Interviewing you for ${info.listingTitle} at ${info.businessName}.`}
+      current={info.current}
+      total={info.total}
+    />
+  );
+}
+
+function CenteredCard({ children, ...props }: React.ComponentProps<typeof Card>) {
+  return (
+    <div className="my-auto flex justify-center py-10">
+      <Card className="w-full max-w-md" {...props}>
+        {children}
+      </Card>
+    </div>
   );
 }
 
@@ -168,7 +212,7 @@ function FailedCard({ message, onSwitchToChat }: { message: string; onSwitchToCh
   }, [seconds, onSwitchToChat]);
 
   return (
-    <Card role="alert">
+    <CenteredCard role="alert">
       <CardHeader>
         <CardTitle>Let&apos;s continue in chat</CardTitle>
         <CardDescription>{message}</CardDescription>
@@ -178,30 +222,32 @@ function FailedCard({ message, onSwitchToChat }: { message: string; onSwitchToCh
           <MessageSquare /> Switch to chat now ({Math.max(seconds, 0)})
         </Button>
       </CardContent>
-    </Card>
+    </CenteredCard>
   );
 }
 
-const STATE_LABELS: Record<string, string> = {
-  speaking: "Interviewer is speaking…",
-  listening: "Listening — your turn to speak",
-  thinking: "Thinking…",
-  idle: "Listening — your turn to speak",
+const ORB_STATUS: Record<string, OrbStatus> = {
+  speaking: "speaking",
+  listening: "listening",
+  thinking: "thinking",
+  idle: "listening",
 };
 
 function LiveInterview({
+  info,
   onConnectionLost,
   onFinished,
   onEnd,
   onSwitchToChat,
 }: {
+  info: StageInfo;
   onConnectionLost: () => void;
   onFinished: () => void;
   onEnd: () => void;
   onSwitchToChat: () => void;
 }) {
   const { agent, state } = useVoiceAssistant();
-  const { localParticipant } = useLocalParticipant();
+  const { localParticipant, isMicrophoneEnabled } = useLocalParticipant();
   const transcriptions = useTranscriptions();
   const agentSeen = useRef(false);
   const captionsEnd = useRef<HTMLDivElement>(null);
@@ -225,85 +271,88 @@ function LiveInterview({
     captionsEnd.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [transcriptions]);
 
-  const speaking = state === "speaking";
-  const label = agent
-    ? (STATE_LABELS[state] ?? "Connecting your interviewer…")
-    : "Connecting your interviewer…";
-  const captions = transcriptions.slice(-6);
+  const status: OrbStatus = agent ? (ORB_STATUS[state] ?? "connecting") : "connecting";
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Voice interview</CardTitle>
-        <div
-          aria-live="polite"
-          className={`mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
-            speaking ? "bg-primary/10 text-primary" : "bg-muted text-foreground"
-          }`}
-        >
-          {agent ? (
-            <Mic className={speaking ? "" : "animate-pulse"} />
+    <InterviewStage
+      orb={<Orb info={info} status={status} />}
+      transcript={
+        <TranscriptPanel live={Boolean(agent)}>
+          {transcriptions.length === 0 ? (
+            <p className="my-auto text-center text-[14px] text-[#a3a3a3]">
+              {agent ? "Captions will appear here." : "Connecting your interviewer…"}
+            </p>
           ) : (
-            <Loader2 className="animate-spin" />
-          )}
-          {label}
-        </div>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <div className="flex max-h-72 min-h-32 flex-col gap-2 overflow-y-auto rounded-lg border p-3 text-sm">
-          {captions.length === 0 ? (
-            <p className="text-muted-foreground">Captions will appear here.</p>
-          ) : (
-            captions.map((t) => {
-              const mine = t.participantInfo.identity === localParticipant.identity;
-              return (
-                <p key={t.streamInfo.id} className={mine ? "text-right" : ""}>
-                  <span className="block text-xs text-muted-foreground">
-                    {mine ? "You" : "Interviewer"}
-                  </span>
+            <ol aria-label="Captions" className="flex flex-col gap-5">
+              {transcriptions.map((t) => (
+                <TranscriptEntry
+                  key={t.streamInfo.id}
+                  role={t.participantInfo.identity === localParticipant.identity ? "student" : "ai"}
+                >
                   {t.text}
-                </p>
-              );
-            })
+                </TranscriptEntry>
+              ))}
+            </ol>
           )}
           <div ref={captionsEnd} />
+        </TranscriptPanel>
+      }
+      controls={
+        <div className="flex flex-col items-center gap-3 pb-[env(safe-area-inset-bottom)]">
+          <StartAudio
+            label="Tap to hear the interviewer"
+            className="h-10 rounded-full bg-[#00bf63] px-5 text-sm font-medium text-white"
+          />
+          <div className="flex items-center gap-1.5 rounded-full border border-[#e5e5e5] bg-white p-1.5 shadow-card">
+            <button
+              type="button"
+              aria-label={isMicrophoneEnabled ? "Mute microphone" : "Unmute microphone"}
+              aria-pressed={!isMicrophoneEnabled}
+              onClick={() => void localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}
+              className={`flex size-11 cursor-pointer items-center justify-center rounded-full transition-colors ${
+                isMicrophoneEnabled
+                  ? "text-[#121212] hover:bg-[#f5f5f5]"
+                  : "bg-[#fdf1ec] text-[#8a3b1f]"
+              }`}
+            >
+              {isMicrophoneEnabled ? <Mic className="size-5" /> : <MicOff className="size-5" />}
+            </button>
+            <EndButton onEnd={onEnd} />
+          </div>
+          <button
+            type="button"
+            onClick={onSwitchToChat}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium text-[#737373] transition-colors hover:bg-[#f5f5f5] hover:text-[#121212]"
+          >
+            <MessageSquare className="size-4" /> Switch to chat
+          </button>
         </div>
-        <StartAudio
-          label="Tap to hear the interviewer"
-          className="h-11 w-full rounded-lg bg-primary text-sm font-medium text-primary-foreground"
-        />
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <EndButton onEnd={onEnd} />
-          <Button variant="outline" className="h-11 w-full" onClick={onSwitchToChat}>
-            <MessageSquare /> Switch to chat
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      }
+    />
   );
 }
 
 function EndButton({ onEnd }: { onEnd: () => void }) {
   const room = useRoomContext();
   const [confirming, setConfirming] = useState(false);
-  if (!confirming) {
-    return (
-      <Button variant="destructive" className="h-11 w-full" onClick={() => setConfirming(true)}>
-        <PhoneOff /> End interview
-      </Button>
-    );
-  }
   return (
-    <Button
-      variant="destructive"
-      className="h-11 w-full"
+    <button
+      type="button"
       onClick={() => {
+        if (!confirming) {
+          setConfirming(true);
+          return;
+        }
         onEnd();
         // Leaving the room ends the interviewer's session; the transcript so far is saved.
         void room.disconnect();
       }}
+      className={`inline-flex h-11 cursor-pointer items-center gap-2 rounded-full px-5 text-[15px] font-medium text-white transition-colors ${
+        confirming ? "bg-[#dc2626] hover:bg-[#b91c1c]" : "bg-[#121212] hover:bg-[#262626]"
+      }`}
     >
-      Tap again to end
-    </Button>
+      <PhoneOff className="size-[18px]" />
+      {confirming ? "Tap again to end" : "End"}
+    </button>
   );
 }

@@ -7,7 +7,7 @@ import { getInvite } from "@/lib/team";
 import { AcceptInviteCard } from "./accept-invite-card";
 import { JoinInviteCard } from "./join-invite-card";
 
-export const metadata: Metadata = { title: "Team invite · VenturePath" };
+export const metadata: Metadata = { title: "Team invite · Venture Path" };
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

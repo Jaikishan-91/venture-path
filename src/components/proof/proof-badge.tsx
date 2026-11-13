@@ -10,9 +10,9 @@ export const PROOF_LEVEL_HINTS: Record<ProofLevel, string> = {
 };
 
 const STYLES: Record<ProofLevel, string> = {
-  added: "bg-[#f1f2f4] text-[#4a4d53]",
+  added: "bg-[#f5f5f5] text-[#737373]",
   checked: "bg-[#e8f0fb] text-[#1d4f8f]",
-  verified: "bg-[#e6f4ec] text-[#1f6b43]",
+  verified: "bg-[#e6f9ef] text-[#00803f]",
 };
 
 /** ⚪ Added · 🔵 Checked · 🟢 Verified by business (docs/PRODUCT.md Module 3). */

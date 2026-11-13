@@ -100,7 +100,7 @@ export function BoardList({
   return (
     <div className="flex flex-col gap-3">
       {selectable && rows.length > 1 && (
-        <label className="flex w-fit items-center gap-2 text-sm text-[#4a4d53]">
+        <label className="flex w-fit items-center gap-2 text-sm text-[#737373]">
           <input
             type="checkbox"
             checked={chosen.length === rows.length}
@@ -116,7 +116,7 @@ export function BoardList({
             <li
               key={row.id}
               aria-label={row.name}
-              className="relative flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[#ecedef] bg-white p-3 hover:border-[#c9ccd2]"
+              className="relative flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[#e5e5e5] bg-white p-3 hover:border-[#d4d4d4]"
             >
               {selectable && (
                 <input
@@ -130,11 +130,11 @@ export function BoardList({
               <div className="flex min-w-0 flex-1 basis-48 flex-col gap-1">
                 <Link
                   href={href}
-                  className="truncate font-medium text-[#16181d] after:absolute after:inset-0 after:content-['']"
+                  className="truncate font-medium text-[#121212] after:absolute after:inset-0 after:content-['']"
                 >
                   {row.name}
                 </Link>
-                <p className="truncate text-xs text-[#4a4d53]">
+                <p className="truncate text-xs text-[#737373]">
                   {row.course}, {row.institution} · Applied {formatApplied(row.appliedAt)}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -156,7 +156,7 @@ export function BoardList({
         <div
           role="region"
           aria-label="Selected candidates"
-          className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-[#ecedef] bg-white p-3 shadow-[0_8px_24px_-12px_rgba(22,24,29,0.35)]"
+          className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-[#e5e5e5] bg-white p-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.35)]"
         >
           <span className="text-sm font-medium">{chosen.length} selected</span>
           {canSendAiInterview && (
@@ -178,7 +178,7 @@ export function BoardList({
               Compare ({chosen.length})
             </Link>
           ) : (
-            <span className="text-xs text-[#4a4d53]">
+            <span className="text-xs text-[#737373]">
               Pick {MIN_COMPARE}–{MAX_COMPARE} to compare
             </span>
           )}

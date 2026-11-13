@@ -66,7 +66,7 @@ export function PipelineStageCard({
             </span>
           )}
           {stage.source === "ai" && (
-            <span className="inline-flex items-center rounded-md bg-[#e8f0ed] px-1.5 py-0.5 text-xs font-normal whitespace-nowrap text-[#26594a]">
+            <span className="inline-flex items-center rounded-md bg-[#e6f9ef] px-1.5 py-0.5 text-xs font-normal whitespace-nowrap text-[#00994f]">
               AI draft
             </span>
           )}

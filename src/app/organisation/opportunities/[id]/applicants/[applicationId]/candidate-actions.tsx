@@ -103,7 +103,7 @@ function OfferForm({
           <Input id="offer-start" name="startDate" type="date" min={minStartDate} />
         </div>
       </div>
-      <p className="text-xs text-[#4a4d53]">
+      <p className="text-xs text-[#737373]">
         The student gets an email and answers in the app. You&apos;ll get an email when they do.
       </p>
       <div className="flex flex-wrap justify-end gap-2">
@@ -148,7 +148,7 @@ function NotSelectedForm({
           placeholder="e.g. We picked someone with more Instagram experience. Keep building!"
         />
       </div>
-      <p className="text-xs text-[#4a4d53]">
+      <p className="text-xs text-[#737373]">
         They get a polite email with your note. This can&apos;t be undone.
       </p>
       <div className="flex flex-wrap justify-end gap-2">
@@ -198,7 +198,7 @@ export function CandidateActionBar({
       <div
         role="region"
         aria-label="Decide"
-        className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-[#ecedef] bg-white p-3 shadow-[0_8px_24px_-12px_rgba(22,24,29,0.35)]"
+        className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-[#e5e5e5] bg-white p-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.35)]"
       >
         {(nextStep.kind === "move" || nextStep.kind === "send_ai_interview") && (
           <form action={advanceAction}>
@@ -215,7 +215,7 @@ export function CandidateActionBar({
         )}
         {nextStep.kind === "offer_pending" && (
           <>
-            <span className="text-sm text-[#4a4d53]">Waiting for the student to answer.</span>
+            <span className="text-sm text-[#737373]">Waiting for the student to answer.</span>
             <form action={withdrawOfferAction}>
               <input type="hidden" name="applicationId" value={applicationId} />
               <Button type="submit" variant="outline">

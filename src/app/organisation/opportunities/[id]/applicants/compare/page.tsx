@@ -12,7 +12,7 @@ import {
 } from "@/lib/interview-compare";
 import { MAX_COMPARE, MIN_COMPARE } from "@/lib/v2/types";
 
-export const metadata: Metadata = { title: "Compare candidates · VenturePath" };
+export const metadata: Metadata = { title: "Compare candidates · Venture Path" };
 
 /** Column classes per candidate count (static so Tailwind sees them). */
 const COLUMNS: Record<number, string> = {
@@ -76,7 +76,7 @@ export default async function CompareCandidatesPage({
         <Link href={boardPath} className="text-sm underline">
           Back to applicants
         </Link>
-        <p className="text-sm text-[#4a4d53]">
+        <p className="text-sm text-[#737373]">
           {view.opportunity.title} · {view.candidates.length} candidates. Scores are advice only;
           you decide.
         </p>
@@ -87,15 +87,15 @@ export default async function CompareCandidatesPage({
           <article
             key={candidate.applicationId}
             aria-label={candidate.name}
-            className="mb-4 grid min-w-0 rounded-xl bg-white text-sm ring-1 ring-[#ecedef]"
+            className="mb-4 grid min-w-0 rounded-xl bg-white text-sm border border-[#e5e5e5] shadow-card"
             style={{ gridRow: `span ${rowCount}`, gridTemplateRows: "subgrid" }}
           >
-            <div className="flex min-w-0 flex-col gap-1.5 border-b border-[#ecedef] p-3">
-              <h2 className="text-base font-medium break-words text-[#1b2a26]">{candidate.name}</h2>
+            <div className="flex min-w-0 flex-col gap-1.5 border-b border-[#e5e5e5] p-3">
+              <h2 className="text-base font-medium break-words text-[#121212]">{candidate.name}</h2>
               {candidate.bestProof ? (
                 <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
                   <ProofBadge level={candidate.bestProof.level} />
-                  <span className="min-w-0 break-words text-[#4a4d53]">
+                  <span className="min-w-0 break-words text-[#737373]">
                     {candidate.bestProof.title}
                   </span>
                 </div>
@@ -104,19 +104,19 @@ export default async function CompareCandidatesPage({
               )}
             </div>
 
-            <div className="flex items-baseline justify-between gap-2 border-b border-[#ecedef] px-3 py-2">
-              <span className="text-xs text-[#4a4d53]">AI screening</span>
+            <div className="flex items-baseline justify-between gap-2 border-b border-[#e5e5e5] px-3 py-2">
+              <span className="text-xs text-[#737373]">AI screening</span>
               <span className="font-medium">
                 {candidate.screeningScore !== null ? `${candidate.screeningScore}/100` : "–"}
               </span>
             </div>
 
-            <div className="flex flex-col gap-1 border-b border-[#ecedef] px-3 py-2">
+            <div className="flex flex-col gap-1 border-b border-[#e5e5e5] px-3 py-2">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs text-[#4a4d53]">AI interview</span>
+                <span className="text-xs text-[#737373]">AI interview</span>
                 {candidate.interview?.score != null ? (
                   <span>
-                    <span className="text-xl font-semibold text-[#1b2a26]">
+                    <span className="text-xl font-semibold text-[#121212]">
                       {candidate.interview.score}
                     </span>
                     /100
@@ -142,7 +142,7 @@ export default async function CompareCandidatesPage({
                   key={skill}
                   className="flex min-w-0 items-center justify-between gap-2 px-3 py-1.5"
                 >
-                  <span className="min-w-0 text-xs break-words text-[#4a4d53]">{skill}</span>
+                  <span className="min-w-0 text-xs break-words text-[#737373]">{skill}</span>
                   {score !== null ? (
                     <ScoreDots score={score} />
                   ) : (
@@ -154,7 +154,7 @@ export default async function CompareCandidatesPage({
               );
             })}
 
-            <div className="min-w-0 border-t border-[#ecedef] px-3 py-2">
+            <div className="min-w-0 border-t border-[#e5e5e5] px-3 py-2">
               <p className="text-xs font-medium">✅ Strengths</p>
               {candidate.strengths.length > 0 ? (
                 <ul className="list-disc pl-5 break-words">
@@ -183,7 +183,7 @@ export default async function CompareCandidatesPage({
             <div className="self-end p-3">
               <Link
                 href={`${boardPath}/${candidate.applicationId}`}
-                className="text-sm font-medium text-[#26594a] underline"
+                className="text-sm font-medium text-[#00994f] underline"
               >
                 Open {candidate.name.split(" ")[0]}&apos;s page
               </Link>

@@ -14,7 +14,7 @@ import {
 import { getOrganisationProfile } from "@/lib/profiles";
 import { OpportunityActions } from "./opportunity-actions";
 
-export const metadata: Metadata = { title: "Your listings · VenturePath" };
+export const metadata: Metadata = { title: "Your listings · Venture Path" };
 
 const STATUS_LABELS: Record<OpportunityStatus, string> = {
   draft: "Draft",

@@ -9,7 +9,7 @@ import { formatIndiaDateTime } from "@/lib/hiring/time";
 import { SCHEDULE_STATUS_LABELS, STAGE_KIND_LABELS } from "@/lib/hiring/types";
 import { FeedbackForm } from "./feedback-form";
 
-export const metadata: Metadata = { title: "Interview · VenturePath" };
+export const metadata: Metadata = { title: "Interview · Venture Path" };
 
 export default async function HiringManagerInterviewDetailPage({
   params,
@@ -27,11 +27,11 @@ export default async function HiringManagerInterviewDetailPage({
     <RoleHome title={event.candidateName} name={session.user.name}>
       <DashboardSection title="Interview">
         <div className="flex flex-col gap-2 text-sm">
-          <p className="text-[#1b2a26]">
+          <p className="text-[#121212]">
             <span className="font-medium">{formatIndiaDateTime(event.startsAt)}</span> ·{" "}
             {event.durationMinutes} min · {SCHEDULE_STATUS_LABELS[event.status]}
           </p>
-          <p className="text-[#4a4d53]">
+          <p className="text-[#737373]">
             {STAGE_KIND_LABELS[event.stageKind]} · {event.stageName}
           </p>
           {event.meetUrl ? (
@@ -44,20 +44,20 @@ export default async function HiringManagerInterviewDetailPage({
               Join Meet
             </a>
           ) : (
-            <p className="text-[#4a4d53]">Meet link: -</p>
+            <p className="text-[#737373]">Meet link: -</p>
           )}
-          {event.stageInstructions && <p className="text-[#4a4d53]">{event.stageInstructions}</p>}
+          {event.stageInstructions && <p className="text-[#737373]">{event.stageInstructions}</p>}
           {event.stageExternalUrl && (
             <a
               href={event.stageExternalUrl}
               target="_blank"
               rel="noopener noreferrer nofollow"
-              className="text-[#26594a] underline underline-offset-4"
+              className="text-[#00994f] underline underline-offset-4"
             >
               {event.stageExternalUrl}
             </a>
           )}
-          <p className="text-[#4a4d53]">
+          <p className="text-[#737373]">
             {event.otherInterviewers.length > 0
               ? `Also interviewing: ${event.otherInterviewers.join(", ")}`
               : "No other interviewers assigned."}
@@ -67,15 +67,15 @@ export default async function HiringManagerInterviewDetailPage({
 
       <DashboardSection title="Listing">
         <div className="flex flex-col gap-2 text-sm">
-          <p className="font-medium text-[#1b2a26]">{event.listingTitle}</p>
-          <p className="whitespace-pre-wrap text-[#4a4d53]">{event.listingDescription}</p>
+          <p className="font-medium text-[#121212]">{event.listingTitle}</p>
+          <p className="whitespace-pre-wrap text-[#737373]">{event.listingDescription}</p>
           {event.listingRequirements && (
-            <p className="whitespace-pre-wrap text-[#4a4d53]">{event.listingRequirements}</p>
+            <p className="whitespace-pre-wrap text-[#737373]">{event.listingRequirements}</p>
           )}
           {event.listingSkills.length > 0 && (
             <ul aria-label="Skills" className="flex flex-wrap gap-2">
               {event.listingSkills.map((skill) => (
-                <li key={skill} className="rounded-md bg-[#f0f1f3] px-2 py-0.5 text-[#1b2a26]">
+                <li key={skill} className="rounded-md bg-[#f5f5f5] px-2 py-0.5 text-[#121212]">
                   {skill}
                 </li>
               ))}
@@ -86,8 +86,8 @@ export default async function HiringManagerInterviewDetailPage({
 
       <DashboardSection title="Candidate">
         <div className="flex flex-col gap-2 text-sm">
-          <p className="font-medium text-[#1b2a26]">{event.candidateName}</p>
-          <p className="text-[#4a4d53]">
+          <p className="font-medium text-[#121212]">{event.candidateName}</p>
+          <p className="text-[#737373]">
             {event.candidateCourse}, {event.candidateInstitution}
           </p>
           {event.resumeFileName && (
@@ -105,14 +105,14 @@ export default async function HiringManagerInterviewDetailPage({
         {event.screeningAnswers.length > 0 ? (
           <ul className="flex flex-col gap-3 text-sm">
             {event.screeningAnswers.map((answer) => (
-              <li key={answer.prompt} className="min-w-0 rounded-xl bg-[#f7f7f9] p-3">
-                <p className="font-medium text-[#1b2a26]">{answer.prompt}</p>
-                <p className="mt-1 whitespace-pre-wrap text-[#4a4d53]">{answer.answer}</p>
+              <li key={answer.prompt} className="min-w-0 rounded-xl bg-[#f5f5f5] p-3">
+                <p className="font-medium text-[#121212]">{answer.prompt}</p>
+                <p className="mt-1 whitespace-pre-wrap text-[#737373]">{answer.answer}</p>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-[#4a4d53]">This listing has no screening questions.</p>
+          <p className="text-sm text-[#737373]">This listing has no screening questions.</p>
         )}
       </DashboardSection>
 

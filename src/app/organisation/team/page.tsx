@@ -9,7 +9,7 @@ import { listMembers } from "@/lib/team";
 import { InviteForm } from "./invite-form";
 import { MembersTable } from "./members-table";
 
-export const metadata: Metadata = { title: "Team · VenturePath" };
+export const metadata: Metadata = { title: "Team · Venture Path" };
 
 export default async function TeamPage() {
   const session = await requireRole("organisation");
@@ -19,7 +19,7 @@ export default async function TeamPage() {
     <RoleHome title="Team" name={session.user.name}>
       {profile ? (
         <>
-          <p className="text-sm text-[#4a4d53]">
+          <p className="text-sm text-[#737373]">
             Hiring managers only see the interviews they&apos;re assigned to and can share feedback
             — they can&apos;t see your other listings, applicants, or business profile.
           </p>

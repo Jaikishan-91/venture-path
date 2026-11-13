@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 import { SignOutButton } from "@/components/sign-out-button";
 import type { Role } from "@/lib/roles";
 
@@ -42,7 +43,12 @@ const NAV: Record<Role, NavItem[]> = {
   ],
   admin: [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/organisations", label: "Organisation reviews", icon: ShieldCheck },
+    {
+      href: "/admin/organisations",
+      label: "Organisation reviews",
+      short: "Reviews",
+      icon: ShieldCheck,
+    },
     { href: "/admin/settings", label: "Settings", icon: Settings },
   ],
   hiring_manager: [
@@ -69,81 +75,82 @@ export function AppSidebar({ role, name }: { role: Role; name: string }) {
   const pathname = usePathname();
   const items = NAV[role];
   const current = currentHref(items, pathname);
-
-  const links = items.map(({ href, label, icon: Icon }) => (
-    <Link
-      key={href}
-      href={href}
-      aria-current={href === current ? "page" : undefined}
-      className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm whitespace-nowrap transition-colors duration-300 ${
-        href === current
-          ? "bg-[#26594a] text-white"
-          : "text-[#4a4d53] hover:bg-[#f0f1f3] hover:text-[#1b2a26]"
-      }`}
-    >
-      <Icon className="size-4" aria-hidden="true" />
-      {label}
-    </Link>
-  ));
+  const initial = name.trim().charAt(0).toUpperCase() || "?";
 
   return (
     <>
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-[#ecedef] bg-white md:flex">
-        <Link href="/" className="px-5 pt-6 font-heading text-lg text-[#26594a]">
-          VenturePath
-        </Link>
-        <p className="px-5 pb-4 text-[10px] uppercase tracking-[0.18em] text-[#6e7e78]">Careers</p>
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-[#e5e5e5] bg-white md:flex">
+        <BrandLogo className="px-5 pt-6 pb-6" />
         <nav aria-label="Main" className="flex flex-1 flex-col gap-1 px-3">
-          {links}
+          {items.map(({ href, label, icon: Icon }) => {
+            const active = href === current;
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={`flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[14px] font-medium transition-colors duration-200 ${
+                  active
+                    ? "bg-[#e6f9ef] text-[#00994f]"
+                    : "text-[#737373] hover:bg-[#f5f5f5] hover:text-[#121212]"
+                }`}
+              >
+                <Icon className="size-[18px]" aria-hidden="true" />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
-        <div className="flex flex-col gap-3 border-t border-[#ecedef] p-4">
+        <div className="m-3 flex flex-col gap-3 rounded-xl border border-[#e5e5e5] p-3">
           <div className="flex min-w-0 items-center gap-3">
             <span
               aria-hidden="true"
-              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e3efe8] text-sm font-medium text-[#26594a]"
+              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#00bf63] text-sm font-semibold text-white"
             >
-              {name.trim().charAt(0).toUpperCase() || "?"}
+              {initial}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm text-[#1b2a26]">{name}</p>
-              <p className="text-[11px] uppercase tracking-[0.14em] text-[#6e7e78]">
-                {ROLE_NAMES[role]}
-              </p>
+              <p className="truncate text-[14px] font-medium text-[#121212]">{name}</p>
+              <p className="text-[12px] text-[#737373]">{ROLE_NAMES[role]}</p>
             </div>
           </div>
           <SignOutButton />
         </div>
       </aside>
-      <div className="border-b border-[#ecedef] bg-white md:hidden">
-        <div className="flex items-center justify-between gap-3 px-4 pt-3">
-          <Link href="/" className="font-heading text-lg text-[#26594a]">
-            VenturePath
-          </Link>
-          <SignOutButton />
-        </div>
-        {/* A tab bar: every link fits at 320px, so nothing hides off-screen. */}
-        <nav
-          aria-label="Main"
-          className="grid gap-1 px-2 py-2"
-          style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
-        >
-          {items.map(({ href, label, short, icon: Icon }) => (
+
+      {/* Phones: a slim top bar plus a bottom tab bar within thumb reach. */}
+      <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#e5e5e5] bg-white/90 px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] pb-3 backdrop-blur-md md:hidden">
+        <BrandLogo />
+        <SignOutButton />
+      </div>
+      <nav
+        aria-label="Main"
+        className="fixed inset-x-0 bottom-0 z-30 grid border-t border-[#e5e5e5] bg-white/95 px-1 pt-1.5 pb-[calc(env(safe-area-inset-bottom,0px)+0.375rem)] backdrop-blur-md md:hidden"
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      >
+        {items.map(({ href, label, short, icon: Icon }) => {
+          const active = href === current;
+          return (
             <Link
               key={href}
               href={href}
-              aria-current={href === current ? "page" : undefined}
-              className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] leading-tight transition-colors duration-300 ${
-                href === current
-                  ? "bg-[#26594a] text-white"
-                  : "text-[#4a4d53] hover:bg-[#f0f1f3] hover:text-[#1b2a26]"
+              aria-current={active ? "page" : undefined}
+              className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[11px] leading-tight font-medium transition-colors duration-200 ${
+                active ? "text-[#00994f]" : "text-[#737373]"
               }`}
             >
-              <Icon className="size-4" aria-hidden="true" />
+              <span
+                className={`flex h-7 w-12 max-w-full items-center justify-center rounded-full transition-colors duration-200 ${
+                  active ? "bg-[#e6f9ef]" : ""
+                }`}
+              >
+                <Icon className="size-[18px]" aria-hidden="true" />
+              </span>
               <span className="w-full truncate text-center">{short ?? label}</span>
             </Link>
-          ))}
-        </nav>
-      </div>
+          );
+        })}
+      </nav>
     </>
   );
 }

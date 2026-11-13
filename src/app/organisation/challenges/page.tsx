@@ -11,7 +11,7 @@ import { getOrganisationProfile } from "@/lib/profiles";
 import { CHALLENGE_STATUS_LABELS } from "@/lib/v2/types";
 import { StatusButtons } from "./status-buttons";
 
-export const metadata: Metadata = { title: "Your challenges · VenturePath" };
+export const metadata: Metadata = { title: "Your challenges · Venture Path" };
 
 export default async function OrganisationChallengesPage() {
   const session = await requireRole("organisation");
@@ -23,7 +23,7 @@ export default async function OrganisationChallengesPage() {
 
   return (
     <RoleHome title="Your challenges" name={session.user.name}>
-      <p className="max-w-2xl text-sm text-[#4a4d53]">
+      <p className="max-w-2xl text-sm text-[#737373]">
         Post a real problem from your business with a reward. Students send solutions, AI sorts
         them, and you pick the winner.
       </p>

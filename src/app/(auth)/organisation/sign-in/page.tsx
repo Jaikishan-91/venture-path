@@ -4,7 +4,7 @@ import { getSession } from "@/lib/authz";
 import { getEnv } from "@/lib/env";
 import { SignInForm } from "../../sign-in/sign-in-form";
 
-export const metadata: Metadata = { title: "Organisation sign in · VenturePath" };
+export const metadata: Metadata = { title: "Organisation sign in · Venture Path" };
 
 export default async function OrganisationSignInPage({
   searchParams,

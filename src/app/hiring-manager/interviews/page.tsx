@@ -8,7 +8,7 @@ import { listAssignedEvents, type AssignedEventSummary } from "@/lib/hm-intervie
 import { formatIndiaDateTime } from "@/lib/hiring/time";
 import { SCHEDULE_STATUS_LABELS, STAGE_KIND_LABELS } from "@/lib/hiring/types";
 
-export const metadata: Metadata = { title: "Interviews · VenturePath" };
+export const metadata: Metadata = { title: "Interviews · Venture Path" };
 
 const SCOPES = ["upcoming", "past"] as const;
 type Scope = (typeof SCOPES)[number];
@@ -21,21 +21,21 @@ function parseScope(value: string | string[] | undefined): Scope {
 
 function EventRow({ event }: { event: AssignedEventSummary }) {
   return (
-    <li className="min-w-0 rounded-xl bg-[#f7f7f9] p-3">
+    <li className="min-w-0 rounded-xl bg-[#f5f5f5] p-3">
       <Link
         href={`/hiring-manager/interviews/${event.id}`}
-        className="block min-w-0 truncate font-medium text-[#1b2a26] underline-offset-4 hover:underline"
+        className="block min-w-0 truncate font-medium text-[#121212] underline-offset-4 hover:underline"
       >
         {event.candidateName} · {event.listingTitle}
       </Link>
-      <p className="mt-0.5 truncate text-sm text-[#4a4d53]">
+      <p className="mt-0.5 truncate text-sm text-[#737373]">
         {STAGE_KIND_LABELS[event.stageKind]} · {event.stageName} ·{" "}
         {formatIndiaDateTime(event.startsAt)}
       </p>
-      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#4a4d53]">
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#737373]">
         <span>{SCHEDULE_STATUS_LABELS[event.status]}</span>
         {event.feedbackSubmitted && (
-          <span className="font-medium text-[#26594a]">Feedback submitted</span>
+          <span className="font-medium text-[#00994f]">Feedback submitted</span>
         )}
         {event.otherInterviewers.length > 0 && (
           <span>With {event.otherInterviewers.join(", ")}</span>

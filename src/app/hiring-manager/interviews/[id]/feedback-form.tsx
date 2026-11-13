@@ -40,7 +40,7 @@ export function FeedbackForm({
 
   if (disabledReason) {
     return (
-      <p className="rounded-xl bg-[#f7f7f9] px-4 py-6 text-center text-sm text-[#4a4d53]">
+      <p className="rounded-xl bg-[#f5f5f5] px-4 py-6 text-center text-sm text-[#737373]">
         {disabledReason}
       </p>
     );
@@ -49,12 +49,12 @@ export function FeedbackForm({
   return (
     <form action={action} className="flex flex-col gap-4">
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium text-[#1b2a26]">Rating</legend>
+        <legend className="text-sm font-medium text-[#121212]">Rating</legend>
         <div className="flex flex-wrap gap-2">
           {RATINGS.map((value) => (
             <label
               key={value}
-              className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-[#ecedef] text-sm font-medium text-[#1b2a26] has-checked:border-[#26594a] has-checked:bg-[#26594a] has-checked:text-white"
+              className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-[#e5e5e5] text-sm font-medium text-[#121212] has-checked:border-[#00bf63] has-checked:bg-[#00bf63] has-checked:text-white"
             >
               <input
                 type="radio"
@@ -71,12 +71,12 @@ export function FeedbackForm({
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium text-[#1b2a26]">Recommendation</legend>
+        <legend className="text-sm font-medium text-[#121212]">Recommendation</legend>
         <div className="flex flex-wrap gap-2">
           {RECOMMENDATIONS.map((value) => (
             <label
               key={value}
-              className="cursor-pointer rounded-lg border border-[#ecedef] px-3 py-1.5 text-sm text-[#1b2a26] has-checked:border-[#26594a] has-checked:bg-[#26594a] has-checked:text-white"
+              className="cursor-pointer rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-sm text-[#121212] has-checked:border-[#00bf63] has-checked:bg-[#00bf63] has-checked:text-white"
             >
               <input
                 type="radio"

@@ -14,7 +14,7 @@ export async function generateMetadata({
   params,
 }: PageProps<"/challenges/[id]">): Promise<Metadata> {
   const challenge = await getVisibleChallenge((await params).id);
-  return { title: challenge ? `${challenge.title} · VenturePath` : "Challenge · VenturePath" };
+  return { title: challenge ? `${challenge.title} · Venture Path` : "Challenge · Venture Path" };
 }
 
 export default async function ChallengePage({ params }: PageProps<"/challenges/[id]">) {
@@ -36,18 +36,18 @@ export default async function ChallengePage({ params }: PageProps<"/challenges/[
     <PublicFrame>
       <main className="grid gap-8 px-6 py-8 md:grid-cols-[minmax(0,1fr)_360px] md:px-8">
         <div className="flex min-w-0 flex-col gap-6">
-          <Link href="/challenges" className="text-sm text-[#26594a] underline">
+          <Link href="/challenges" className="text-sm text-[#00994f] underline">
             All challenges
           </Link>
           <header className="flex flex-col gap-1">
-            <h1 className="text-3xl font-medium tracking-tight text-[#26594a]">
+            <h1 className="text-[26px] leading-[1.15] font-medium tracking-tight text-[#121212] lg:text-[32px]">
               {challenge.title}
             </h1>
             <p className="text-sm text-muted-foreground">
               {business.businessName} · {business.location}
             </p>
           </header>
-          <dl className="grid gap-3 rounded-2xl bg-white p-5 text-sm ring-1 ring-[#e2e5e7] sm:grid-cols-2">
+          <dl className="grid gap-3 rounded-2xl bg-white p-5 text-sm border border-[#e5e5e5] shadow-card sm:grid-cols-2">
             <div>
               <dt className="text-muted-foreground">Reward</dt>
               <dd className="text-lg font-medium">{formatReward(challenge)}</dd>
@@ -87,7 +87,7 @@ export default async function ChallengePage({ params }: PageProps<"/challenges/[
           )}
         </div>
 
-        <section className="flex h-fit min-w-0 flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-[#e2e5e7]">
+        <section className="flex h-fit min-w-0 flex-col gap-3 rounded-2xl bg-white p-5 border border-[#e5e5e5] shadow-card">
           <h2 className="text-lg font-medium">
             {submission ? "Your solution" : "Submit solution"}
           </h2>

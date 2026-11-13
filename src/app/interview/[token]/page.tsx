@@ -6,7 +6,7 @@ import { getInterviewForStudent, isInterviewTokenShape } from "@/lib/ai-intervie
 import { getSession } from "@/lib/authz";
 import { InterviewClient } from "./interview-client";
 
-export const metadata: Metadata = { title: "AI interview · VenturePath" };
+export const metadata: Metadata = { title: "AI interview · Venture Path" };
 
 /** The phone keyboard shrinks the layout, so the sticky answer box stays above it. */
 export const viewport: Viewport = { interactiveWidget: "resizes-content" };
@@ -26,12 +26,12 @@ export default async function InterviewPage({ params }: PageProps<"/interview/[t
     return (
       <InterviewFrame>
         <section className="my-auto flex flex-col gap-3 py-10">
-          <h1 className="font-heading text-2xl text-[#1b2a26]">Sign in as a student</h1>
-          <p className="text-sm text-[#4a4d53]">
+          <h1 className="font-heading text-2xl font-medium text-[#121212]">Sign in as a student</h1>
+          <p className="text-sm text-[#737373]">
             This interview belongs to a student account. Sign out, then open the link again and sign
             in with the account you applied with.
           </p>
-          <Link href="/dashboard" className="text-sm font-medium text-[#26594a] underline">
+          <Link href="/dashboard" className="text-sm font-medium text-[#00994f] underline">
             Go to your dashboard
           </Link>
         </section>

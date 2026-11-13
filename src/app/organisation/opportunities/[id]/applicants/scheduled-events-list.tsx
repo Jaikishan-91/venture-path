@@ -44,7 +44,7 @@ export function ScheduledEventsList({
           <p className="font-medium">
             {event.stageName} · {formatIndiaDateTime(event.startsAt)} · {event.durationMinutes} min
           </p>
-          <p className="text-[#4a4d53]">
+          <p className="text-[#737373]">
             {SCHEDULE_STATUS_LABELS[event.status]} · {calendarStatusLabel(event)}
           </p>
           <p>

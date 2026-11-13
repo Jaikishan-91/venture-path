@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/authz";
 import { getUserProfile } from "@/lib/profiles";
 import { UserProfileForm } from "./user-profile-form";
 
-export const metadata: Metadata = { title: "Your profile · VenturePath" };
+export const metadata: Metadata = { title: "Your profile · Venture Path" };
 
 export default async function UserProfilePage() {
   const session = await requireRole("user");

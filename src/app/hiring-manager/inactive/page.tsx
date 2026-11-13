@@ -4,7 +4,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/authz";
 
-export const metadata: Metadata = { title: "No access · VenturePath" };
+export const metadata: Metadata = { title: "No access · Venture Path" };
 
 /**
  * Reached only when the account has the `hiring_manager` role but no active membership: it was

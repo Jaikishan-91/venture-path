@@ -65,7 +65,7 @@ export function DecisionPanel({
     rewardHire && placement !== "none" && rewardStatus !== "hire_offered" && !moneyDue;
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl bg-white p-5 ring-1 ring-[#e2e5e7]">
+    <section className="flex flex-col gap-4 rounded-2xl bg-white p-5 border border-[#e5e5e5] shadow-card">
       <h2 className="text-lg font-medium">Your decision</h2>
       {challengeStatus === "open" && (
         <p className="text-sm text-muted-foreground">
@@ -100,7 +100,7 @@ export function DecisionPanel({
                   </form>
                 )
               ) : (
-                <span className="rounded-md bg-[#e3efe9] px-2 py-0.5 text-xs text-[#26594a]">
+                <span className="rounded-md bg-[#e6f9ef] px-2 py-0.5 text-xs text-[#00994f]">
                   Paid
                 </span>
               )}
@@ -113,7 +113,7 @@ export function DecisionPanel({
           )}
           {rewardHire && rewardStatus === "hire_offered" && (
             <p>
-              <span className="rounded-md bg-[#e3efe9] px-2 py-0.5 text-xs text-[#26594a]">
+              <span className="rounded-md bg-[#e6f9ef] px-2 py-0.5 text-xs text-[#00994f]">
                 Hire offer sent
               </span>
             </p>
