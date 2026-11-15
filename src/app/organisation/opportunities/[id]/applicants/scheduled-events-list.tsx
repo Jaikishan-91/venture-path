@@ -1,3 +1,4 @@
+import { CalendarClock, Users, Video } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatIndiaDateTime, utcToIndiaLocal } from "@/lib/hiring/time";
@@ -11,7 +12,7 @@ import type { ScheduledEventView } from "@/lib/scheduling";
 import { cancelEventAction, rescheduleAction, retrySyncAction } from "./actions";
 
 const selectClass =
-  "min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base md:text-sm dark:bg-input/30";
+  "min-h-20 w-full rounded-lg border border-input bg-white px-2.5 py-1.5 text-base md:text-sm dark:bg-input/30";
 
 function calendarStatusLabel(event: ScheduledEventView): string {
   switch (event.calendarSync) {
@@ -39,37 +40,49 @@ export function ScheduledEventsList({
       {events.map((event) => (
         <li
           key={event.id}
-          className="flex flex-col gap-1 rounded-lg border border-input p-3 text-sm"
+          className="flex flex-col gap-2 rounded-lg border border-[#e5e5e5] p-4 text-sm"
         >
-          <p className="font-medium">
-            {event.stageName} · {formatIndiaDateTime(event.startsAt)} · {event.durationMinutes} min
-          </p>
-          <p className="text-[#737373]">
-            {SCHEDULE_STATUS_LABELS[event.status]} · {calendarStatusLabel(event)}
-          </p>
-          <p>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <p className="flex items-center gap-2 font-medium text-[#121212]">
+              <CalendarClock aria-hidden className="size-4 shrink-0 text-[#737373]" />
+              {event.stageName} · {formatIndiaDateTime(event.startsAt)} · {event.durationMinutes}{" "}
+              min
+            </p>
+            <span className="rounded-md border border-[#e5e5e5] bg-[#fafafa] px-1.5 py-0.5 text-[12px] font-medium text-[#525252]">
+              {SCHEDULE_STATUS_LABELS[event.status]}
+            </span>
+          </div>
+          <p className="text-[13px] text-[#737373]">{calendarStatusLabel(event)}</p>
+          <p className="flex items-center gap-2 text-[13px]">
+            <Video aria-hidden className="size-4 shrink-0 text-[#a3a3a3]" />
             {event.meetUrl ? (
-              <a href={event.meetUrl} className="underline">
+              <a
+                href={event.meetUrl}
+                className="font-medium text-[#15803d] underline-offset-4 hover:underline"
+              >
                 Join Google Meet
               </a>
             ) : (
-              "-"
+              <span className="text-[#a3a3a3]">-</span>
             )}
           </p>
-          <p>
-            Interviewers:{" "}
-            {event.interviewers.length === 0
-              ? "-"
-              : event.interviewers
-                  .map((interviewer) =>
-                    interviewer.active
-                      ? interviewer.name
-                      : `${interviewer.name} (no longer active, reschedule)`,
-                  )
-                  .join(", ")}
+          <p className="flex items-start gap-2 text-[13px] text-[#404040]">
+            <Users aria-hidden className="mt-0.5 size-4 shrink-0 text-[#a3a3a3]" />
+            <span>
+              Interviewers:{" "}
+              {event.interviewers.length === 0
+                ? "-"
+                : event.interviewers
+                    .map((interviewer) =>
+                      interviewer.active
+                        ? interviewer.name
+                        : `${interviewer.name} (no longer active, reschedule)`,
+                    )
+                    .join(", ")}
+            </span>
           </p>
           {event.status === "scheduled" && (
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2 border-t border-[#f0f0f0] pt-3">
               {event.calendarSync === "failed" && (
                 <form action={retrySyncAction}>
                   <input type="hidden" name="eventId" value={event.id} />
@@ -82,7 +95,9 @@ export function ScheduledEventsList({
                 </form>
               )}
               <details>
-                <summary className="cursor-pointer text-xs underline">Reschedule</summary>
+                <summary className="cursor-pointer text-[13px] font-medium text-[#525252] hover:text-[#121212]">
+                  Reschedule
+                </summary>
                 <form
                   action={rescheduleAction}
                   aria-label="Reschedule"

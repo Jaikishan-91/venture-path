@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-11-15 — Cleaner, simpler UI (ADR-051)
+
+Changed:
+- Deeper green accent (#16a34a), Inter for UI text, 8px buttons, one 12px card radius, near-flat shadows.
+- Landing page rebuilt: plain headline, working job search with popular terms, numbered "How it works", students/businesses split. Decorative glow, badges, icon tiles and dark CTA band removed.
+- Dashboard lists use divided rows instead of grey boxes inside cards; accent stat tile meets contrast; header sign-in is a neutral dark button.
+- Landing page made fuller: centred hero with search + type tabs, live counts (open jobs, open challenges, verified businesses), latest job cards, open challenges beside a compact How it works, student/business cards (`lib/home.ts`).
+- Header is dynamic: full-width at the top, then floats as an inset blurred bar with shadow on scroll; current section highlighted (`components/header-shell.tsx`).
+- Signed-in screens rebuilt in the same style: shared `AppShell` + `PageHeader`; `RoleHome` takes `description`/`actions`/`back`; panels with header rows; stats as one divided strip; denser sidebar with compact sign-out.
+- Jobs and challenges pages keep the sidebar for signed-in users (`PublicFrame appShell`) instead of dropping them to the public site.
+- Student dashboard (greeting, stat strip, recommended jobs, recent applications, profile-strength card, closing soon), jobs list/detail/apply, challenges list/detail/submit, My Proof, Applications, Profile (settings layout); proof badges use icons instead of emoji.
+- e2e: user dashboard heading is now "Welcome back, …".
+- Organisation screens rebuilt in the same style: dashboard (greeting, status banner, 8-number strip, listings with per-stage counts, recent applicants, business card with quick actions); job listings and the listing editor (sectioned form, hiring-step cards, sticky save bar); hiring board (tabs with counts, candidate rows, bulk bar), candidate page (panels + sticky next-step card and timeline), compare; challenges (list, sectioned form, ranked submissions, submission detail with AI breakdown and decision panel); team; business profile. Hiring chips, feedback and AI report use icons instead of emoji.
+- e2e: organisation dashboard heading is now "Welcome…"; AI report flags line no longer has an emoji.
+- Remaining screens rebuilt in the same style: AI interview room (two-column "Before you start" lobby with Voice/Chat cards and mic check, flat orb card, shared centred message card for done/expired/invalid, Exit link); auth (own split layout: form + product panel, inline errors, loading states), role onboarding (two option cards), team invites; admin dashboard, organisation reviews (tabs, review cards), prompt settings; hiring-manager dashboard, interviews list, interview detail with feedback form, no-access page; student resumes and recommendations.
+- Sidebar items can claim extra sections (`also`): resumes highlight My Proof.
+
 ## 2026-11-13 — UI redesign (ADR-050)
 
 Changed:

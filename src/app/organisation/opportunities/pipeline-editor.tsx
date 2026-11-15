@@ -4,7 +4,6 @@ import { Plus, Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useActionErrorToast } from "@/components/use-action-error-toast";
 import {
@@ -205,16 +204,22 @@ export function PipelineEditor({
   }
 
   return (
-    <Card id="hiring-steps">
-      <CardHeader>
-        <CardTitle>Hiring steps</CardTitle>
-        <CardDescription>
-          Candidates move through these steps after applying; after the last one you send an offer.
-          Leave it empty to make offers straight from Applied.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-3">
+    <section
+      id="hiring-steps"
+      aria-labelledby="hiring-steps-heading"
+      className="scroll-mt-6 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white"
+    >
+      <div className="flex flex-col gap-3 border-b border-[#f0f0f0] px-5 py-4 md:flex-row md:items-start md:justify-between md:px-6">
+        <div className="min-w-0">
+          <h2 id="hiring-steps-heading" className="text-[15px] font-semibold text-[#121212]">
+            Hiring steps
+          </h2>
+          <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-[#737373]">
+            Candidates move through these steps after applying; after the last one you send an
+            offer. Leave it empty to make offers straight from Applied.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           {aiEnabled && (
             <Button
               type="button"
@@ -228,13 +233,16 @@ export function PipelineEditor({
             </Button>
           )}
           {sources.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <Label htmlFor="pipeline-copy-source" className="text-sm whitespace-nowrap">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="pipeline-copy-source"
+                className="text-[13px] whitespace-nowrap text-[#737373]"
+              >
                 Copy from listing
               </Label>
               <select
                 id="pipeline-copy-source"
-                className="h-10 rounded-[8px] border border-input bg-white px-3 text-base md:text-sm disabled:opacity-50 dark:bg-input/30"
+                className="h-8 rounded-lg border border-input bg-white px-2.5 text-sm disabled:opacity-50 dark:bg-input/30"
                 disabled={pending}
                 defaultValue=""
                 onChange={(event) => {
@@ -255,20 +263,17 @@ export function PipelineEditor({
             </div>
           )}
         </div>
+      </div>
 
+      <div className="flex flex-col gap-3 p-5 md:px-6">
         {stages.length === 0 ? (
-          <div className="flex flex-col gap-2 rounded-lg bg-[#f5f5f5] p-3 text-sm">
+          <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-[#d4d4d4] p-4 text-sm text-[#525252]">
             <p>
-              No steps yet. Recommended: a short <strong>AI interview</strong>, then a{" "}
-              <strong>Live interview</strong>.
+              No steps yet. Recommended: a short{" "}
+              <strong className="text-[#121212]">AI interview</strong>, then a{" "}
+              <strong className="text-[#121212]">Live interview</strong>.
             </p>
-            <Button
-              type="button"
-              size="sm"
-              className="self-start"
-              disabled={pending || dirty}
-              onClick={handleRecommended}
-            >
+            <Button type="button" size="sm" disabled={pending || dirty} onClick={handleRecommended}>
               {recommendPending ? "Adding…" : "Use recommended steps"}
             </Button>
           </div>
@@ -292,23 +297,26 @@ export function PipelineEditor({
             ))}
           </ol>
         )}
+      </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={pending || stages.length >= MAX_STAGES}
-            onClick={addStage}
-          >
-            <Plus strokeWidth={1.75} />
-            Add stage
-          </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#f0f0f0] bg-[#fafafa] px-5 py-3 md:px-6">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={pending || stages.length >= MAX_STAGES}
+          onClick={addStage}
+        >
+          <Plus strokeWidth={1.75} />
+          Add stage
+        </Button>
+        <div className="flex items-center gap-3">
+          {dirty && <span className="text-xs font-medium text-[#b45309]">Unsaved changes</span>}
           <Button type="button" size="sm" disabled={pending || !dirty} onClick={handleSave}>
             {savePending ? "Saving…" : "Save pipeline"}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

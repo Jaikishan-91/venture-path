@@ -456,7 +456,7 @@ test.describe("demo story (docs/PRODUCT.md §8)", () => {
       await expect(report.getByText("(advice only)")).toBeVisible();
       await expect(report.locator("tbody tr").first()).toContainText(/\d\/5/);
       expect(await report.locator("tbody q").count()).toBeGreaterThan(0);
-      await expect(report).toContainText("🚩 Flags:");
+      await expect(report).toContainText("Flags:");
       await expect(report).toContainText("Pasted 1 answer");
       await shot(org, "interview-report");
     }

@@ -9,7 +9,7 @@ import {
 import { scheduleAction } from "./actions";
 
 const selectClass =
-  "min-h-24 w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base md:text-sm dark:bg-input/30";
+  "min-h-24 w-full rounded-lg border border-input bg-white px-2.5 py-1.5 text-base md:text-sm dark:bg-input/30";
 
 /** Schedule form for a candidate's current stage (D7). Server-rendered; posts to `scheduleAction`. */
 export function ScheduleForm({
@@ -31,16 +31,17 @@ export function ScheduleForm({
     <form
       action={scheduleAction}
       aria-label="Schedule an interview or test"
-      className="flex flex-col gap-2 rounded-lg border border-input p-3"
+      className="flex flex-col gap-3 rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-4"
     >
+      <p className="text-[13px] font-semibold text-[#121212]">Schedule the next session</p>
       <input type="hidden" name="applicationId" value={applicationId} />
       <input type="hidden" name="stageId" value={stageId} />
-      <div className="grid gap-2 sm:grid-cols-2">
-        <div className="flex flex-col gap-1">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor={startId}>Start</Label>
           <Input id={startId} name="startsAtLocal" type="datetime-local" required />
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor={durationId}>Duration (minutes)</Label>
           <Input
             id={durationId}
@@ -53,7 +54,7 @@ export function ScheduleForm({
           />
         </div>
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor={interviewersId}>Interviewers</Label>
         <select id={interviewersId} name="interviewerUserIds" multiple className={selectClass}>
           {interviewerOptions.map((option) => (
@@ -63,10 +64,14 @@ export function ScheduleForm({
           ))}
         </select>
       </div>
-      <p className="text-xs text-muted-foreground">Times are in India time (IST).</p>
-      <Button type="submit" size="sm" className="self-start">
-        Schedule
-      </Button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-[#737373]">
+          Times are in India time (IST). Hold Ctrl / ⌘ to pick several interviewers.
+        </p>
+        <Button type="submit" size="sm">
+          Schedule
+        </Button>
+      </div>
     </form>
   );
 }

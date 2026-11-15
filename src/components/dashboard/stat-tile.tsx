@@ -1,14 +1,15 @@
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 type Tone = "default" | "accent" | "warn";
 
-const TONES: Record<Tone, string> = {
-  default: "bg-white ring-[#e5e5e5] shadow-card",
-  accent: "bg-[#00bf63] text-white ring-[#00bf63] shadow-[0_8px_24px_-12px_rgb(0_191_99/0.6)]",
-  warn: "bg-[#fbf3e6] ring-[#e8cf9f]",
+const DOTS: Record<Tone, string | null> = {
+  default: null,
+  accent: "bg-[#16a34a]",
+  warn: "bg-[#d97706]",
 };
 
-/** One headline number. The whole tile is a link when `href` is set. */
+/** One headline number inside a `StatGrid`. The whole cell is a link when `href` is set. */
 export function StatTile({
   label,
   value,
@@ -22,25 +23,37 @@ export function StatTile({
   href?: string;
   tone?: Tone;
 }) {
-  const muted = tone === "accent" ? "text-white/85" : "text-[#737373]";
+  const dot = DOTS[tone];
   const body = (
     <>
-      <p className={`text-[13px] font-medium ${muted}`}>{label}</p>
+      <p className="flex items-center gap-1.5 text-[13px] font-medium text-[#737373]">
+        {dot ? <span aria-hidden className={`size-1.5 rounded-full ${dot}`} /> : null}
+        {label}
+        {href ? (
+          <ArrowUpRight
+            aria-hidden
+            className="ml-auto size-3.5 text-[#d4d4d4] transition-colors group-hover:text-[#121212]"
+          />
+        ) : null}
+      </p>
       <p
-        className={`mt-2 text-[32px] leading-none font-semibold tracking-tight tabular-nums ${tone === "accent" ? "" : "text-[#121212]"}`}
+        className={`mt-1.5 text-[26px] leading-none font-semibold tracking-tight tabular-nums ${
+          tone === "accent"
+            ? "text-[#15803d]"
+            : tone === "warn"
+              ? "text-[#b45309]"
+              : "text-[#121212]"
+        }`}
       >
         {value}
       </p>
-      {hint && <p className={`mt-1 text-xs ${muted}`}>{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs text-[#737373]">{hint}</p>}
     </>
   );
-  const className = `block min-w-0 rounded-2xl p-5 ring-1 ${TONES[tone]}`;
+  const className = "group block min-w-0 border-r border-b border-[#e5e5e5] px-5 py-4";
 
   return href ? (
-    <Link
-      href={href}
-      className={`${className} transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_-18px_rgba(0,0,0,0.45)]`}
-    >
+    <Link href={href} className={`${className} transition-colors duration-200 hover:bg-[#fafafa]`}>
       {body}
     </Link>
   ) : (

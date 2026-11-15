@@ -46,9 +46,9 @@ export function AppToaster({ flash }: { flash: Flash | null }) {
           "--normal-bg": "var(--card)",
           "--normal-text": "var(--foreground)",
           "--normal-border": "var(--border)",
-          "--success-bg": "#e6f9ef",
+          "--success-bg": "#f0fdf4",
           "--success-text": "#121212",
-          "--success-border": "#b8efd2",
+          "--success-border": "#bbf7d0",
           "--error-bg": "#f8ece9",
           "--error-text": "#7f3326",
           "--error-border": "#e6c3bb",
@@ -62,7 +62,7 @@ export function AppToaster({ flash }: { flash: Flash | null }) {
         classNames: {
           toast: "shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)] text-sm",
           title: "font-medium",
-          actionButton: "!bg-[#00bf63] !text-[#ffffff]",
+          actionButton: "!bg-[#16a34a] !text-[#ffffff]",
         },
       }}
     />

@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Hide the floating "N" dev-tools button in `next dev` (build errors still show as an overlay).
+  devIndicators: false,
   experimental: {
     // Resume uploads are capped at 5 MB; leave headroom for the rest of the form.
     serverActions: { bodySizeLimit: "6mb" },

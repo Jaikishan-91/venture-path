@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock } from "lucide-react";
 import { useActionState } from "react";
 import { useActionErrorToast } from "@/components/use-action-error-toast";
 import { Button } from "@/components/ui/button";
@@ -40,21 +41,22 @@ export function FeedbackForm({
 
   if (disabledReason) {
     return (
-      <p className="rounded-xl bg-[#f5f5f5] px-4 py-6 text-center text-sm text-[#737373]">
+      <p className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-[#d4d4d4] px-4 py-6 text-center text-[13px] text-[#737373]">
+        <Clock aria-hidden className="size-5 text-[#a3a3a3]" />
         {disabledReason}
       </p>
     );
   }
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} className="flex flex-col gap-5">
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium text-[#121212]">Rating</legend>
-        <div className="flex flex-wrap gap-2">
+        <legend className="mb-2 text-[13px] font-medium text-[#121212]">Rating</legend>
+        <div className="grid grid-cols-5 overflow-hidden rounded-lg border border-[#e5e5e5]">
           {RATINGS.map((value) => (
             <label
               key={value}
-              className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-[#e5e5e5] text-sm font-medium text-[#121212] has-checked:border-[#00bf63] has-checked:bg-[#00bf63] has-checked:text-white"
+              className="flex h-10 cursor-pointer items-center justify-center border-r border-[#e5e5e5] text-[14px] font-medium text-[#525252] transition-colors last:border-r-0 hover:bg-[#fafafa] has-checked:bg-[#121212] has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-[#16a34a] has-focus-visible:ring-inset"
             >
               <input
                 type="radio"
@@ -68,15 +70,19 @@ export function FeedbackForm({
             </label>
           ))}
         </div>
+        <p className="flex justify-between text-[11px] text-[#a3a3a3]">
+          <span>Weak</span>
+          <span>Excellent</span>
+        </p>
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium text-[#121212]">Recommendation</legend>
+        <legend className="mb-2 text-[13px] font-medium text-[#121212]">Recommendation</legend>
         <div className="flex flex-wrap gap-2">
           {RECOMMENDATIONS.map((value) => (
             <label
               key={value}
-              className="cursor-pointer rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-sm text-[#121212] has-checked:border-[#00bf63] has-checked:bg-[#00bf63] has-checked:text-white"
+              className="cursor-pointer rounded-lg border border-[#e5e5e5] bg-white px-3 py-1.5 text-[13px] font-medium text-[#404040] transition-colors hover:border-[#a3a3a3] has-checked:border-[#16a34a] has-checked:bg-[#f0fdf4] has-checked:text-[#15803d] has-focus-visible:ring-2 has-focus-visible:ring-[#16a34a]"
             >
               <input
                 type="radio"
@@ -103,9 +109,10 @@ export function FeedbackForm({
           rows={5}
           placeholder="What stood out, strengths, concerns…"
         />
+        <p className="text-[12px] text-[#a3a3a3]">Only your organisation sees this.</p>
       </div>
 
-      <Button type="submit" disabled={pending} className="self-start">
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Saving…" : initial ? "Update feedback" : "Submit feedback"}
       </Button>
     </form>

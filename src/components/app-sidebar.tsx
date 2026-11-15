@@ -20,8 +20,11 @@ import { BrandLogo } from "@/components/brand-logo";
 import { SignOutButton } from "@/components/sign-out-button";
 import type { Role } from "@/lib/roles";
 
-/** `short` replaces `label` in the phone tab bar, where six full labels don't fit at 320px. */
-type NavItem = { href: string; label: string; short?: string; icon: LucideIcon };
+/**
+ * `short` replaces `label` in the phone tab bar, where six full labels don't fit at 320px.
+ * `also` lists other sections that belong to this item (e.g. resumes live under My Proof).
+ */
+type NavItem = { href: string; label: string; short?: string; also?: string[]; icon: LucideIcon };
 
 /** One entry per link; add a link to a role's nav by adding a line here. */
 const NAV: Record<Role, NavItem[]> = {
@@ -30,7 +33,13 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/challenges", label: "Challenges", short: "Solve", icon: Trophy },
     { href: "/opportunities", label: "Explore jobs", short: "Jobs", icon: Search },
     // Resumes are optional now (docs/PRODUCT.md Module 4); the library is linked from My Proof.
-    { href: "/user/proof", label: "My Proof", short: "Proof", icon: BadgeCheck },
+    {
+      href: "/user/proof",
+      label: "My Proof",
+      short: "Proof",
+      also: ["/user/resumes"],
+      icon: BadgeCheck,
+    },
     { href: "/user/applications", label: "Applications", short: "Applied", icon: FileText },
     { href: "/user/profile", label: "Profile", icon: UserRound },
   ],
@@ -65,10 +74,16 @@ const ROLE_NAMES: Record<Role, string> = {
 };
 
 /** The one nav item matching the path: the longest href that is the path or a parent of it. */
-export function currentHref(items: { href: string }[], pathname: string): string | undefined {
+export function currentHref(
+  items: { href: string; also?: string[] }[],
+  pathname: string,
+): string | undefined {
+  const under = (base: string) => pathname === base || pathname.startsWith(`${base}/`);
   return items
-    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
-    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+    .flatMap((item) =>
+      [item.href, ...(item.also ?? [])].filter(under).map((base) => ({ href: item.href, base })),
+    )
+    .sort((a, b) => b.base.length - a.base.length)[0]?.href;
 }
 
 export function AppSidebar({ role, name }: { role: Role; name: string }) {
@@ -79,9 +94,9 @@ export function AppSidebar({ role, name }: { role: Role; name: string }) {
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-[#e5e5e5] bg-white md:flex">
-        <BrandLogo className="px-5 pt-6 pb-6" />
-        <nav aria-label="Main" className="flex flex-1 flex-col gap-1 px-3">
+      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-[#e5e5e5] bg-white md:flex">
+        <BrandLogo className="px-5 pt-5 pb-5" />
+        <nav aria-label="Main" className="flex flex-1 flex-col gap-0.5 px-3">
           {items.map(({ href, label, icon: Icon }) => {
             const active = href === current;
             return (
@@ -89,39 +104,40 @@ export function AppSidebar({ role, name }: { role: Role; name: string }) {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[14px] font-medium transition-colors duration-200 ${
+                className={`relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[14px] font-medium transition-colors duration-200 ${
                   active
-                    ? "bg-[#e6f9ef] text-[#00994f]"
-                    : "text-[#737373] hover:bg-[#f5f5f5] hover:text-[#121212]"
+                    ? "bg-[#f5f5f5] text-[#121212] before:absolute before:top-2 before:bottom-2 before:-left-3 before:w-0.5 before:rounded-full before:bg-[#16a34a]"
+                    : "text-[#525252] hover:bg-[#fafafa] hover:text-[#121212]"
                 }`}
               >
-                <Icon className="size-[18px]" aria-hidden="true" />
+                <Icon
+                  className={`size-4 ${active ? "text-[#16a34a]" : "text-[#a3a3a3]"}`}
+                  aria-hidden="true"
+                />
                 {label}
               </Link>
             );
           })}
         </nav>
-        <div className="m-3 flex flex-col gap-3 rounded-xl border border-[#e5e5e5] p-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#00bf63] text-sm font-semibold text-white"
-            >
-              {initial}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-[14px] font-medium text-[#121212]">{name}</p>
-              <p className="text-[12px] text-[#737373]">{ROLE_NAMES[role]}</p>
-            </div>
+        <div className="flex items-center gap-2.5 border-t border-[#e5e5e5] px-3 py-3">
+          <span
+            aria-hidden="true"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#121212] text-[13px] font-semibold text-white"
+          >
+            {initial}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-medium text-[#121212]">{name}</p>
+            <p className="text-[12px] text-[#737373]">{ROLE_NAMES[role]}</p>
           </div>
-          <SignOutButton />
+          <SignOutButton compact />
         </div>
       </aside>
 
       {/* Phones: a slim top bar plus a bottom tab bar within thumb reach. */}
       <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#e5e5e5] bg-white/90 px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] pb-3 backdrop-blur-md md:hidden">
         <BrandLogo />
-        <SignOutButton />
+        <SignOutButton compact />
       </div>
       <nav
         aria-label="Main"
@@ -136,12 +152,12 @@ export function AppSidebar({ role, name }: { role: Role; name: string }) {
               href={href}
               aria-current={active ? "page" : undefined}
               className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[11px] leading-tight font-medium transition-colors duration-200 ${
-                active ? "text-[#00994f]" : "text-[#737373]"
+                active ? "text-[#15803d]" : "text-[#737373]"
               }`}
             >
               <span
                 className={`flex h-7 w-12 max-w-full items-center justify-center rounded-full transition-colors duration-200 ${
-                  active ? "bg-[#e6f9ef]" : ""
+                  active ? "bg-[#f0fdf4]" : ""
                 }`}
               >
                 <Icon className="size-[18px]" aria-hidden="true" />

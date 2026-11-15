@@ -9,10 +9,11 @@ import {
   useTranscriptions,
   useVoiceAssistant,
 } from "@livekit/components-react";
-import { Loader2, Mic, MicOff, MessageSquare, PhoneOff } from "lucide-react";
+import { CheckCircle2, Loader2, Mic, MicOff, MessageSquare, PhoneOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { RoomMessage } from "@/components/interview/interview-frame";
 import {
   InterviewStage,
   InterviewerOrb,
@@ -20,7 +21,6 @@ import {
   TranscriptPanel,
   type OrbStatus,
 } from "@/components/interview/interview-stage";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { VoiceJoin } from "@/lib/v2/types";
 
 /**
@@ -96,23 +96,24 @@ export function VoiceRoom({
 
   if (phase.kind === "ended") {
     return (
-      <CenteredCard>
-        <CardHeader>
-          <CardTitle>{phase.early ? "Voice interview stopped" : "Thank you!"}</CardTitle>
-          <CardDescription>
-            {phase.early
-              ? "Your answers so far are saved. You can finish the remaining questions in chat."
-              : "The interview is over. The business will review it and make the decision."}
-          </CardDescription>
-        </CardHeader>
-        {phase.early ? (
-          <CardContent>
-            <Button className="h-11 w-full" onClick={onSwitchToChat}>
+      <RoomMessage
+        icon={phase.early ? <PhoneOff /> : <CheckCircle2 />}
+        tone={phase.early ? "neutral" : "success"}
+        title={phase.early ? "Voice interview stopped" : "Thank you!"}
+        action={
+          phase.early ? (
+            <Button onClick={onSwitchToChat}>
               <MessageSquare /> Continue in chat
             </Button>
-          </CardContent>
-        ) : null}
-      </CenteredCard>
+          ) : null
+        }
+      >
+        <p>
+          {phase.early
+            ? "Your answers so far are saved. You can finish the remaining questions in chat."
+            : "The interview is over. The business will review it and make the decision."}
+        </p>
+      </RoomMessage>
     );
   }
 
@@ -190,16 +191,6 @@ function Orb({ info, status }: { info: StageInfo; status: OrbStatus }) {
   );
 }
 
-function CenteredCard({ children, ...props }: React.ComponentProps<typeof Card>) {
-  return (
-    <div className="my-auto flex justify-center py-10">
-      <Card className="w-full max-w-md" {...props}>
-        {children}
-      </Card>
-    </div>
-  );
-}
-
 function FailedCard({ message, onSwitchToChat }: { message: string; onSwitchToChat: () => void }) {
   const [seconds, setSeconds] = useState(AUTO_SWITCH_SECONDS);
   useEffect(() => {
@@ -212,17 +203,20 @@ function FailedCard({ message, onSwitchToChat }: { message: string; onSwitchToCh
   }, [seconds, onSwitchToChat]);
 
   return (
-    <CenteredCard role="alert">
-      <CardHeader>
-        <CardTitle>Let&apos;s continue in chat</CardTitle>
-        <CardDescription>{message}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button className="h-11 w-full" onClick={onSwitchToChat}>
-          <MessageSquare /> Switch to chat now ({Math.max(seconds, 0)})
-        </Button>
-      </CardContent>
-    </CenteredCard>
+    <div role="alert" className="flex flex-1 flex-col">
+      <RoomMessage
+        icon={<MessageSquare />}
+        tone="warn"
+        title="Let's continue in chat"
+        action={
+          <Button onClick={onSwitchToChat}>
+            <MessageSquare /> Switch to chat now ({Math.max(seconds, 0)})
+          </Button>
+        }
+      >
+        <p>{message}</p>
+      </RoomMessage>
+    </div>
   );
 }
 
@@ -301,7 +295,7 @@ function LiveInterview({
         <div className="flex flex-col items-center gap-3 pb-[env(safe-area-inset-bottom)]">
           <StartAudio
             label="Tap to hear the interviewer"
-            className="h-10 rounded-full bg-[#00bf63] px-5 text-sm font-medium text-white"
+            className="h-10 rounded-full bg-[#16a34a] px-5 text-sm font-medium text-white"
           />
           <div className="flex items-center gap-1.5 rounded-full border border-[#e5e5e5] bg-white p-1.5 shadow-card">
             <button

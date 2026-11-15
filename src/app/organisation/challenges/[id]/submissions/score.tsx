@@ -5,6 +5,16 @@ export const PLACEMENT_BADGES: Record<Exclude<ChallengePlacement, "none">, strin
   runner_up: "Runner-up",
 };
 
+/** Placement as a small green label. */
+export function PlacementBadge({ placement }: { placement: ChallengePlacement }) {
+  if (placement === "none") return null;
+  return (
+    <span className="inline-flex items-center rounded-full bg-[#f0fdf4] px-2 py-0.5 text-[12px] font-medium whitespace-nowrap text-[#15803d]">
+      {PLACEMENT_BADGES[placement]}
+    </span>
+  );
+}
+
 /** The AI score as the organisation sees it; students never see this. */
 export function ScoreText({
   score,
@@ -17,7 +27,7 @@ export function ScoreText({
 }) {
   if (score !== null) {
     return (
-      <span className="rounded-md bg-[#f5f5f5] px-2 py-0.5 text-xs font-medium">
+      <span className="inline-flex items-center rounded-md border border-[#e5e5e5] bg-white px-2 py-0.5 text-[12px] font-medium whitespace-nowrap text-[#121212] tabular-nums">
         AI score {score}/{max}
       </span>
     );
@@ -28,5 +38,5 @@ export function ScoreText({
       : status === "failed"
         ? "AI score failed"
         : "AI unavailable";
-  return <span className="text-xs text-muted-foreground">{label}</span>;
+  return <span className="text-[12px] whitespace-nowrap text-[#737373]">{label}</span>;
 }

@@ -41,4 +41,10 @@ describe("currentHref", () => {
       "/hiring-manager/interviews",
     );
   });
+
+  it("matches extra sections listed in `also`", () => {
+    const userItems = [{ href: "/user" }, { href: "/user/proof", also: ["/user/resumes"] }];
+    expect(currentHref(userItems, "/user/resumes")).toBe("/user/proof");
+    expect(currentHref(userItems, "/user/recommendations")).toBe("/user");
+  });
 });

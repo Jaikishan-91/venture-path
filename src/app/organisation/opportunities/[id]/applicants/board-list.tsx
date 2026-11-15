@@ -1,5 +1,6 @@
 "use client";
 
+import { GitCompareArrows, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { InterviewChip, OfferChip, ScreeningChip } from "@/components/hiring/candidate-chips";
@@ -27,6 +28,8 @@ export type BoardRowView = {
 
 const formatApplied = (date: Date) =>
   date.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
+
+const checkboxClass = "relative z-10 size-4 shrink-0 cursor-pointer accent-[#16a34a]";
 
 function NextStepButton({ row, candidateHref }: { row: BoardRowView; candidateHref: string }) {
   const step = row.nextStep;
@@ -98,45 +101,64 @@ export function BoardList({
   const [confirmReject, setConfirmReject] = useState(false);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col">
       {selectable && rows.length > 1 && (
-        <label className="flex w-fit items-center gap-2 text-sm text-[#737373]">
-          <input
-            type="checkbox"
-            checked={chosen.length === rows.length}
-            onChange={(event) => setSelected(event.target.checked ? rows.map((row) => row.id) : [])}
-          />
-          Select all
-        </label>
+        <div className="flex items-center justify-between gap-2 border-b border-[#f0f0f0] bg-[#fafafa] px-4 py-2">
+          <label className="flex w-fit cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[#525252]">
+            <input
+              type="checkbox"
+              className={checkboxClass}
+              checked={chosen.length === rows.length}
+              onChange={(event) =>
+                setSelected(event.target.checked ? rows.map((row) => row.id) : [])
+              }
+            />
+            Select all
+          </label>
+          <span className="text-[12px] text-[#a3a3a3]">
+            Pick {MIN_COMPARE}–{MAX_COMPARE} to compare
+          </span>
+        </div>
       )}
-      <ul className="flex flex-col gap-2" aria-label="Candidates">
+      <ul className="flex flex-col divide-y divide-[#f0f0f0]" aria-label="Candidates">
         {rows.map((row) => {
           const href = `${basePath}/${row.id}${linkQuery}`;
+          const checked = selected.includes(row.id);
           return (
             <li
               key={row.id}
               aria-label={row.name}
-              className="relative flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[#e5e5e5] bg-white p-3 hover:border-[#d4d4d4]"
+              className={`relative flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3.5 transition-colors ${
+                checked ? "bg-[#f0fdf4]/60" : "hover:bg-[#fafafa]"
+              }`}
             >
               {selectable && (
                 <input
                   type="checkbox"
                   aria-label={`Select ${row.name}`}
-                  className="relative z-10 size-4"
-                  checked={selected.includes(row.id)}
+                  className={checkboxClass}
+                  checked={checked}
                   onChange={() => toggle(row.id)}
                 />
               )}
-              <div className="flex min-w-0 flex-1 basis-48 flex-col gap-1">
-                <Link
-                  href={href}
-                  className="truncate font-medium text-[#121212] after:absolute after:inset-0 after:content-['']"
-                >
-                  {row.name}
-                </Link>
-                <p className="truncate text-xs text-[#737373]">
-                  {row.course}, {row.institution} · Applied {formatApplied(row.appliedAt)}
-                </p>
+              <span
+                aria-hidden
+                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa] text-[13px] font-semibold text-[#404040]"
+              >
+                {row.name.trim().charAt(0).toUpperCase()}
+              </span>
+              <div className="flex min-w-0 flex-1 basis-52 flex-col gap-1.5">
+                <div className="min-w-0">
+                  <Link
+                    href={href}
+                    className="block truncate text-[14px] font-semibold text-[#121212] after:absolute after:inset-0 after:content-[''] hover:underline hover:underline-offset-4"
+                  >
+                    {row.name}
+                  </Link>
+                  <p className="truncate text-[12px] text-[#737373]">
+                    {row.course}, {row.institution} · Applied {formatApplied(row.appliedAt)}
+                  </p>
+                </div>
                 <div className="flex flex-wrap gap-1.5">
                   {row.bestProofLevel && <ProofBadge level={row.bestProofLevel} />}
                   <ScreeningChip score={row.screeningScore} />
@@ -156,9 +178,15 @@ export function BoardList({
         <div
           role="region"
           aria-label="Selected candidates"
-          className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-[#e5e5e5] bg-white p-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.35)]"
+          className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] z-20 m-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#e5e5e5] bg-white p-2.5 shadow-[0_10px_30px_-12px_rgb(0_0_0/0.25)] md:bottom-4"
         >
-          <span className="text-sm font-medium">{chosen.length} selected</span>
+          <span className="inline-flex items-center gap-2 px-1.5 text-[13px] font-semibold text-[#121212]">
+            <span className="flex size-6 items-center justify-center rounded-md bg-[#121212] text-[12px] text-white tabular-nums">
+              {chosen.length}
+            </span>
+            selected
+          </span>
+          <span aria-hidden className="mx-1 hidden h-5 w-px bg-[#e5e5e5] sm:block" />
           {canSendAiInterview && (
             <form action={sendAiInterviewAction}>
               <input type="hidden" name="opportunityId" value={opportunityId} />
@@ -175,6 +203,7 @@ export function BoardList({
               href={`${basePath}/compare?ids=${chosen.map((row) => row.id).join(",")}`}
               className={buttonVariants({ size: "sm", variant: "outline" })}
             >
+              <GitCompareArrows data-icon="inline-start" />
               Compare ({chosen.length})
             </Link>
           ) : (
@@ -187,7 +216,7 @@ export function BoardList({
               {selectionValues.map((value) => (
                 <input key={value} type="hidden" name="selection" value={value} />
               ))}
-              <span className="text-xs">Each gets a kind email.</span>
+              <span className="text-xs text-[#737373]">Each gets a kind email.</span>
               <Button type="submit" size="sm" variant="destructive">
                 Confirm not selected
               </Button>
@@ -214,11 +243,13 @@ export function BoardList({
             type="button"
             size="sm"
             variant="ghost"
+            className="ml-auto"
             onClick={() => {
               setSelected([]);
               setConfirmReject(false);
             }}
           >
+            <X data-icon="inline-start" />
             Clear
           </Button>
         </div>

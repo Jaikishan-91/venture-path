@@ -28,33 +28,41 @@ export function ReviewActions({
   const reasonId = `reason-${profileId}`;
 
   return (
-    <div className="flex flex-col gap-3">
-      {status !== "approved" && (
-        <form action={action}>
-          <input type="hidden" name="decision" value="approve" />
-          <input type="hidden" name="profileId" value={profileId} />
-          <input type="hidden" name="profileUpdatedAt" value={profileUpdatedAt} />
-          <Button type="submit" disabled={pending}>
-            Approve
-          </Button>
-        </form>
-      )}
+    <div className="flex flex-col gap-4 md:flex-row md:items-end">
       {status !== "rejected" && (
-        <form action={action} className="flex flex-col gap-2">
+        <form action={action} className="flex min-w-0 flex-1 flex-col gap-2">
           <input type="hidden" name="decision" value="reject" />
           <input type="hidden" name="profileId" value={profileId} />
           <input type="hidden" name="profileUpdatedAt" value={profileUpdatedAt} />
           <Label htmlFor={reasonId}>Reason for rejecting</Label>
-          <Textarea
-            id={reasonId}
-            name="reason"
-            required
-            maxLength={MAX_REJECTION_REASON}
-            rows={2}
-            placeholder="Shown to the organisation"
-          />
-          <Button type="submit" variant="destructive" disabled={pending} className="self-start">
-            {status === "approved" ? "Revoke approval" : "Reject"}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+            <Textarea
+              id={reasonId}
+              name="reason"
+              required
+              maxLength={MAX_REJECTION_REASON}
+              rows={2}
+              placeholder="Shown to the organisation"
+              className="min-h-10 flex-1 bg-white"
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              disabled={pending}
+              className="shrink-0 border-[#fecaca]! text-[#b91c1c] hover:bg-[#fef2f2]"
+            >
+              {status === "approved" ? "Revoke approval" : "Reject"}
+            </Button>
+          </div>
+        </form>
+      )}
+      {status !== "approved" && (
+        <form action={action} className="shrink-0">
+          <input type="hidden" name="decision" value="approve" />
+          <input type="hidden" name="profileId" value={profileId} />
+          <input type="hidden" name="profileUpdatedAt" value={profileUpdatedAt} />
+          <Button type="submit" disabled={pending} className="w-full md:w-auto">
+            Approve
           </Button>
         </form>
       )}

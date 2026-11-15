@@ -60,9 +60,7 @@ for (const role of ["user", "organisation"] as const) {
 
     await page.goto(await getVerificationLink(email));
     await expect(page).toHaveURL(new RegExp(`/${role}$`));
-    await expect(
-      page.getByRole("heading", { name: `${role === "user" ? "User" : "Organisation"} dashboard` }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Welcome/ })).toBeVisible();
 
     for (const other of ["/user", "/organisation", "/admin"].filter((p) => p !== `/${role}`)) {
       await page.goto(other);

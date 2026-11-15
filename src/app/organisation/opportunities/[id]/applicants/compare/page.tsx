@@ -1,3 +1,4 @@
+import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,13 +14,6 @@ import {
 import { MAX_COMPARE, MIN_COMPARE } from "@/lib/v2/types";
 
 export const metadata: Metadata = { title: "Compare candidates · Venture Path" };
-
-/** Column classes per candidate count (static so Tailwind sees them). */
-const COLUMNS: Record<number, string> = {
-  2: "md:grid-cols-2",
-  3: "md:grid-cols-3",
-  4: "md:grid-cols-2 xl:grid-cols-4",
-};
 
 const INTERVIEW_STATUS: Record<NonNullable<CompareCandidate["interview"]>["status"], string> = {
   invited: "Invited, not started",
@@ -55,13 +49,14 @@ export default async function CompareCandidatesPage({
 
   if (!result.ok) {
     return (
-      <RoleHome title="Compare candidates" name={session.user.name}>
-        <p className="text-sm">
+      <RoleHome
+        title="Compare candidates"
+        name={session.user.name}
+        back={{ href: boardPath, label: "Back to applicants" }}
+      >
+        <p className="rounded-xl border border-dashed border-[#d4d4d4] px-4 py-10 text-center text-sm text-[#737373]">
           Pick {MIN_COMPARE} to {MAX_COMPARE} candidates on the board to compare them.
         </p>
-        <Link href={boardPath} className="text-sm underline">
-          Back to applicants
-        </Link>
       </RoleHome>
     );
   }
@@ -71,125 +66,143 @@ export default async function CompareCandidatesPage({
   const rowCount = 3 + view.skills.length + 3;
 
   return (
-    <RoleHome title="Compare candidates" name={session.user.name}>
-      <div className="flex flex-col gap-1">
-        <Link href={boardPath} className="text-sm underline">
-          Back to applicants
-        </Link>
-        <p className="text-sm text-[#737373]">
-          {view.opportunity.title} · {view.candidates.length} candidates. Scores are advice only;
-          you decide.
-        </p>
-      </div>
-
-      <div className={`grid grid-cols-1 gap-x-3 ${COLUMNS[view.candidates.length]}`}>
-        {view.candidates.map((candidate) => (
-          <article
-            key={candidate.applicationId}
-            aria-label={candidate.name}
-            className="mb-4 grid min-w-0 rounded-xl bg-white text-sm border border-[#e5e5e5] shadow-card"
-            style={{ gridRow: `span ${rowCount}`, gridTemplateRows: "subgrid" }}
-          >
-            <div className="flex min-w-0 flex-col gap-1.5 border-b border-[#e5e5e5] p-3">
-              <h2 className="text-base font-medium break-words text-[#121212]">{candidate.name}</h2>
-              {candidate.bestProof ? (
-                <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
-                  <ProofBadge level={candidate.bestProof.level} />
-                  <span className="min-w-0 break-words text-[#737373]">
-                    {candidate.bestProof.title}
+    <RoleHome
+      title="Compare candidates"
+      name={session.user.name}
+      back={{ href: boardPath, label: "Back to applicants" }}
+      description={`${view.opportunity.title} · ${view.candidates.length} candidates. Scores are advice only; you decide.`}
+    >
+      {/* Columns stay side by side so rows line up; narrow screens scroll sideways here only. */}
+      <div className="-mx-4 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
+        <div
+          className="grid gap-x-3"
+          style={{
+            gridTemplateColumns: `repeat(${view.candidates.length}, minmax(220px, 1fr))`,
+          }}
+        >
+          {view.candidates.map((candidate) => (
+            <article
+              key={candidate.applicationId}
+              aria-label={candidate.name}
+              className="grid min-w-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white text-sm"
+              style={{ gridRow: `span ${rowCount}`, gridTemplateRows: "subgrid" }}
+            >
+              <div className="flex min-w-0 flex-col gap-2 border-b border-[#f0f0f0] p-4">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span
+                    aria-hidden
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#121212] text-[13px] font-semibold text-white"
+                  >
+                    {candidate.name.trim().charAt(0).toUpperCase()}
                   </span>
+                  <h2 className="min-w-0 text-[15px] font-semibold break-words text-[#121212]">
+                    {candidate.name}
+                  </h2>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">No proof cards</p>
-              )}
-            </div>
-
-            <div className="flex items-baseline justify-between gap-2 border-b border-[#e5e5e5] px-3 py-2">
-              <span className="text-xs text-[#737373]">AI screening</span>
-              <span className="font-medium">
-                {candidate.screeningScore !== null ? `${candidate.screeningScore}/100` : "–"}
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-1 border-b border-[#e5e5e5] px-3 py-2">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs text-[#737373]">AI interview</span>
-                {candidate.interview?.score != null ? (
-                  <span>
-                    <span className="text-xl font-semibold text-[#121212]">
-                      {candidate.interview.score}
+                {candidate.bestProof ? (
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
+                    <ProofBadge level={candidate.bestProof.level} />
+                    <span className="min-w-0 break-words text-[#737373]">
+                      {candidate.bestProof.title}
                     </span>
-                    /100
-                  </span>
+                  </div>
                 ) : (
-                  <span className="text-xs text-muted-foreground">
-                    {interviewText(candidate.interview)}
-                  </span>
+                  <p className="text-xs text-[#a3a3a3]">No proof cards</p>
                 )}
               </div>
-              {candidate.interview?.recommendation && (
-                <RecommendationChip
-                  recommendation={candidate.interview.recommendation}
-                  adviceNote={false}
-                />
-              )}
-            </div>
 
-            {view.skills.map((skill, index) => {
-              const score = candidate.skillScores[index];
-              return (
-                <div
-                  key={skill}
-                  className="flex min-w-0 items-center justify-between gap-2 px-3 py-1.5"
-                >
-                  <span className="min-w-0 text-xs break-words text-[#737373]">{skill}</span>
-                  {score !== null ? (
-                    <ScoreDots score={score} />
+              <div className="flex items-baseline justify-between gap-2 border-b border-[#f0f0f0] px-4 py-3">
+                <span className="text-[12px] font-medium text-[#737373]">AI screening</span>
+                <span className="text-[15px] font-semibold text-[#121212] tabular-nums">
+                  {candidate.screeningScore !== null ? `${candidate.screeningScore}/100` : "–"}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1.5 border-b border-[#f0f0f0] bg-[#fafafa] px-4 py-3">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[12px] font-medium text-[#737373]">AI interview</span>
+                  {candidate.interview?.score != null ? (
+                    <span className="text-[12px] text-[#737373]">
+                      <span className="text-[24px] leading-none font-semibold tracking-tight text-[#121212] tabular-nums">
+                        {candidate.interview.score}
+                      </span>
+                      /100
+                    </span>
                   ) : (
-                    <span aria-label="No score" className="text-muted-foreground">
-                      –
+                    <span className="text-xs text-[#a3a3a3]">
+                      {interviewText(candidate.interview)}
                     </span>
                   )}
                 </div>
-              );
-            })}
+                {candidate.interview?.recommendation && (
+                  <RecommendationChip
+                    recommendation={candidate.interview.recommendation}
+                    adviceNote={false}
+                  />
+                )}
+              </div>
 
-            <div className="min-w-0 border-t border-[#e5e5e5] px-3 py-2">
-              <p className="text-xs font-medium">✅ Strengths</p>
-              {candidate.strengths.length > 0 ? (
-                <ul className="list-disc pl-5 break-words">
-                  {candidate.strengths.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted-foreground">–</p>
-              )}
-            </div>
+              {view.skills.map((skill, index) => {
+                const score = candidate.skillScores[index];
+                return (
+                  <div
+                    key={skill}
+                    className="flex min-w-0 items-center justify-between gap-2 border-b border-[#f7f7f7] px-4 py-2"
+                  >
+                    <span className="min-w-0 text-[13px] break-words text-[#404040]">{skill}</span>
+                    {score !== null ? (
+                      <ScoreDots score={score} />
+                    ) : (
+                      <span aria-label="No score" className="text-[#a3a3a3]">
+                        –
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
 
-            <div className="min-w-0 px-3 py-2">
-              <p className="text-xs font-medium">⚠️ Check in the live interview</p>
-              {candidate.concerns.length > 0 ? (
-                <ul className="list-disc pl-5 break-words">
-                  {candidate.concerns.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted-foreground">–</p>
-              )}
-            </div>
+              <div className="min-w-0 px-4 py-3">
+                <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#15803d]">
+                  <CheckCircle2 aria-hidden className="size-3.5" /> Strengths
+                </p>
+                {candidate.strengths.length > 0 ? (
+                  <ul className="mt-1.5 list-disc pl-5 break-words text-[13px] text-[#404040] marker:text-[#d4d4d4]">
+                    {candidate.strengths.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[#a3a3a3]">–</p>
+                )}
+              </div>
 
-            <div className="self-end p-3">
-              <Link
-                href={`${boardPath}/${candidate.applicationId}`}
-                className="text-sm font-medium text-[#00994f] underline"
-              >
-                Open {candidate.name.split(" ")[0]}&apos;s page
-              </Link>
-            </div>
-          </article>
-        ))}
+              <div className="min-w-0 border-t border-[#f7f7f7] px-4 py-3">
+                <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#b45309]">
+                  <AlertTriangle aria-hidden className="size-3.5" /> Check in the live interview
+                </p>
+                {candidate.concerns.length > 0 ? (
+                  <ul className="mt-1.5 list-disc pl-5 break-words text-[13px] text-[#404040] marker:text-[#d4d4d4]">
+                    {candidate.concerns.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[#a3a3a3]">–</p>
+                )}
+              </div>
+
+              <div className="self-end border-t border-[#f0f0f0] bg-[#fafafa] px-4 py-3">
+                <Link
+                  href={`${boardPath}/${candidate.applicationId}`}
+                  className="inline-flex items-center gap-1 text-[13px] font-medium text-[#121212] underline-offset-4 hover:underline"
+                >
+                  Open {candidate.name.split(" ")[0]}&apos;s page
+                  <ArrowRight aria-hidden className="size-3.5" />
+                </Link>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </RoleHome>
   );

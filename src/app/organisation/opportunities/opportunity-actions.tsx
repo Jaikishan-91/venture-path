@@ -44,21 +44,19 @@ export function OpportunityActions({
   );
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
-        {canEdit && (
-          <Link
-            href={`/organisation/opportunities/${id}/edit`}
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            Edit
-          </Link>
-        )}
-        {status === "draft" && canEdit && actionButton("publish", "Publish", "default")}
-        {status === "published" && actionButton("close", "Close", "outline")}
-        {status === "closed" && canEdit && actionButton("reopen", "Reopen", "outline")}
-        {status === "draft" && actionButton("delete", "Delete draft", "destructive")}
-      </div>
-    </div>
+    <>
+      {canEdit && (
+        <Link
+          href={`/organisation/opportunities/${id}/edit`}
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+        >
+          Edit
+        </Link>
+      )}
+      {status === "draft" && canEdit && actionButton("publish", "Publish", "default")}
+      {status === "published" && actionButton("close", "Close", "outline")}
+      {status === "closed" && canEdit && actionButton("reopen", "Reopen", "outline")}
+      {status === "draft" && actionButton("delete", "Delete draft", "destructive")}
+    </>
   );
 }

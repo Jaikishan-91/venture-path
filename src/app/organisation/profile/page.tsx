@@ -14,6 +14,8 @@ export default async function OrganisationProfilePage() {
     <RoleHome
       title={profile ? "Edit business profile" : "Create business profile"}
       name={session.user.name}
+      description="Students see this on every challenge and job you post. An admin reviews it before your listings go live."
+      back={{ href: "/organisation", label: "Dashboard" }}
     >
       <OrganisationProfileForm
         status={profile?.status ?? null}

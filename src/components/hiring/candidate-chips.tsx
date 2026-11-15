@@ -9,12 +9,12 @@ import {
 /** Small chips for the hiring board and candidate page (owner only: they show AI scores). */
 
 const chip =
-  "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap";
+  "inline-flex shrink-0 items-center gap-1.5 rounded-md border px-1.5 py-0.5 text-[12px] font-medium whitespace-nowrap";
 
 const RECOMMENDATION: Record<InterviewRecommendation, { dot: string; className: string }> = {
-  strong: { dot: "🟢", className: "bg-[#e6f9ef] text-[#00994f]" },
-  maybe: { dot: "🟡", className: "bg-[#fbf3dc] text-[#6b5310]" },
-  not_fit: { dot: "🔴", className: "bg-[#f8ece9] text-[#7f3326]" },
+  strong: { dot: "bg-[#16a34a]", className: "border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d]" },
+  maybe: { dot: "bg-[#d97706]", className: "border-[#fde68a] bg-[#fffbeb] text-[#92400e]" },
+  not_fit: { dot: "bg-[#dc2626]", className: "border-[#fecaca] bg-[#fef2f2] text-[#991b1b]" },
 };
 
 const INTERVIEW_STATUS: Record<BoardInterview["status"], string> = {
@@ -24,7 +24,11 @@ const INTERVIEW_STATUS: Record<BoardInterview["status"], string> = {
   expired: "AI interview: expired",
 };
 
-/** 🟢/🟡/🔴 + score when the report is ready, else where the interview is. */
+function Dot({ className }: { className: string }) {
+  return <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-full ${className}`} />;
+}
+
+/** Coloured dot + score when the report is ready, else where the interview is. */
 export function InterviewChip({ interview }: { interview: BoardInterview | null }) {
   if (!interview) return null;
   if (interview.recommendation && interview.score !== null) {
@@ -34,7 +38,7 @@ export function InterviewChip({ interview }: { interview: BoardInterview | null 
         className={`${chip} ${style.className}`}
         title={`AI interview: ${INTERVIEW_RECOMMENDATION_LABELS[interview.recommendation]} (advice only)`}
       >
-        <span aria-hidden="true">{style.dot}</span>
+        <Dot className={style.dot} />
         <span>
           AI interview <span className="tabular-nums">{interview.score}</span>/100
         </span>
@@ -47,7 +51,16 @@ export function InterviewChip({ interview }: { interview: BoardInterview | null 
         ? "AI interview: report failed"
         : "AI interview: writing report"
       : INTERVIEW_STATUS[interview.status];
-  return <span className={`${chip} bg-[#f5f5f5] text-[#737373]`}>{label}</span>;
+  return (
+    <span className={`${chip} border-[#e5e5e5] bg-[#fafafa] text-[#737373]`}>
+      <Dot
+        className={
+          interview.status === "in_progress" ? "bg-[#2563eb]" : "border border-[#a3a3a3] bg-white"
+        }
+      />
+      {label}
+    </span>
+  );
 }
 
 /** AI screening overall score, or nothing when not scored. */
@@ -55,19 +68,19 @@ export function ScreeningChip({ score }: { score: number | null }) {
   if (score === null) return null;
   return (
     <span
-      className={`${chip} bg-[#f5f5f5] text-[#262626]`}
+      className={`${chip} border-[#e5e5e5] bg-white text-[#404040]`}
       title="AI screening score (advice only)"
     >
-      Screening <span className="tabular-nums">{score}</span>
+      Screening <span className="font-semibold text-[#121212] tabular-nums">{score}</span>
     </span>
   );
 }
 
 const OFFER_STYLE: Record<OfferStatus, string> = {
-  pending: "bg-[#e8f0fb] text-[#1d4f8f]",
-  accepted: "bg-[#e6f9ef] text-[#00803f]",
-  declined: "bg-[#f8ece9] text-[#7f3326]",
-  withdrawn: "bg-[#f5f5f5] text-[#737373]",
+  pending: "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]",
+  accepted: "border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d]",
+  declined: "border-[#fecaca] bg-[#fef2f2] text-[#991b1b]",
+  withdrawn: "border-[#e5e5e5] bg-[#fafafa] text-[#737373]",
 };
 
 export function OfferChip({ status }: { status: OfferStatus }) {
@@ -76,5 +89,5 @@ export function OfferChip({ status }: { status: OfferStatus }) {
 
 /** Plain stage / status pill. */
 export function StagePill({ label }: { label: string }) {
-  return <span className={`${chip} bg-[#f5f5f5] text-[#262626]`}>{label}</span>;
+  return <span className={`${chip} border-[#e5e5e5] bg-[#fafafa] text-[#262626]`}>{label}</span>;
 }

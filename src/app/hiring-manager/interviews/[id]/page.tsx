@@ -1,3 +1,4 @@
+import { Clock, Download, ExternalLink, Users, Video } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DashboardSection } from "@/components/dashboard/dashboard-section";
@@ -24,105 +25,159 @@ export default async function HiringManagerInterviewDetailPage({
   const disabledReason = feedbackDisabledReason(event);
 
   return (
-    <RoleHome title={event.candidateName} name={session.user.name}>
-      <DashboardSection title="Interview">
-        <div className="flex flex-col gap-2 text-sm">
-          <p className="text-[#121212]">
-            <span className="font-medium">{formatIndiaDateTime(event.startsAt)}</span> ·{" "}
-            {event.durationMinutes} min · {SCHEDULE_STATUS_LABELS[event.status]}
-          </p>
-          <p className="text-[#737373]">
-            {STAGE_KIND_LABELS[event.stageKind]} · {event.stageName}
-          </p>
-          {event.meetUrl ? (
-            <a
-              href={event.meetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={buttonVariants({ className: "self-start" })}
-            >
-              Join Meet
-            </a>
-          ) : (
-            <p className="text-[#737373]">Meet link: -</p>
-          )}
-          {event.stageInstructions && <p className="text-[#737373]">{event.stageInstructions}</p>}
-          {event.stageExternalUrl && (
-            <a
-              href={event.stageExternalUrl}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="text-[#00994f] underline underline-offset-4"
-            >
-              {event.stageExternalUrl}
-            </a>
-          )}
-          <p className="text-[#737373]">
-            {event.otherInterviewers.length > 0
-              ? `Also interviewing: ${event.otherInterviewers.join(", ")}`
-              : "No other interviewers assigned."}
-          </p>
+    <RoleHome
+      title={event.candidateName}
+      name={session.user.name}
+      description={`${event.listingTitle} · ${STAGE_KIND_LABELS[event.stageKind]} · ${event.stageName}`}
+      back={{ href: "/hiring-manager/interviews", label: "Interviews" }}
+    >
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <DashboardSection title="Candidate">
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                aria-hidden
+                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#121212] text-[15px] font-semibold text-white"
+              >
+                {event.candidateName.trim().charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold text-[#121212]">
+                  {event.candidateName}
+                </p>
+                <p className="text-[13px] text-[#737373]">
+                  {event.candidateCourse}, {event.candidateInstitution}
+                </p>
+              </div>
+              {event.resumeFileName && (
+                <a
+                  href={`/api/applications/${event.applicationId}/resume`}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
+                  <Download data-icon="inline-start" />
+                  Download resume ({event.resumeFileName})
+                </a>
+              )}
+            </div>
+          </DashboardSection>
+
+          <DashboardSection title="Screening answers">
+            {event.screeningAnswers.length > 0 ? (
+              <ol className="-my-1 flex flex-col divide-y divide-[#f0f0f0] text-[14px]">
+                {event.screeningAnswers.map((answer, index) => (
+                  <li key={answer.prompt} className="flex min-w-0 gap-3 py-3">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#e5e5e5] text-[12px] font-medium text-[#525252] tabular-nums">
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-medium text-[#121212]">{answer.prompt}</p>
+                      <p className="mt-1 leading-relaxed whitespace-pre-wrap text-[#525252]">
+                        {answer.answer}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-[14px] text-[#737373]">This listing has no screening questions.</p>
+            )}
+          </DashboardSection>
+
+          <DashboardSection title="Listing">
+            <div className="flex flex-col gap-3 text-[14px]">
+              <p className="font-medium text-[#121212]">{event.listingTitle}</p>
+              <p className="leading-relaxed whitespace-pre-wrap text-[#525252]">
+                {event.listingDescription}
+              </p>
+              {event.listingRequirements && (
+                <div>
+                  <p className="text-[12px] font-medium tracking-wide text-[#737373] uppercase">
+                    Requirements
+                  </p>
+                  <p className="mt-1 leading-relaxed whitespace-pre-wrap text-[#525252]">
+                    {event.listingRequirements}
+                  </p>
+                </div>
+              )}
+              {event.listingSkills.length > 0 && (
+                <ul aria-label="Skills" className="flex flex-wrap gap-1.5">
+                  {event.listingSkills.map((skill) => (
+                    <li
+                      key={skill}
+                      className="rounded-md border border-[#e5e5e5] px-2 py-0.5 text-[12px] text-[#404040]"
+                    >
+                      {skill}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </DashboardSection>
         </div>
-      </DashboardSection>
 
-      <DashboardSection title="Listing">
-        <div className="flex flex-col gap-2 text-sm">
-          <p className="font-medium text-[#121212]">{event.listingTitle}</p>
-          <p className="whitespace-pre-wrap text-[#737373]">{event.listingDescription}</p>
-          {event.listingRequirements && (
-            <p className="whitespace-pre-wrap text-[#737373]">{event.listingRequirements}</p>
-          )}
-          {event.listingSkills.length > 0 && (
-            <ul aria-label="Skills" className="flex flex-wrap gap-2">
-              {event.listingSkills.map((skill) => (
-                <li key={skill} className="rounded-md bg-[#f5f5f5] px-2 py-0.5 text-[#121212]">
-                  {skill}
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-6">
+          <section
+            aria-label="Interview"
+            className="overflow-hidden rounded-xl border border-[#e5e5e5] bg-white"
+          >
+            <div className="flex flex-col gap-1 p-5">
+              <p className="text-[12px] font-medium text-[#737373]">
+                {SCHEDULE_STATUS_LABELS[event.status]}
+              </p>
+              <p className="text-[17px] font-semibold text-[#121212]">
+                {formatIndiaDateTime(event.startsAt)}
+              </p>
+              <p className="inline-flex items-center gap-1.5 text-[13px] text-[#737373]">
+                <Clock aria-hidden className="size-3.5" />
+                {event.durationMinutes} min
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-[#f0f0f0] px-5 py-4 text-[13px]">
+              {event.meetUrl ? (
+                <a
+                  href={event.meetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonVariants({ className: "w-full" })}
+                >
+                  <Video data-icon="inline-start" />
+                  Join Meet
+                </a>
+              ) : (
+                <p className="text-[#737373]">Meet link: -</p>
+              )}
+              {event.stageInstructions && (
+                <p className="leading-relaxed text-[#525252]">{event.stageInstructions}</p>
+              )}
+              {event.stageExternalUrl && (
+                <a
+                  href={event.stageExternalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1.5 break-all text-[#15803d] hover:underline"
+                >
+                  <ExternalLink aria-hidden className="size-3.5 shrink-0" />
+                  {event.stageExternalUrl}
+                </a>
+              )}
+              <p className="inline-flex items-start gap-1.5 text-[#737373]">
+                <Users aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+                {event.otherInterviewers.length > 0
+                  ? `Also interviewing: ${event.otherInterviewers.join(", ")}`
+                  : "No other interviewers assigned."}
+              </p>
+            </div>
+          </section>
+
+          <DashboardSection title={event.myFeedback ? "Your feedback" : "Submit feedback"}>
+            <FeedbackForm
+              eventId={event.id}
+              disabledReason={disabledReason}
+              initial={event.myFeedback}
+            />
+          </DashboardSection>
         </div>
-      </DashboardSection>
-
-      <DashboardSection title="Candidate">
-        <div className="flex flex-col gap-2 text-sm">
-          <p className="font-medium text-[#121212]">{event.candidateName}</p>
-          <p className="text-[#737373]">
-            {event.candidateCourse}, {event.candidateInstitution}
-          </p>
-          {event.resumeFileName && (
-            <a
-              href={`/api/applications/${event.applicationId}/resume`}
-              className={buttonVariants({ variant: "outline", className: "self-start" })}
-            >
-              Download resume ({event.resumeFileName})
-            </a>
-          )}
-        </div>
-      </DashboardSection>
-
-      <DashboardSection title="Screening answers">
-        {event.screeningAnswers.length > 0 ? (
-          <ul className="flex flex-col gap-3 text-sm">
-            {event.screeningAnswers.map((answer) => (
-              <li key={answer.prompt} className="min-w-0 rounded-xl bg-[#f5f5f5] p-3">
-                <p className="font-medium text-[#121212]">{answer.prompt}</p>
-                <p className="mt-1 whitespace-pre-wrap text-[#737373]">{answer.answer}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-[#737373]">This listing has no screening questions.</p>
-        )}
-      </DashboardSection>
-
-      <DashboardSection title={event.myFeedback ? "Your feedback" : "Submit feedback"}>
-        <FeedbackForm
-          eventId={event.id}
-          disabledReason={disabledReason}
-          initial={event.myFeedback}
-        />
-      </DashboardSection>
+      </div>
     </RoleHome>
   );
 }

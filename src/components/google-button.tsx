@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { GoogleMark } from "@/app/(auth)/auth-parts";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { SIGN_IN_PATHS, type GoogleContinueRole } from "@/lib/roles";
@@ -26,7 +27,8 @@ export function GoogleButton({ role }: { role: GoogleContinueRole }) {
   }
 
   return (
-    <Button variant="outline" onClick={onClick} disabled={pending}>
+    <Button variant="outline" className="w-full" onClick={onClick} disabled={pending}>
+      <GoogleMark />
       Continue with Google
     </Button>
   );

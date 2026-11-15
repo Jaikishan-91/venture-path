@@ -33,7 +33,7 @@ export function SubmitForm({
   return (
     <form onSubmit={onSubmit} className="flex min-w-0 flex-col gap-4">
       <input type="hidden" name="challengeId" value={challengeId} />
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="text">Your solution</Label>
         <Textarea
           id="text"
@@ -42,10 +42,14 @@ export function SubmitForm({
           required
           maxLength={MAX_SUBMISSION_TEXT_LENGTH}
           rows={8}
+          aria-describedby="text-hint"
           placeholder="Explain your idea and how the business can use it."
         />
+        <p id="text-hint" className="text-[12px] text-[#737373]">
+          Be specific: what you would do, and what result the business can expect.
+        </p>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="link">Link (optional)</Label>
         <Input
           id="link"
@@ -56,18 +60,18 @@ export function SubmitForm({
           placeholder="https://"
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="file">File (optional)</Label>
         {initial?.fileName && (
-          <div className="flex flex-wrap items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[13px]">
             <a
               href={`/api/challenge-submissions/${initial.submissionId}/file`}
-              className="break-all underline"
+              className="min-w-0 break-all text-[#121212] underline underline-offset-4"
             >
               {initial.fileName}
             </a>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" name="removeFile" /> Remove
+            <label className="flex shrink-0 cursor-pointer items-center gap-2 text-[#525252]">
+              <input type="checkbox" name="removeFile" className="size-4 accent-[#16a34a]" /> Remove
             </label>
           </div>
         )}
@@ -76,13 +80,14 @@ export function SubmitForm({
           name="file"
           type="file"
           accept=".pdf,.doc,.docx,.xlsx,.csv,.pptx,.png,.jpg,.jpeg"
-          className="max-w-full text-sm"
+          aria-describedby="file-hint"
+          className="max-w-full cursor-pointer rounded-lg border border-dashed border-[#d4d4d4] bg-white p-2 text-[13px] text-[#525252] file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-[#f5f5f5] file:px-3 file:py-1.5 file:text-[13px] file:font-medium file:text-[#121212] hover:border-[#a3a3a3]"
         />
-        <p className="text-xs text-muted-foreground">
+        <p id="file-hint" className="text-[12px] text-[#737373]">
           PDF, Word, Excel, CSV, PowerPoint, PNG or JPG, up to 5 MB.
         </p>
       </div>
-      <Button type="submit" className="self-start" disabled={pending}>
+      <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Sending…" : initial ? "Update solution" : "Submit solution"}
       </Button>
     </form>

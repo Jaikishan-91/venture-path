@@ -25,21 +25,22 @@ export function QuestionsEditor({
   if (locked) {
     return (
       <section className="flex flex-col gap-2" aria-labelledby="questions-heading">
-        <h2 id="questions-heading" className="text-sm font-medium">
+        <h3 id="questions-heading" className="text-sm font-medium">
           Screening questions
-        </h2>
+        </h3>
         {items.length > 0 ? (
-          <ol className="flex list-decimal flex-col gap-1 pl-5 text-sm">
-            {items.map((item) => (
-              <li key={item.prompt} className="break-words">
-                {item.prompt}
+          <ol className="flex flex-col divide-y divide-[#f0f0f0] rounded-lg border border-[#e5e5e5] text-sm">
+            {items.map((item, index) => (
+              <li key={item.prompt} className="flex gap-3 px-3 py-2.5 break-words">
+                <span className="w-4 shrink-0 text-[#a3a3a3] tabular-nums">{index + 1}.</span>
+                <span className="text-[#121212]">{item.prompt}</span>
               </li>
             ))}
           </ol>
         ) : (
-          <p className="text-sm text-muted-foreground">No questions.</p>
+          <p className="text-sm text-[#737373]">No questions.</p>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-[#737373]">
           Questions can&apos;t change after someone has applied.
         </p>
       </section>
@@ -64,12 +65,15 @@ export function QuestionsEditor({
       {items.map((item, index) => {
         const id = `question-${index}`;
         return (
-          <div key={index} className="flex flex-col gap-1.5">
+          <div
+            key={index}
+            className="flex flex-col gap-2 rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3"
+          >
             <div className="flex items-center justify-between gap-2">
-              <Label htmlFor={id} className="flex items-center gap-1.5">
+              <Label htmlFor={id} className="flex items-center gap-1.5 text-[13px]">
                 Question {index + 1}
                 {item.source === "ai" && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-[#e6f9ef] px-1.5 py-0.5 text-xs font-normal text-[#00994f]">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[#f0fdf4] px-1.5 py-0.5 text-xs font-normal text-[#15803d]">
                     <Sparkles className="size-3" strokeWidth={1.75} aria-hidden />
                     AI draft
                   </span>
@@ -77,8 +81,8 @@ export function QuestionsEditor({
               </Label>
               <Button
                 type="button"
-                variant="outline"
-                size="icon"
+                variant="ghost"
+                size="icon-sm"
                 aria-label={`Remove question ${index + 1}`}
                 onClick={() => setItems((current) => current.filter((_, i) => i !== index))}
               >
@@ -92,6 +96,7 @@ export function QuestionsEditor({
               rows={2}
               maxLength={MAX_QUESTION_LENGTH}
               onChange={(event) => update(index, event.target.value)}
+              className="bg-white"
             />
           </div>
         );
@@ -107,7 +112,7 @@ export function QuestionsEditor({
         <Plus strokeWidth={1.75} />
         Add question
       </Button>
-      <p id="questions-hint" className="text-xs text-muted-foreground">
+      <p id="questions-hint" className="text-xs text-[#737373]">
         Applicants answer each question in writing, and the answers are scored by AI. Up to{" "}
         {MAX_QUESTIONS}. They lock once someone applies.
       </p>

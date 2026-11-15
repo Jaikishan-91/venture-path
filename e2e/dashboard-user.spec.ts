@@ -5,7 +5,7 @@ test("user dashboard shows the heading, stat tiles and explore-jobs link", async
   const email = uniqueEmail("dashboard-user");
   await signUpVerified(page, "user", email);
 
-  await expect(page.getByRole("heading", { name: "User dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Welcome back/ })).toBeVisible();
 
   // Scope to the stat tiles group: plain text like "Accepted" also appears in status pills
   // elsewhere on the page, so an unscoped getByText would hit a strict-mode violation.
@@ -35,7 +35,7 @@ test("has no horizontal overflow on a phone-width viewport", async ({ page }) =>
   const email = uniqueEmail("dashboard-user-mobile");
   await signUpVerified(page, "user", email);
 
-  await expect(page.getByRole("heading", { name: "User dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Welcome back/ })).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
   );

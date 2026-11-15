@@ -1,6 +1,9 @@
+import { Users } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RoleHome } from "@/components/role-home";
+import { buttonVariants } from "@/components/ui/button";
 import { requireRole } from "@/lib/authz";
 import { getOwnOpportunity } from "@/lib/opportunities";
 import { todayInIndia } from "@/lib/opportunity-schemas";
@@ -32,7 +35,28 @@ export default async function EditOpportunityPage({ params }: { params: Promise<
     : [];
 
   return (
-    <RoleHome title="Edit listing" name={session.user.name}>
+    <RoleHome
+      title="Edit listing"
+      name={session.user.name}
+      description={opportunity.title}
+      back={{ href: "/organisation/opportunities", label: "All listings" }}
+      actions={
+        isApproved ? (
+          <>
+            <a href="#hiring-steps" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              Hiring steps
+            </a>
+            <Link
+              href={`/organisation/opportunities/${opportunity.id}/applicants`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <Users data-icon="inline-start" />
+              View applicants
+            </Link>
+          </>
+        ) : undefined
+      }
+    >
       {profile?.status === "approved" ? (
         <>
           {aiEnabled && (

@@ -63,7 +63,7 @@ export function InterviewerOrb({
   return (
     <section
       aria-label="Interviewer"
-      className="relative flex flex-col overflow-hidden rounded-[20px] border border-[#e5e5e5] bg-[linear-gradient(180deg,#f7faf8_0%,#f1f3f2_100%)] px-4 py-4 max-md:sticky max-md:top-[calc(env(safe-area-inset-top)+4.25rem)] max-md:z-10 max-md:shadow-card md:min-h-[520px] md:items-center md:rounded-[24px] md:px-6 md:pt-14 md:pb-6"
+      className="relative flex flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white px-4 py-4 max-md:sticky max-md:top-[calc(env(safe-area-inset-top)+4.25rem)] max-md:z-10 max-md:shadow-[0_4px_16px_-8px_rgb(0_0_0/0.15)] md:min-h-[520px] md:items-center md:px-6 md:pt-14 md:pb-6"
     >
       <span
         aria-live="polite"
@@ -73,7 +73,7 @@ export function InterviewerOrb({
           aria-hidden
           className={cn(
             "size-1.5 rounded-full",
-            status === "speaking" || status === "listening" ? "bg-[#00bf63]" : "bg-[#a3a3a3]",
+            status === "speaking" || status === "listening" ? "bg-[#16a34a]" : "bg-[#a3a3a3]",
             status !== "ready" && "motion-safe:animate-pulse",
           )}
         />
@@ -85,7 +85,7 @@ export function InterviewerOrb({
           <div
             aria-hidden
             className={cn(
-              "size-14 rounded-full bg-[radial-gradient(circle,rgb(0_191_99/0.55)_0%,rgb(0_191_99/0.22)_38%,rgb(0_191_99/0)_70%)] blur-md md:size-64 md:blur-xl",
+              "size-14 rounded-full bg-[radial-gradient(circle,rgb(22_163_74/0.55)_0%,rgb(22_163_74/0.22)_38%,rgb(22_163_74/0)_70%)] blur-md md:size-64 md:blur-xl",
               ORB_MOTION[status],
             )}
           />
@@ -122,9 +122,9 @@ export function InterviewerOrb({
                 className={cn(
                   "h-1.5 rounded-full transition-all duration-300 motion-reduce:transition-none",
                   index === current - 1
-                    ? "w-6 bg-[#00bf63]"
+                    ? "w-6 bg-[#16a34a]"
                     : index < current - 1
-                      ? "w-3.5 bg-[#00bf63]/45"
+                      ? "w-3.5 bg-[#16a34a]/45"
                       : "w-3.5 bg-[#d4d4d4]",
                 )}
               />
@@ -144,15 +144,15 @@ export function TranscriptPanel({ live, children }: { live?: boolean; children: 
   return (
     <section
       aria-label="Transcript"
-      className="flex min-h-[260px] flex-col overflow-hidden rounded-[24px] border border-[#e5e5e5] bg-white shadow-card md:max-h-[calc(100dvh-14rem)] md:min-h-[520px]"
+      className="flex min-h-[260px] flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white shadow-card md:max-h-[calc(100dvh-14rem)] md:min-h-[520px]"
     >
       <div className="flex items-center justify-between border-b border-[#e5e5e5] px-5 py-3 font-mono text-[11px] tracking-[0.14em] text-[#a3a3a3] uppercase">
         <span>Transcript</span>
         {live ? (
-          <span className="inline-flex items-center gap-1.5 text-[#00994f]">
+          <span className="inline-flex items-center gap-1.5 text-[#15803d]">
             <span
               aria-hidden
-              className="size-1.5 rounded-full bg-[#00bf63] motion-safe:animate-pulse"
+              className="size-1.5 rounded-full bg-[#16a34a] motion-safe:animate-pulse"
             />
             Live
           </span>
@@ -179,7 +179,7 @@ export function TranscriptEntry({
       <span
         className={cn(
           "font-mono text-[11px] tracking-[0.14em] uppercase",
-          ai ? "text-[#a3a3a3]" : "text-[#00994f]",
+          ai ? "text-[#a3a3a3]" : "text-[#15803d]",
         )}
       >
         {ai ? "Interviewer" : "You"}

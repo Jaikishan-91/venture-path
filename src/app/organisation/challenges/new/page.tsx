@@ -14,7 +14,12 @@ export default async function NewChallengePage() {
   const profile = await getOrganisationProfile(session.user.id);
 
   return (
-    <RoleHome title="Post a challenge" name={session.user.name}>
+    <RoleHome
+      title="Post a challenge"
+      name={session.user.name}
+      description="Describe a real problem, set a reward and a deadline. You can save a draft and publish later."
+      back={{ href: "/organisation/challenges", label: "Your challenges" }}
+    >
       {profile?.status === "approved" ? (
         <ChallengeForm
           minDeadline={todayInIndia()}

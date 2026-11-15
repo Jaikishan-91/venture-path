@@ -11,7 +11,7 @@ export function BarList({ items }: { items: { label: string; value: number }[] }
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-[#f5f5f5]" aria-hidden="true">
             <div
-              className="h-full rounded-full bg-[#00bf63]"
+              className="h-full rounded-full bg-[#16a34a]"
               style={{ width: `${(item.value / max) * 100}%` }}
             />
           </div>

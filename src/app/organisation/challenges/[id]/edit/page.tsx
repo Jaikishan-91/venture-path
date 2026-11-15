@@ -27,15 +27,20 @@ export default async function EditChallengePage({
   const editable = challenge.status === "draft" || challenge.status === "open";
 
   return (
-    <RoleHome title="Edit challenge" name={session.user.name}>
+    <RoleHome
+      title="Edit challenge"
+      name={session.user.name}
+      description={challenge.title}
+      back={{ href: "/organisation/challenges", label: "Your challenges" }}
+    >
       {profile?.status !== "approved" ? (
         <NotApproved />
       ) : !editable ? (
-        <div className="flex flex-col gap-3 text-sm">
+        <div className="flex flex-col items-start gap-3 rounded-xl border border-[#e5e5e5] bg-white p-6 text-[14px] text-[#525252]">
           <p>Submissions have closed, so this challenge can&apos;t be edited.</p>
           <Link
             href={`/organisation/challenges/${challenge.id}/submissions`}
-            className={buttonVariants({ variant: "outline", className: "self-start" })}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             See submissions
           </Link>

@@ -77,19 +77,22 @@ export function MicCheck({
 
   if (status === "failed") {
     return (
-      <div role="alert" className="flex flex-col gap-2 rounded-xl bg-[#fdf1ec] p-3 text-sm">
-        <p className="flex items-center gap-2 font-medium text-[#8a3b1f]">
+      <div
+        role="alert"
+        className="flex flex-col gap-3 rounded-lg border border-[#fecaca] bg-[#fef2f2] p-3 text-[13px]"
+      >
+        <p className="flex items-center gap-2 font-medium text-[#991b1b]">
           <MicOff className="size-4" /> We couldn&apos;t use your microphone
         </p>
-        <p className="text-[#737373]">
+        <p className="text-[#525252]">
           Allow the microphone in your browser settings and check again, or answer in chat instead.
           Chat works on any phone.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="lg" onClick={onUseChat}>
+          <Button type="button" size="sm" onClick={onUseChat}>
             Use chat instead
           </Button>
-          <Button type="button" size="lg" variant="outline" onClick={check}>
+          <Button type="button" size="sm" variant="outline" onClick={check}>
             Check again
           </Button>
         </div>
@@ -99,11 +102,11 @@ export function MicCheck({
 
   if (status === "ready") {
     return (
-      <div className="flex flex-col gap-2 rounded-xl bg-white p-3 text-sm border border-[#e5e5e5] shadow-card">
+      <div className="flex flex-col gap-2.5 rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 text-[13px]">
         <p className="flex items-center gap-2 font-medium text-[#121212]">
           {heard ? (
             <>
-              <CheckCircle2 className="size-4 text-[#00994f]" /> We can hear you
+              <CheckCircle2 className="size-4 text-[#15803d]" /> We can hear you
             </>
           ) : (
             <>
@@ -113,15 +116,15 @@ export function MicCheck({
         </p>
         <span
           aria-hidden
-          className="block h-2 overflow-hidden rounded-full bg-[#00bf63]/12"
+          className="block h-1.5 overflow-hidden rounded-full bg-[#e5e5e5]"
           title="Microphone level"
         >
           <span
             ref={barRef}
-            className="block h-full origin-left scale-x-0 rounded-full bg-[#00bf63]"
+            className="block h-full origin-left scale-x-0 rounded-full bg-[#16a34a]"
           />
         </span>
-        <p className="text-xs text-[#737373]">Nothing is recorded during this check.</p>
+        <p className="text-[12px] text-[#737373]">Nothing is recorded during this check.</p>
       </div>
     );
   }
@@ -130,8 +133,7 @@ export function MicCheck({
     <Button
       type="button"
       variant="outline"
-      size="lg"
-      className="self-start"
+      className="w-full"
       onClick={check}
       disabled={status === "asking"}
     >

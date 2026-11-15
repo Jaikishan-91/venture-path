@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Poppins } from "next/font/google";
+import { Geist_Mono, Inter, Poppins } from "next/font/google";
 import { Suspense } from "react";
 import { AppToaster } from "@/components/app-toaster";
 import { readFlash } from "@/lib/flash";
@@ -10,10 +10,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+// Logo wordmark only.
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["600"],
 });
 
 export const metadata: Metadata = {
@@ -24,7 +30,10 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const flash = await readFlash();
   return (
-    <html lang="en" className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${poppins.variable} ${geistMono.variable} h-full antialiased`}
+    >
       <body className="flex min-h-full flex-col bg-white font-sans text-foreground">
         {children}
         {/* useSearchParams needs a Suspense boundary. */}

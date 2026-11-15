@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { useActionErrorToast } from "@/components/use-action-error-toast";
 import { GoogleButton } from "@/components/google-button";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,6 +15,7 @@ import {
   isSignupRole,
   type Role,
 } from "@/lib/roles";
+import { AuthError, AuthField, AuthHeading, OrDivider, Spinner } from "../auth-parts";
 import { signInAs, type SignInState } from "./actions";
 
 const COPY: Record<Role, { title: string; description: string }> = {
@@ -78,65 +78,85 @@ export function SignInForm({
   }, [error, role]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{COPY[role].title}</CardTitle>
-        <CardDescription>{COPY[role].description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <form action={action} className="flex flex-col gap-4">
-          {inviteToken && <input type="hidden" name="invite" value={inviteToken} />}
-          {nextPath && <input type="hidden" name="next" value={nextPath} />}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" autoComplete="email" required />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
-          <Button type="submit" disabled={pending}>
-            {pending ? "Signing in…" : "Sign in"}
-          </Button>
-        </form>
-        {googleEnabled && isGoogleContinueRole(role) && <GoogleButton role={role} />}
+    <div className="flex flex-col gap-6">
+      <AuthHeading title={COPY[role].title} description={COPY[role].description} />
+      <form action={action} className="flex flex-col gap-4">
+        {inviteToken && <input type="hidden" name="invite" value={inviteToken} />}
+        {nextPath && <input type="hidden" name="next" value={nextPath} />}
+        <AuthField>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            required
+          />
+        </AuthField>
+        <AuthField>
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </AuthField>
+        <AuthError message={state.status === "error" ? state.message : undefined} />
+        <Button type="submit" className="w-full" disabled={pending}>
+          {pending && <Spinner />}
+          {pending ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+      {googleEnabled && isGoogleContinueRole(role) && (
+        <>
+          <OrDivider />
+          <GoogleButton role={role} />
+        </>
+      )}
+      <div className="flex flex-col gap-2 border-t border-[#f0f0f0] pt-5 text-center">
         {isSignupRole(role) && (
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-[14px] text-[#525252]">
             New to Venture Path?{" "}
-            <Link href={SIGN_UP_PATHS[role]} className="underline">
+            <Link
+              href={SIGN_UP_PATHS[role]}
+              className="font-medium text-[#121212] underline underline-offset-4"
+            >
               Create {role === "organisation" ? "an organisation" : "an"} account
             </Link>
           </p>
         )}
         {role === "hiring_manager" && (
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-[14px] text-[#525252]">
             Hiring managers join through an invite from their organisation.
           </p>
         )}
         <OtherSignInLinks role={role} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 export function OtherSignInLinks({ role }: { role: Role }) {
   const showSeparator = role !== "user" && role !== "organisation";
   return (
-    <p className="text-center text-xs text-muted-foreground">
+    <p className="text-[13px] text-[#737373]">
       {role !== "user" && (
-        <Link href={SIGN_IN_PATHS.user} className="underline">
+        <Link
+          href={SIGN_IN_PATHS.user}
+          className="underline underline-offset-4 hover:text-[#121212]"
+        >
           User sign in
         </Link>
       )}
       {showSeparator && " · "}
       {role !== "organisation" && (
-        <Link href={SIGN_IN_PATHS.organisation} className="underline">
+        <Link
+          href={SIGN_IN_PATHS.organisation}
+          className="underline underline-offset-4 hover:text-[#121212]"
+        >
           Organisation sign in
         </Link>
       )}

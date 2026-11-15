@@ -1,20 +1,37 @@
+import { Briefcase, Clock, Download, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PageHeader } from "@/components/page-header";
 import { PublicFrame } from "@/components/public-frame";
 import { buttonVariants } from "@/components/ui/button";
 import { getSession } from "@/lib/authz";
-import { daysLeftLabel, formatReward, studentResultLabel } from "@/lib/challenge-schemas";
+import { daysLeft, daysLeftLabel, formatReward, studentResultLabel } from "@/lib/challenge-schemas";
 import { getOwnSubmission, getVisibleChallenge } from "@/lib/challenges";
 import { formatIndiaDateTime } from "@/lib/hiring/time";
 import { getUserProfile } from "@/lib/profiles";
+import { isRole } from "@/lib/roles";
 import { SubmitForm } from "./submit-form";
+
+/** Three days or fewer left: shown in amber. */
+const URGENT_DAYS = 3;
 
 export async function generateMetadata({
   params,
 }: PageProps<"/challenges/[id]">): Promise<Metadata> {
   const challenge = await getVisibleChallenge((await params).id);
   return { title: challenge ? `${challenge.title} · Venture Path` : "Challenge · Venture Path" };
+}
+
+function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-[#e5e5e5] bg-white">
+      <h2 className="border-b border-[#f0f0f0] px-5 py-3.5 text-[15px] font-semibold text-[#121212]">
+        {title}
+      </h2>
+      <div className="px-5 py-4">{children}</div>
+    </section>
+  );
 }
 
 export default async function ChallengePage({ params }: PageProps<"/challenges/[id]">) {
@@ -31,125 +48,214 @@ export default async function ChallengePage({ params }: PageProps<"/challenges/[
     : [null, null];
   const open = challenge.status === "open";
   const result = submission ? studentResultLabel(challenge.status, submission.placement) : null;
+  // Signed-in people get the app shell, which already pads the column.
+  const inApp = Boolean(session && isRole(session.user.role));
+  const urgent = open && daysLeft(challenge.deadline) <= URGENT_DAYS;
+  const hasMoney = challenge.rewardMoneyInr !== null;
+  const reward = hasMoney
+    ? formatReward({ ...challenge, rewardHire: false })
+    : formatReward(challenge);
+  const deadlineClass = urgent ? "text-[#b45309]" : "text-[#737373]";
 
   return (
-    <PublicFrame>
-      <main className="grid gap-8 px-6 py-8 md:grid-cols-[minmax(0,1fr)_360px] md:px-8">
-        <div className="flex min-w-0 flex-col gap-6">
-          <Link href="/challenges" className="text-sm text-[#00994f] underline">
-            All challenges
-          </Link>
-          <header className="flex flex-col gap-1">
-            <h1 className="text-[26px] leading-[1.15] font-medium tracking-tight text-[#121212] lg:text-[32px]">
-              {challenge.title}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {business.businessName} · {business.location}
-            </p>
-          </header>
-          <dl className="grid gap-3 rounded-2xl bg-white p-5 text-sm border border-[#e5e5e5] shadow-card sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground">Reward</dt>
-              <dd className="text-lg font-medium">{formatReward(challenge)}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Deadline</dt>
-              <dd>
-                {formatIndiaDateTime(challenge.deadline)}
-                {open && ` · ${daysLeftLabel(challenge.deadline)}`}
-              </dd>
-            </div>
-          </dl>
-          <section className="flex flex-col gap-2">
-            <h2 className="text-lg font-medium">The problem</h2>
-            <p className="whitespace-pre-line break-words text-sm">{challenge.problem}</p>
-          </section>
-          {challenge.goodSolution && (
-            <section className="flex flex-col gap-2">
-              <h2 className="text-lg font-medium">What a good solution looks like</h2>
-              <p className="whitespace-pre-line break-words text-sm">{challenge.goodSolution}</p>
-            </section>
-          )}
-          {challenge.criteria.length > 0 && (
-            <section className="flex flex-col gap-2">
-              <h2 className="text-lg font-medium">How solutions are judged</h2>
-              <ul className="list-disc pl-5 text-sm">
-                {challenge.criteria.map((criterion) => (
-                  <li key={criterion}>{criterion}</li>
-                ))}
-              </ul>
-            </section>
-          )}
-          {challenge.fileName && (
-            <a href={`/api/challenges/${challenge.id}/file`} className="text-sm underline">
-              Download {challenge.fileName}
-            </a>
-          )}
-        </div>
+    <PublicFrame appShell>
+      <main className={`flex flex-col gap-6 ${inApp ? "" : "px-4 py-8 md:px-8 md:py-10"}`.trim()}>
+        <PageHeader
+          back={{ href: "/challenges", label: "All challenges" }}
+          title={challenge.title}
+          description={`${business.businessName} · ${business.location}`}
+        />
 
-        <section className="flex h-fit min-w-0 flex-col gap-3 rounded-2xl bg-white p-5 border border-[#e5e5e5] shadow-card">
-          <h2 className="text-lg font-medium">
-            {submission ? "Your solution" : "Submit solution"}
-          </h2>
-          {result && (
-            <p className="text-sm">
-              Result: <span className="font-medium">{result}</span>
-            </p>
-          )}
-          {!open && !submission && (
-            <p className="text-sm text-muted-foreground">
-              This challenge is no longer taking solutions.
-            </p>
-          )}
-          {open && !session && (
-            <Link href="/sign-in" className={buttonVariants({ className: "self-start" })}>
-              Sign in to submit
-            </Link>
-          )}
-          {open && session && !isUser && (
-            <p className="text-sm text-muted-foreground">Only students can submit solutions.</p>
-          )}
-          {open && isUser && !profile && (
-            <Link href="/user/profile" className={buttonVariants({ className: "self-start" })}>
-              Create your profile to submit
-            </Link>
-          )}
-          {open && isUser && profile && (
-            <>
-              {submission && (
-                <p className="text-xs text-muted-foreground">
-                  Sent {formatIndiaDateTime(submission.updatedAt)}. You can edit it until the
-                  deadline.
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="flex min-w-0 flex-col gap-6">
+            {/* Phones: the key facts before the long text (the side card comes after it). */}
+            <dl className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white lg:hidden">
+              <div className="border-r border-[#f0f0f0] px-4 py-3">
+                <dt className="text-[12px] text-[#737373]">Reward</dt>
+                <dd className="truncate text-[15px] font-semibold text-[#15803d]">{reward}</dd>
+              </div>
+              <div className="px-4 py-3">
+                <dt className="text-[12px] text-[#737373]">Deadline</dt>
+                <dd
+                  className={`text-[14px] font-medium ${open ? deadlineClass : "text-[#737373]"}`}
+                >
+                  {open ? daysLeftLabel(challenge.deadline) : "Closed"}
+                </dd>
+              </div>
+            </dl>
+
+            <Panel title="The problem">
+              <p className="text-[14px] leading-relaxed break-words whitespace-pre-line text-[#404040]">
+                {challenge.problem}
+              </p>
+            </Panel>
+
+            {challenge.goodSolution && (
+              <Panel title="What a good solution looks like">
+                <p className="text-[14px] leading-relaxed break-words whitespace-pre-line text-[#404040]">
+                  {challenge.goodSolution}
+                </p>
+              </Panel>
+            )}
+
+            {challenge.criteria.length > 0 && (
+              <Panel title="How solutions are judged">
+                <ol className="flex flex-col gap-3">
+                  {challenge.criteria.map((criterion, index) => (
+                    <li key={criterion} className="flex gap-3 text-[14px] text-[#404040]">
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa] text-[12px] font-semibold text-[#404040] tabular-nums">
+                        {index + 1}
+                      </span>
+                      <span className="pt-0.5 leading-relaxed">{criterion}</span>
+                    </li>
+                  ))}
+                </ol>
+              </Panel>
+            )}
+
+            {challenge.fileName && (
+              <a
+                href={`/api/challenges/${challenge.id}/file`}
+                className="group flex items-center gap-3 rounded-xl border border-[#e5e5e5] bg-white px-5 py-3.5 transition-colors hover:bg-[#fafafa]"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#e5e5e5] bg-[#fafafa] text-[#525252]">
+                  <Download aria-hidden className="size-4" />
+                </span>
+                <span className="min-w-0 truncate text-[14px] font-medium text-[#121212] group-hover:underline">
+                  Download {challenge.fileName}
+                </span>
+              </a>
+            )}
+          </div>
+
+          <aside
+            className={`flex min-w-0 flex-col gap-4 lg:sticky ${inApp ? "lg:top-6" : "lg:top-24"}`}
+          >
+            <div className="overflow-hidden rounded-xl border border-[#e5e5e5] bg-white">
+              <dl className="hidden divide-y divide-[#f0f0f0] lg:block">
+                <div className="px-5 py-4">
+                  <dt className="text-[12px] text-[#737373]">Reward</dt>
+                  <dd className="text-[22px] font-semibold tracking-tight text-[#15803d] tabular-nums">
+                    {reward}
+                  </dd>
+                  {hasMoney && challenge.rewardHire && (
+                    <dd className="mt-1 inline-flex items-center gap-1 text-[13px] text-[#404040]">
+                      <Briefcase aria-hidden className="size-3.5" /> Winner may be hired
+                    </dd>
+                  )}
+                </div>
+                <div className="px-5 py-4">
+                  <dt className="text-[12px] text-[#737373]">Deadline</dt>
+                  <dd className="text-[14px] font-medium text-[#121212]">
+                    {formatIndiaDateTime(challenge.deadline)}
+                  </dd>
+                  {open && (
+                    <dd
+                      className={`mt-0.5 inline-flex items-center gap-1 text-[13px] font-medium ${deadlineClass}`}
+                    >
+                      <Clock aria-hidden className="size-3.5" />
+                      {daysLeftLabel(challenge.deadline)}
+                    </dd>
+                  )}
+                </div>
+              </dl>
+              <div className="flex items-center gap-3 border-[#f0f0f0] px-5 py-4 lg:border-t">
+                <span
+                  aria-hidden
+                  className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[#e5e5e5] bg-[#fafafa] text-[14px] font-semibold text-[#404040]"
+                >
+                  {business.businessName.trim().charAt(0).toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[14px] font-medium text-[#121212]">
+                    {business.businessName}
+                  </p>
+                  <p className="flex items-center gap-1 truncate text-[12px] text-[#737373]">
+                    <MapPin aria-hidden className="size-3 shrink-0" />
+                    {business.industry} · {business.location}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <section className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white p-5">
+              <h2 className="text-[15px] font-semibold text-[#121212]">
+                {submission ? "Your solution" : "Submit solution"}
+              </h2>
+              {result && (
+                <p className="rounded-lg bg-[#fafafa] px-3 py-2 text-[14px] text-[#404040]">
+                  Result: <span className="font-semibold text-[#121212]">{result}</span>
                 </p>
               )}
-              <SubmitForm
-                challengeId={challenge.id}
-                initial={
-                  submission
-                    ? {
-                        text: submission.text,
-                        link: submission.link ?? "",
-                        fileName: submission.fileName,
-                        submissionId: submission.id,
-                      }
-                    : null
-                }
-              />
-            </>
-          )}
-          {!open && submission && (
-            <div className="flex flex-col gap-2 text-sm">
-              <p className="line-clamp-6 whitespace-pre-line break-words text-muted-foreground">
-                {submission.text}
-              </p>
-              {submission.fileName && (
-                <a href={`/api/challenge-submissions/${submission.id}/file`} className="underline">
-                  {submission.fileName}
-                </a>
+              {!open && !submission && (
+                <p className="text-[14px] text-[#737373]">
+                  This challenge is no longer taking solutions.
+                </p>
               )}
-            </div>
-          )}
-        </section>
+              {open && !session && (
+                <>
+                  <p className="text-[13px] text-[#737373]">
+                    Sign in with a student account to send your solution.
+                  </p>
+                  <Link href="/sign-in" className={buttonVariants({ className: "w-full" })}>
+                    Sign in to submit
+                  </Link>
+                </>
+              )}
+              {open && session && !isUser && (
+                <p className="text-[14px] text-[#737373]">Only students can submit solutions.</p>
+              )}
+              {open && isUser && !profile && (
+                <>
+                  <p className="text-[13px] text-[#737373]">
+                    Businesses see your profile with your solution.
+                  </p>
+                  <Link href="/user/profile" className={buttonVariants({ className: "w-full" })}>
+                    Create your profile to submit
+                  </Link>
+                </>
+              )}
+              {open && isUser && profile && (
+                <>
+                  {submission && (
+                    <p className="text-[12px] text-[#737373]">
+                      Sent {formatIndiaDateTime(submission.updatedAt)}. You can edit it until the
+                      deadline.
+                    </p>
+                  )}
+                  <SubmitForm
+                    challengeId={challenge.id}
+                    initial={
+                      submission
+                        ? {
+                            text: submission.text,
+                            link: submission.link ?? "",
+                            fileName: submission.fileName,
+                            submissionId: submission.id,
+                          }
+                        : null
+                    }
+                  />
+                </>
+              )}
+              {!open && submission && (
+                <div className="flex flex-col gap-2 text-[14px]">
+                  <p className="line-clamp-6 break-words whitespace-pre-line text-[#525252]">
+                    {submission.text}
+                  </p>
+                  {submission.fileName && (
+                    <a
+                      href={`/api/challenge-submissions/${submission.id}/file`}
+                      className="break-all text-[#121212] underline underline-offset-4"
+                    >
+                      {submission.fileName}
+                    </a>
+                  )}
+                </div>
+              )}
+            </section>
+          </aside>
+        </div>
       </main>
     </PublicFrame>
   );

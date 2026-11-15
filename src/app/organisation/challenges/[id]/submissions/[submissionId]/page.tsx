@@ -1,3 +1,4 @@
+import { AlertTriangle, Download, ExternalLink, Info } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,7 +10,7 @@ import { listOwnPublishedListings } from "@/lib/challenges";
 import { formatIndiaDateTime } from "@/lib/hiring/time";
 import { CHALLENGE_SCORE_MAX } from "@/lib/v2/types";
 import { DecisionPanel } from "../decision-panel";
-import { PLACEMENT_BADGES, ScoreText } from "../score";
+import { PlacementBadge, ScoreText } from "../score";
 
 export const metadata: Metadata = { title: "Submission · Venture Path" };
 
@@ -25,110 +26,134 @@ export default async function SubmissionPage({
   const student = submission.userProfile;
 
   return (
-    <RoleHome title={student.user.name} name={session.user.name}>
-      <Link
-        href={`/organisation/challenges/${challenge.id}/submissions`}
-        className="text-sm text-[#00994f] underline"
-      >
-        All submissions to “{challenge.title}”
-      </Link>
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-muted-foreground">
-              {student.course}, {student.institution} · Submitted{" "}
-              {formatIndiaDateTime(submission.updatedAt)}
-            </span>
-            {submission.placement !== "none" && (
-              <span className="rounded-md bg-[#e6f9ef] px-2 py-0.5 text-xs text-[#00994f]">
-                {PLACEMENT_BADGES[submission.placement]}
-              </span>
+    <RoleHome
+      title={student.user.name}
+      name={session.user.name}
+      back={{
+        href: `/organisation/challenges/${challenge.id}/submissions`,
+        label: `All submissions to “${challenge.title}”`,
+      }}
+      description={`${student.course}, ${student.institution} · Submitted ${formatIndiaDateTime(submission.updatedAt)}`}
+      actions={<PlacementBadge placement={submission.placement} />}
+    >
+      {submission.similarTo && (
+        <p
+          role="status"
+          className="flex items-start gap-2 rounded-xl border border-[#fde68a] bg-[#fffbeb] px-4 py-3 text-[14px] text-[#92400e]"
+        >
+          <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <span>
+            Looks very similar to{" "}
+            <Link
+              href={`/organisation/challenges/${challenge.id}/submissions/${submission.similarTo}`}
+              className="font-medium underline"
+            >
+              another submission
+            </Link>
+            . Compare them before you decide.
+          </span>
+        </p>
+      )}
+
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="min-w-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white">
+          <div className="border-b border-[#f0f0f0] px-5 py-3.5">
+            <h2 className="text-[15px] font-semibold text-[#121212]">Solution</h2>
+          </div>
+          <div className="flex flex-col gap-4 p-5">
+            <p className="text-[15px] leading-relaxed break-words whitespace-pre-line text-[#262626]">
+              {submission.text}
+            </p>
+            {(submission.link || submission.fileName) && (
+              <div className="flex flex-col gap-2 border-t border-[#f0f0f0] pt-4">
+                {submission.link && (
+                  <a
+                    href={submission.link}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="inline-flex min-w-0 items-center gap-2 text-[14px] text-[#15803d] hover:underline"
+                  >
+                    <ExternalLink aria-hidden className="size-4 shrink-0" />
+                    <span className="break-all">{submission.link}</span>
+                  </a>
+                )}
+                {submission.fileName && (
+                  <a
+                    href={`/api/challenge-submissions/${submission.id}/file`}
+                    className="inline-flex items-center gap-2 self-start rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[14px] font-medium text-[#121212] hover:bg-white"
+                  >
+                    <Download aria-hidden className="size-4 shrink-0 text-[#737373]" />
+                    Download {submission.fileName}
+                  </a>
+                )}
+              </div>
             )}
           </div>
-          {submission.similarTo && (
-            <p role="status" className="rounded-md bg-amber-100 p-3 text-sm text-amber-900">
-              Looks very similar to{" "}
-              <Link
-                href={`/organisation/challenges/${challenge.id}/submissions/${submission.similarTo}`}
-                className="underline"
-              >
-                another submission
-              </Link>
-              . Compare them before you decide.
-            </p>
-          )}
+        </section>
 
-          <section className="flex flex-col gap-2">
-            <h2 className="text-lg font-medium">Solution</h2>
-            <p className="whitespace-pre-line break-words text-sm">{submission.text}</p>
-            {submission.link && (
-              <a
-                href={submission.link}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="break-all text-sm underline"
-              >
-                {submission.link}
-              </a>
-            )}
-            {submission.fileName && (
-              <a
-                href={`/api/challenge-submissions/${submission.id}/file`}
-                className="text-sm underline"
-              >
-                Download {submission.fileName}
-              </a>
-            )}
-          </section>
-
-          <section className="flex flex-col gap-3 rounded-2xl bg-white p-5 border border-[#e5e5e5] shadow-card">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-medium">AI breakdown</h2>
+        <div className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-6">
+          <section className="overflow-hidden rounded-xl border border-[#e5e5e5] bg-white">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f0f0f0] px-5 py-3.5">
+              <h2 className="text-[15px] font-semibold text-[#121212]">AI breakdown</h2>
               <ScoreText
                 score={submission.aiScore}
                 status={submission.aiScoreStatus}
                 max={CHALLENGE_SCORE_MAX}
               />
             </div>
-            {submission.aiReason && <p className="text-sm">{submission.aiReason}</p>}
-            {submission.breakdown.length > 0 ? (
-              <ul className="flex flex-col gap-3 text-sm">
-                {submission.breakdown.map((item) => (
-                  <li key={item.criterion} className="flex flex-col gap-1">
-                    <span className="font-medium">
-                      {item.criterion} · {item.score}/{CRITERION_SCORE_MAX}
-                    </span>
-                    {item.quote && (
-                      <span className="italic text-muted-foreground">“{item.quote}”</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {submission.aiScoreStatus === "pending"
-                  ? "AI is still scoring this solution. Reload in a moment."
-                  : "No AI breakdown for this solution. Read it and decide yourself."}
+            <div className="flex flex-col gap-4 p-5">
+              {submission.aiReason && (
+                <p className="text-[14px] text-[#404040]">{submission.aiReason}</p>
+              )}
+              {submission.breakdown.length > 0 ? (
+                <ul className="flex flex-col gap-4">
+                  {submission.breakdown.map((item) => (
+                    <li key={item.criterion} className="flex flex-col gap-1.5">
+                      <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                        <span className="font-medium text-[#121212]">{item.criterion}</span>
+                        <span className="shrink-0 text-[#525252] tabular-nums">
+                          {item.score}/{CRITERION_SCORE_MAX}
+                        </span>
+                      </div>
+                      <div aria-hidden className="h-1.5 overflow-hidden rounded-full bg-[#f0f0f0]">
+                        <div
+                          className="h-full rounded-full bg-[#16a34a]"
+                          style={{ width: `${(item.score / CRITERION_SCORE_MAX) * 100}%` }}
+                        />
+                      </div>
+                      {item.quote && (
+                        <span className="text-[13px] text-[#737373] italic">“{item.quote}”</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[14px] text-[#737373]">
+                  {submission.aiScoreStatus === "pending"
+                    ? "AI is still scoring this solution. Reload in a moment."
+                    : "No AI breakdown for this solution. Read it and decide yourself."}
+                </p>
+              )}
+              <p className="flex items-start gap-1.5 border-t border-[#f0f0f0] pt-3 text-[12px] text-[#737373]">
+                <Info aria-hidden className="mt-px size-3.5 shrink-0" />
+                AI only sorts and explains. Quotes are the student&apos;s own words. You decide.
               </p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              AI only sorts and explains. Quotes are the student&apos;s own words. You decide.
-            </p>
+            </div>
           </section>
-        </div>
 
-        <DecisionPanel
-          challengeId={challenge.id}
-          submissionId={submission.id}
-          challengeStatus={challenge.status}
-          placement={submission.placement}
-          rewardStatus={submission.rewardStatus}
-          rewardMoney={
-            challenge.rewardMoneyInr !== null ? formatInr(challenge.rewardMoneyInr) : null
-          }
-          rewardHire={challenge.rewardHire}
-          listings={listings}
-        />
+          <DecisionPanel
+            challengeId={challenge.id}
+            submissionId={submission.id}
+            challengeStatus={challenge.status}
+            placement={submission.placement}
+            rewardStatus={submission.rewardStatus}
+            rewardMoney={
+              challenge.rewardMoneyInr !== null ? formatInr(challenge.rewardMoneyInr) : null
+            }
+            rewardHire={challenge.rewardHire}
+            listings={listings}
+          />
+        </div>
       </div>
     </RoleHome>
   );

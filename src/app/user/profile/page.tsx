@@ -14,6 +14,12 @@ export default async function UserProfilePage() {
     <RoleHome
       title={profile ? "Edit your profile" : "Create your profile"}
       name={session.user.name}
+      description={
+        profile
+          ? "Businesses see this with every application you send."
+          : "You need a profile to apply. It takes about two minutes."
+      }
+      back={{ href: "/user", label: "Dashboard" }}
     >
       <UserProfileForm
         initial={{

@@ -14,7 +14,12 @@ export default async function NewOpportunityPage() {
   const profile = await getOrganisationProfile(session.user.id);
 
   return (
-    <RoleHome title="New listing" name={session.user.name}>
+    <RoleHome
+      title="New listing"
+      name={session.user.name}
+      description="It's saved as a draft first. Publish it from your listings when you're ready."
+      back={{ href: "/organisation/opportunities", label: "All listings" }}
+    >
       {profile?.status === "approved" ? (
         <OpportunityForm
           minDeadline={todayInIndia()}

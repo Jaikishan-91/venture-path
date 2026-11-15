@@ -45,10 +45,10 @@ function Dialog({
       ref={ref}
       aria-label={title}
       onClose={onClose}
-      className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-2xl p-0 backdrop:bg-black/40"
+      className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border border-[#e5e5e5] p-0 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.35)] backdrop:bg-black/30 backdrop:backdrop-blur-[2px]"
     >
-      <div className="flex flex-col gap-3 p-4">
-        <h2 className="text-base font-medium">{title}</h2>
+      <div className="flex flex-col gap-4 p-5">
+        <h2 className="text-[17px] font-semibold text-[#121212]">{title}</h2>
         {children}
       </div>
     </dialog>
@@ -166,7 +166,8 @@ function NotSelectedForm({
 /**
  * The candidate page's one action bar (H3): the next step ("Move to …" / "Send AI interview" /
  * "Make offer", or the pending offer's "Withdraw offer") and "Not selected" with an optional
- * kind reason. Sticky at the bottom so it stays in reach on a phone.
+ * kind reason. A card in the candidate page's side column on large screens; below that it is
+ * pinned to the bottom of the screen (above the phone tab bar) so it stays in reach.
  */
 export function CandidateActionBar({
   applicationId,
@@ -198,8 +199,11 @@ export function CandidateActionBar({
       <div
         role="region"
         aria-label="Decide"
-        className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-[#e5e5e5] bg-white p-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.35)]"
+        className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+4.75rem)] z-30 flex flex-wrap items-center gap-2 rounded-xl border border-[#e5e5e5] bg-white p-2.5 shadow-[0_10px_30px_-12px_rgb(0_0_0/0.3)] md:right-6 md:bottom-4 md:left-[calc(15rem+1.5rem)] lg:static lg:flex-col lg:items-stretch lg:gap-2 lg:p-4 lg:shadow-none lg:[&_button]:w-full"
       >
+        <p className="hidden text-[12px] font-semibold tracking-wide text-[#737373] uppercase lg:block">
+          Next step
+        </p>
         {(nextStep.kind === "move" || nextStep.kind === "send_ai_interview") && (
           <form action={advanceAction}>
             <input type="hidden" name="applicationId" value={applicationId} />

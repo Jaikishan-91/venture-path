@@ -11,21 +11,27 @@ export default async function AdminSettingsPage() {
   const prompts = await getAllPrompts();
 
   return (
-    <RoleHome title="Settings" name={session.user.name}>
-      <nav className="mb-4">
-        <a href="#prompts" className="text-sm underline">
-          Prompt management
-        </a>
-      </nav>
-
-      <section id="prompts">
-        <h2 className="text-lg font-medium mb-4">LLM Prompts</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Edit the prompts sent to the LLM for each AI-powered feature. Changes take effect
-          immediately. Available placeholders are shown in the template.
-        </p>
-
-        <div className="flex flex-col gap-6">
+    <RoleHome
+      title="Settings"
+      name={session.user.name}
+      description="Platform settings for administrators."
+      back={{ href: "/admin", label: "Dashboard" }}
+    >
+      <section
+        id="prompts"
+        aria-labelledby="prompts-title"
+        className="overflow-hidden rounded-xl border border-[#e5e5e5] bg-white"
+      >
+        <div className="border-b border-[#f0f0f0] px-5 py-4">
+          <h2 id="prompts-title" className="text-[15px] font-semibold text-[#121212]">
+            LLM Prompts
+          </h2>
+          <p className="mt-0.5 max-w-2xl text-[13px] leading-relaxed text-[#737373]">
+            Edit the prompts sent to the LLM for each AI-powered feature. Changes take effect
+            immediately. Available placeholders are shown in the template.
+          </p>
+        </div>
+        <div className="divide-y divide-[#f0f0f0]">
           {prompts.map((prompt) => (
             <PromptEditor key={prompt.key} prompt={prompt} />
           ))}

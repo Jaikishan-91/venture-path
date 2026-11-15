@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { UserRound } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { InterviewFrame } from "@/components/interview/interview-frame";
+import { InterviewFrame, RoomMessage } from "@/components/interview/interview-frame";
+import { buttonVariants } from "@/components/ui/button";
 import { getInterviewForStudent, isInterviewTokenShape } from "@/lib/ai-interview";
 import { getSession } from "@/lib/authz";
 import { InterviewClient } from "./interview-client";
@@ -25,16 +27,20 @@ export default async function InterviewPage({ params }: PageProps<"/interview/[t
   if (wrongAccount) {
     return (
       <InterviewFrame>
-        <section className="my-auto flex flex-col gap-3 py-10">
-          <h1 className="font-heading text-2xl font-medium text-[#121212]">Sign in as a student</h1>
-          <p className="text-sm text-[#737373]">
+        <RoomMessage
+          icon={<UserRound />}
+          title="Sign in as a student"
+          action={
+            <Link href="/dashboard" className={buttonVariants({ variant: "outline" })}>
+              Go to your dashboard
+            </Link>
+          }
+        >
+          <p>
             This interview belongs to a student account. Sign out, then open the link again and sign
             in with the account you applied with.
           </p>
-          <Link href="/dashboard" className="text-sm font-medium text-[#00994f] underline">
-            Go to your dashboard
-          </Link>
-        </section>
+        </RoomMessage>
       </InterviewFrame>
     );
   }

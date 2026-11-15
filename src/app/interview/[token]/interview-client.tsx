@@ -1,10 +1,19 @@
 "use client";
 
-import { CheckCircle2, Clock, ListChecks, RotateCcw, SendHorizontal } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  Link as LinkIcon,
+  ListChecks,
+  MessageSquare,
+  Mic,
+  RotateCcw,
+  SendHorizontal,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { InterviewFrame } from "@/components/interview/interview-frame";
+import { InterviewFrame, RoomMessage } from "@/components/interview/interview-frame";
 import {
   InterviewStage,
   InterviewerOrb,
@@ -13,7 +22,7 @@ import {
 } from "@/components/interview/interview-stage";
 import { MicCheck, type MicStatus } from "@/components/interview/mic-check";
 import { VoiceRoom } from "@/components/interview/voice-room";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { StudentInterviewView } from "@/lib/ai-interview";
 import {
   browserStorage,
@@ -70,24 +79,37 @@ export function InterviewClient({
     case "not_found":
       return (
         <InterviewFrame>
-          <Message title="This interview link isn't valid">
-            Check that you opened the whole link from your email, and that you are signed in with
-            the account you applied with. If you opened the interview from My Applications before,
-            the emailed link was replaced: continue from{" "}
-            <a href="/user/applications" className="underline">
-              My Applications
-            </a>
-            .
-          </Message>
+          <RoomMessage
+            icon={<LinkIcon />}
+            tone="warn"
+            title="This interview link isn't valid"
+            action={<ApplicationsButton />}
+          >
+            <p>
+              Check that you opened the whole link from your email, and that you are signed in with
+              the account you applied with. If you opened the interview from My Applications before,
+              the emailed link was replaced: continue from{" "}
+              <a href="/user/applications" className="font-medium text-[#121212] underline">
+                My Applications
+              </a>
+              .
+            </p>
+          </RoomMessage>
         </InterviewFrame>
       );
     case "expired":
       return (
         <InterviewFrame businessName={view.businessName} listingTitle={view.listingTitle}>
-          <Message title="This interview is closed">
-            The link for {view.listingTitle} at {view.businessName} has expired or is no longer
-            active. Contact the business if you think this is a mistake.
-          </Message>
+          <RoomMessage
+            icon={<Clock />}
+            title="This interview is closed"
+            action={<ApplicationsButton />}
+          >
+            <p>
+              The link for {view.listingTitle} at {view.businessName} has expired or is no longer
+              active. Contact the business if you think this is a mistake.
+            </p>
+          </RoomMessage>
         </InterviewFrame>
       );
     case "done":
@@ -98,7 +120,7 @@ export function InterviewClient({
       );
     case "intro":
       return (
-        <InterviewFrame businessName={view.businessName} listingTitle={view.listingTitle}>
+        <InterviewFrame businessName={view.businessName} listingTitle={view.listingTitle} wide>
           <Intro
             view={view}
             pending={pending}
@@ -126,15 +148,11 @@ export function InterviewClient({
   }
 }
 
-function Message({ title, children }: { title: string; children: React.ReactNode }) {
+function ApplicationsButton() {
   return (
-    <section className="my-auto flex flex-col gap-3 py-10">
-      <h1 className="font-heading text-2xl font-medium text-[#121212]">{title}</h1>
-      <p className="text-sm leading-relaxed text-[#737373]">{children}</p>
-      <Link href={APPLICATIONS_HREF} className="text-sm font-medium text-[#00994f] underline">
-        Go to My Applications
-      </Link>
-    </section>
+    <Link href={APPLICATIONS_HREF} className={buttonVariants()}>
+      Go to My Applications
+    </Link>
   );
 }
 
@@ -142,28 +160,18 @@ function Finished({ businessName }: { businessName: string }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => headingRef.current?.focus(), []);
   return (
-    <section className="my-auto flex flex-col items-center gap-4 py-12 text-center">
-      <CheckCircle2 aria-hidden className="size-14 text-[#00994f]" strokeWidth={1.5} />
-      <h1
-        ref={headingRef}
-        tabIndex={-1}
-        className="font-heading text-3xl font-medium text-[#121212] outline-none"
-      >
-        Submitted ✓
-      </h1>
-      <p className="max-w-sm text-base leading-relaxed text-[#737373]">
-        {businessName} will review it. You&apos;ll get an email when they decide.
-      </p>
-      <p className="max-w-sm text-sm text-[#737373]">
+    <RoomMessage
+      icon={<CheckCircle2 />}
+      tone="success"
+      title="Submitted ✓"
+      headingRef={headingRef}
+      action={<ApplicationsButton />}
+    >
+      <p>{businessName} will review it. You&apos;ll get an email when they decide.</p>
+      <p className="text-[13px] text-[#737373]">
         A person at {businessName} makes the decision, not the AI.
       </p>
-      <Link
-        href={APPLICATIONS_HREF}
-        className="mt-2 inline-flex h-11 items-center rounded-full bg-[#00bf63] px-6 text-sm font-medium text-white transition-colors hover:bg-[#00994f]"
-      >
-        Go to My Applications
-      </Link>
-    </section>
+    </RoomMessage>
   );
 }
 
@@ -186,6 +194,11 @@ const TIPS = [
   },
 ];
 
+const MODES = {
+  voice: { label: "Voice", hint: "Speak your answers", icon: Mic },
+  chat: { label: "Chat", hint: "Type your answers", icon: MessageSquare },
+} as const;
+
 function Intro({
   view,
   pending,
@@ -206,96 +219,111 @@ function Intro({
   const canStart = agreed && !pending && (!voice || mic === "ready");
 
   return (
-    <div className="flex flex-col gap-6 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-      <section className="flex flex-col gap-2">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#00994f]">
-          Before you start
-        </p>
-        <h1
-          ref={headingRef}
-          tabIndex={-1}
-          className="font-heading text-2xl font-medium leading-tight text-[#121212] outline-none sm:text-3xl"
-        >
-          AI interview for {view.listingTitle}
-        </h1>
-        <p className="text-sm text-[#737373]">at {view.businessName}</p>
-        <ul
-          className="mt-2 flex flex-wrap gap-2 text-sm text-[#121212]"
-          aria-label="About this interview"
-        >
-          <Fact icon={<ListChecks className="size-4" />}>{INTERVIEW_QUESTION_COUNT} questions</Fact>
-          <Fact icon={<Clock className="size-4" />}>about 15 minutes</Fact>
-          <Fact icon={<RotateCcw className="size-4" />}>one attempt</Fact>
-        </ul>
-      </section>
+    <div className="grid items-start gap-6 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:py-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10">
+      <div className="flex min-w-0 flex-col gap-6">
+        <section className="flex flex-col gap-2">
+          <p className="text-[13px] font-medium text-[#15803d]">Before you start</p>
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-[#121212] outline-none sm:text-[32px]"
+          >
+            AI interview for {view.listingTitle}
+          </h1>
+          <p className="text-[14px] text-[#737373]">at {view.businessName}</p>
+          <ul
+            className="mt-3 grid grid-cols-3 divide-x divide-[#e5e5e5] overflow-hidden rounded-xl border border-[#e5e5e5] bg-white"
+            aria-label="About this interview"
+          >
+            <Fact icon={<ListChecks />} value={String(INTERVIEW_QUESTION_COUNT)}>
+              questions
+            </Fact>
+            <Fact icon={<Clock />} value="~15">
+              minutes
+            </Fact>
+            <Fact icon={<RotateCcw />} value="1">
+              attempt
+            </Fact>
+          </ul>
+        </section>
 
-      <section className="flex flex-col gap-1.5 text-sm leading-relaxed text-[#737373]">
-        <h2 className="text-sm font-semibold text-[#121212]">What happens</h2>
-        <p>
-          An AI will ask you {INTERVIEW_QUESTION_COUNT} questions about this role, one at a time.{" "}
-          {view.businessName} then reads a short summary of your answers. A person at{" "}
-          {view.businessName} makes the decision, not the AI.
-        </p>
-      </section>
+        <section className="flex flex-col gap-2 rounded-xl border border-[#e5e5e5] bg-white p-5">
+          <h2 className="text-[15px] font-semibold text-[#121212]">What happens</h2>
+          <p className="text-[14px] leading-relaxed text-[#525252]">
+            An AI will ask you {INTERVIEW_QUESTION_COUNT} questions about this role, one at a time.{" "}
+            {view.businessName} then reads a short summary of your answers. A person at{" "}
+            {view.businessName} makes the decision, not the AI.
+          </p>
+        </section>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold text-[#121212]">Tips</h2>
-        <ol className="flex flex-col gap-2">
-          {TIPS.map((tip, index) => (
-            <li
-              key={tip.title}
-              className="flex gap-3 rounded-xl bg-white p-3 border border-[#e5e5e5] shadow-card"
-            >
-              <span
-                aria-hidden
-                className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#00bf63]/10 text-xs font-semibold text-[#00994f]"
-              >
-                {index + 1}
-              </span>
-              <span className="text-sm leading-snug">
-                <span className="font-medium text-[#121212]">{tip.title}.</span>{" "}
-                <span className="text-[#737373]">{tip.text}</span>
-              </span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {view.voiceEnabled ? (
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-sm font-semibold text-[#121212]">
-            How do you want to answer?
-          </legend>
-          <div className="grid grid-cols-2 gap-2">
-            {(["voice", "chat"] as const).map((option) => (
-              <label
-                key={option}
-                className={`flex cursor-pointer flex-col gap-0.5 rounded-xl border bg-white p-3 text-sm transition-colors has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50 motion-reduce:transition-none ${
-                  mode === option ? "border-[#00bf63] ring-1 ring-[#00bf63]" : "border-[#e5e5e5]"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="mode"
-                  value={option}
-                  checked={mode === option}
-                  onChange={() => setMode(option)}
-                  className="sr-only"
-                />
-                <span className="font-medium text-[#121212]">
-                  {option === "chat" ? "💬 Chat" : "🎤 Voice"}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-[15px] font-semibold text-[#121212]">Tips</h2>
+          <ol className="flex flex-col divide-y divide-[#f0f0f0] rounded-xl border border-[#e5e5e5] bg-white">
+            {TIPS.map((tip, index) => (
+              <li key={tip.title} className="flex gap-3 px-5 py-4">
+                <span
+                  aria-hidden
+                  className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#121212] text-[12px] font-semibold text-white tabular-nums"
+                >
+                  {index + 1}
                 </span>
-                <span className="text-xs text-[#737373]">
-                  {option === "chat" ? "Type your answers" : "Speak your answers"}
+                <span className="text-[14px] leading-snug">
+                  <span className="block font-medium text-[#121212]">{tip.title}</span>
+                  <span className="text-[#737373]">{tip.text}</span>
                 </span>
-              </label>
+              </li>
             ))}
-          </div>
-          {voice ? (
-            <div className="mt-1 flex flex-col gap-2">
-              <p className="text-sm text-[#737373]">
-                Find a quiet place, then check your microphone.
-              </p>
+          </ol>
+        </section>
+      </div>
+
+      <aside className="flex flex-col gap-5 rounded-xl border border-[#e5e5e5] bg-white p-5 lg:sticky lg:top-20">
+        <div>
+          <h2 className="text-[17px] font-semibold text-[#121212]">Ready to start</h2>
+          <p className="text-[13px] text-[#737373]">
+            Find a quiet place. You can leave and continue later.
+          </p>
+        </div>
+
+        {view.voiceEnabled ? (
+          <fieldset className="flex flex-col gap-3">
+            <legend className="mb-2 text-[13px] font-medium text-[#121212]">
+              How do you want to answer?
+            </legend>
+            <div className="grid grid-cols-2 gap-2">
+              {(["voice", "chat"] as const).map((option) => {
+                const { label, hint, icon: Icon } = MODES[option];
+                const selected = mode === option;
+                return (
+                  <label
+                    key={option}
+                    className={`flex cursor-pointer flex-col gap-2 rounded-lg border p-3 text-sm transition-colors has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-[#16a34a]/20 motion-reduce:transition-none ${
+                      selected
+                        ? "border-[#16a34a] bg-[#f0fdf4]"
+                        : "border-[#e5e5e5] bg-white hover:border-[#a3a3a3]"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="mode"
+                      value={option}
+                      checked={selected}
+                      onChange={() => setMode(option)}
+                      className="sr-only"
+                    />
+                    <Icon
+                      aria-hidden
+                      className={`size-5 ${selected ? "text-[#15803d]" : "text-[#737373]"}`}
+                    />
+                    <span>
+                      <span className="block font-medium text-[#121212]">{label}</span>
+                      <span className="text-[12px] text-[#737373]">{hint}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            {voice ? (
               <MicCheck
                 onStatus={setMic}
                 onUseChat={() => {
@@ -303,52 +331,65 @@ function Intro({
                   setMic("idle");
                 }}
               />
-            </div>
-          ) : null}
-        </fieldset>
-      ) : null}
-
-      <label className="flex items-start gap-3 rounded-xl bg-white p-3 text-sm leading-snug text-[#121212] border border-[#e5e5e5] shadow-card">
-        <input
-          type="checkbox"
-          className="mt-0.5 size-4 shrink-0 accent-[#00bf63]"
-          checked={agreed}
-          onChange={(event) => setAgreed(event.target.checked)}
-        />
-        <span>
-          I agree that an AI asks me questions and that my answers
-          {view.voiceEnabled
-            ? " (typed, or a text transcript of what I say — audio is not stored)"
-            : ""}{" "}
-          are shared with {view.businessName}. Pasting answers and leaving this tab are noted.
-        </span>
-      </label>
-
-      <div className="flex flex-col gap-2">
-        <Button
-          type="button"
-          size="lg"
-          className="h-12 w-full text-base sm:w-auto sm:self-start sm:px-6"
-          disabled={!canStart}
-          onClick={() => onStart(view.voiceEnabled ? mode : "chat")}
-        >
-          {pending ? "Starting…" : "I agree, start"}
-        </Button>
-        {voice && mic !== "ready" ? (
-          <p className="text-xs text-[#737373]">Check your microphone first, or choose Chat.</p>
+            ) : null}
+          </fieldset>
         ) : null}
-      </div>
+
+        <label className="flex items-start gap-3 rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 text-[13px] leading-snug text-[#404040]">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4 shrink-0 accent-[#16a34a]"
+            checked={agreed}
+            onChange={(event) => setAgreed(event.target.checked)}
+          />
+          <span>
+            I agree that an AI asks me questions and that my answers
+            {view.voiceEnabled
+              ? " (typed, or a text transcript of what I say — audio is not stored)"
+              : ""}{" "}
+            are shared with {view.businessName}. Pasting answers and leaving this tab are noted.
+          </span>
+        </label>
+
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            size="lg"
+            className="w-full"
+            disabled={!canStart}
+            onClick={() => onStart(view.voiceEnabled ? mode : "chat")}
+          >
+            {pending ? "Starting…" : "I agree, start"}
+          </Button>
+          {voice && mic !== "ready" ? (
+            <p className="text-center text-[12px] text-[#737373]">
+              Check your microphone first, or choose Chat.
+            </p>
+          ) : null}
+        </div>
+      </aside>
     </div>
   );
 }
 
-function Fact({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+function Fact({
+  icon,
+  value,
+  children,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  children: React.ReactNode;
+}) {
   return (
-    <li className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 border border-[#e5e5e5] shadow-card">
-      <span aria-hidden className="text-[#00994f]">
+    <li className="flex flex-col gap-1 px-4 py-3">
+      <span aria-hidden className="text-[#a3a3a3] [&_svg]:size-4">
         {icon}
       </span>
-      {children}
+      <span className="text-[14px] text-[#525252]">
+        <span className="text-[20px] font-semibold text-[#121212] tabular-nums">{value}</span>{" "}
+        {children}
+      </span>
     </li>
   );
 }
@@ -525,7 +566,7 @@ function Chat({
                 enterKeyHint="send"
                 placeholder={pending ? "Waiting for the interviewer…" : "Type an answer…"}
                 aria-describedby="answer-hint"
-                className="max-h-48 min-h-12 flex-1 resize-none rounded-[24px] border border-[#d4d4d4] bg-white px-5 py-3 text-base leading-snug shadow-card outline-none transition-colors placeholder:text-[#a3a3a3] focus-visible:border-[#121212] focus-visible:ring-3 focus-visible:ring-[#00bf63]/15 disabled:opacity-60 motion-reduce:transition-none"
+                className="max-h-48 min-h-12 flex-1 resize-none rounded-xl border border-[#d4d4d4] bg-white px-5 py-3 text-base leading-snug shadow-card outline-none transition-colors placeholder:text-[#a3a3a3] focus-visible:border-[#121212] focus-visible:ring-3 focus-visible:ring-[#16a34a]/15 disabled:opacity-60 motion-reduce:transition-none"
                 onChange={(event) => {
                   setText(event.target.value);
                   saveDraft(browserStorage(), token, turns, event.target.value);
@@ -588,7 +629,7 @@ function TypingIndicator() {
         {[0, 150, 300].map((delay) => (
           <span
             key={delay}
-            className="size-1.5 rounded-full bg-[#00bf63]/60 motion-safe:animate-bounce"
+            className="size-1.5 rounded-full bg-[#16a34a]/60 motion-safe:animate-bounce"
             style={{ animationDelay: `${delay}ms` }}
           />
         ))}

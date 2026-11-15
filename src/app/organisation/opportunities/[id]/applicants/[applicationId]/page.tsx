@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight, Download, Mail } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -37,15 +38,33 @@ export const metadata: Metadata = { title: "Candidate · Venture Path" };
 const LIVE_KINDS: readonly StageKind[] = ["interview", "test", "assignment"];
 
 const selectClass =
-  "h-8 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-2.5 text-base md:text-sm";
+  "h-9 min-w-0 flex-1 rounded-lg border border-[#e5e5e5] bg-white px-2.5 text-base md:text-sm";
 
 const OUTCOME_TEXT = { passed: "Passed", failed: "Not selected at", moved: "Moved to" } as const;
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/** A titled panel; `aria-label` keeps it a named region for tests and screen readers. */
+function Section({
+  title,
+  description,
+  children,
+  flush = false,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  /** No inner padding (for lists that draw their own rows). */
+  flush?: boolean;
+}) {
   return (
-    <section aria-label={title} className="flex flex-col gap-2">
-      <h2 className="text-sm font-medium text-[#737373]">{title}</h2>
-      {children}
+    <section
+      aria-label={title}
+      className="min-w-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white"
+    >
+      <div className="border-b border-[#f0f0f0] px-5 py-3.5">
+        <h2 className="text-[15px] font-semibold text-[#121212]">{title}</h2>
+        {description && <p className="text-[13px] text-[#737373]">{description}</p>}
+      </div>
+      <div className={flush ? "" : "flex flex-col gap-3 p-5"}>{children}</div>
     </section>
   );
 }
@@ -123,186 +142,270 @@ export default async function CandidatePage({
       : []),
   ].sort((a, b) => a.at.getTime() - b.at.getTime());
 
+  const navClass = buttonVariants({ variant: "outline", size: "sm" });
+
   return (
-    <RoleHome title={name} name={session.user.name}>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <Link href={boardHref(basePath, { tab, sort: query.sort })} className="underline">
-          ← {opportunity.title}
-        </Link>
-        <div className="flex gap-2">
-          {around.previous ? (
-            <Link
-              href={`${basePath}/${around.previous}${linkQuery}`}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              ← Previous
-            </Link>
-          ) : null}
-          {around.next ? (
-            <Link
-              href={`${basePath}/${around.next}${linkQuery}`}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              Next →
-            </Link>
-          ) : null}
-        </div>
-      </div>
-
-      <header className="flex flex-col gap-2 rounded-xl border border-[#e5e5e5] bg-white p-4">
-        <p className="text-sm text-[#737373]">
-          {candidate.userProfile.course}, {candidate.userProfile.institution}
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          <StagePill label={tabLabel} />
-          {candidate.offerStatus && <OfferChip status={candidate.offerStatus} />}
-          <ScreeningChip score={row.screeningScore} />
-          <InterviewChip interview={row.interview} />
-        </div>
-        <p className="text-sm text-[#737373]">Applied {formatIndiaDateTime(candidate.appliedAt)}</p>
-        {/* Contact only once hired (ADR-013 rule kept). */}
-        {candidate.status === "accepted" && (
-          <p className="text-sm">Email: {candidate.userProfile.user.email}</p>
-        )}
-        {candidate.userProfile.skills.length > 0 && (
-          <p className="text-sm">{candidate.userProfile.skills.join(", ")}</p>
-        )}
-        {candidate.note && <p className="text-sm whitespace-pre-line">{candidate.note}</p>}
-        {candidate.resumeFileName && (
-          <a href={`/api/applications/${candidate.id}/resume`} className="w-fit text-sm underline">
-            Download {candidate.resumeFileName}
-          </a>
-        )}
-        {candidate.offerStatus && candidate.offerMessage && (
-          <div className="flex flex-col gap-1 rounded-lg bg-[#f5f5f5] p-3 text-sm">
-            <p className="font-medium">Your offer</p>
-            <p className="whitespace-pre-line">{candidate.offerMessage}</p>
-            {formatStipend(candidate.offerStipendInr) && (
-              <p>Stipend: {formatStipend(candidate.offerStipendInr)}</p>
-            )}
-            {formatStartDate(candidate.offerStartDate) && (
-              <p>Start date: {formatStartDate(candidate.offerStartDate)}</p>
-            )}
-          </div>
-        )}
-        {candidate.status === "rejected" && candidate.notSelectedReason && (
-          <p className="text-sm text-[#737373]">Note sent: {candidate.notSelectedReason}</p>
-        )}
-      </header>
-
-      {candidate.proofs.length > 0 && (
-        <Section title="Proof">
-          {candidate.proofs.map((proof) => (
-            <ProofCard key={proof.id} proof={proof} compact />
-          ))}
-        </Section>
-      )}
-
-      {/* The report panel has its own heading. */}
-      {interview && <AiInterviewSection interview={interview} />}
-
-      <ResumeAnalysis
-        applicationId={candidate.id}
-        analysis={candidate.analysis}
-        answers={candidate.answers}
-        canReanalyze={canReanalyze}
-        proofOnly={!candidate.resumeFileName}
-        showAnswers={false}
-      />
-
-      {(atLiveStage || candidateEvents.length > 0) && (
-        <Section title="Live interview">
-          {atLiveStage && currentStage && (
-            <ScheduleForm
-              applicationId={candidate.id}
-              stageId={currentStage.id}
-              defaultDuration={currentStage.durationMinutes ?? DEFAULT_DURATION_MINUTES}
-              interviewerOptions={interviewerOptions}
-            />
-          )}
-          {candidateEvents.length > 0 && (
-            <ScheduledEventsList events={candidateEvents} interviewerOptions={interviewerOptions} />
-          )}
-          {candidateEvents.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">Interviewer feedback</p>
-              <FeedbackList items={feedback[applicationId] ?? []} />
-            </div>
-          )}
-        </Section>
-      )}
-
-      {candidate.answers.length > 0 && (
-        <Section title="Screening answers">
-          <ol className="flex flex-col gap-3 rounded-xl border border-[#e5e5e5] bg-white p-4 text-sm">
-            {candidate.answers.map((answer, index) => (
-              <li key={answer.id} className="flex min-w-0 flex-col gap-1">
-                <p className="font-medium break-words">
-                  {index + 1}. {answer.question.prompt}
-                </p>
-                <p className="whitespace-pre-line break-words">{answer.answer}</p>
-                {(answer.score !== null || answer.feedback) && (
-                  <p className="text-xs text-[#737373]">
-                    {answer.score !== null && `AI score ${answer.score}`}
-                    {answer.score !== null && answer.feedback && " · "}
-                    {answer.feedback}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ol>
-        </Section>
-      )}
-
-      <Section title="Timeline">
-        <ol className="flex flex-col gap-1.5 rounded-xl border border-[#e5e5e5] bg-white p-4 text-sm">
-          {timeline.map((item, index) => (
-            <li key={index} className="flex flex-wrap gap-x-2">
-              <span className="text-[#737373] tabular-nums">{formatIndiaDateTime(item.at)}</span>
-              <span>{item.text}</span>
-            </li>
-          ))}
-        </ol>
-        {submitted && board.stages.length > 0 && candidate.offerStatus !== "pending" && (
-          <details className="text-sm">
-            <summary className="cursor-pointer text-[#737373] underline">
-              Move to a different step
-            </summary>
-            <form action={moveAction} className="mt-2 flex max-w-md gap-2">
-              <input type="hidden" name="applicationId" value={candidate.id} />
-              <input type="hidden" name="expectedStageId" value={candidate.currentStageId ?? ""} />
-              <select
-                name="targetStageId"
-                defaultValue=""
-                className={selectClass}
-                aria-label="Move to step"
+    <RoleHome
+      title={name}
+      name={session.user.name}
+      back={{ href: boardHref(basePath, { tab, sort: query.sort }), label: opportunity.title }}
+      description={`${candidate.userProfile.course}, ${candidate.userProfile.institution}`}
+      actions={
+        around.previous || around.next ? (
+          <nav aria-label="Candidates in this step" className="flex gap-2">
+            {around.previous ? (
+              <Link href={`${basePath}/${around.previous}${linkQuery}`} className={navClass}>
+                <ChevronLeft data-icon="inline-start" />
+                Previous
+              </Link>
+            ) : null}
+            {around.next ? (
+              <Link href={`${basePath}/${around.next}${linkQuery}`} className={navClass}>
+                Next
+                <ChevronRight data-icon="inline-end" />
+              </Link>
+            ) : null}
+          </nav>
+        ) : undefined
+      }
+    >
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <section
+            aria-label="Application"
+            className="flex min-w-0 flex-col gap-4 rounded-xl border border-[#e5e5e5] bg-white p-5"
+          >
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden
+                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#121212] text-[15px] font-semibold text-white"
               >
-                <option value="" disabled>
-                  Choose a step…
-                </option>
-                <option value="applied">Applied</option>
-                {board.stages.map((stage) => (
-                  <option key={stage.id} value={stage.id}>
-                    {stage.name}
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className={buttonVariants({ variant: "outline", size: "sm" })}>
-                Move
-              </button>
-            </form>
-          </details>
-        )}
-      </Section>
+                {name.trim().charAt(0).toUpperCase()}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="flex flex-wrap gap-1.5">
+                  <StagePill label={tabLabel} />
+                  {candidate.offerStatus && <OfferChip status={candidate.offerStatus} />}
+                  <ScreeningChip score={row.screeningScore} />
+                  <InterviewChip interview={row.interview} />
+                </div>
+                <p className="text-[13px] text-[#737373]">
+                  Applied {formatIndiaDateTime(candidate.appliedAt)}
+                </p>
+              </div>
+            </div>
 
-      <CandidateActionBar
-        applicationId={candidate.id}
-        currentStageId={candidate.currentStageId}
-        nextStep={row.nextStep}
-        canMarkNotSelected={submitted && candidate.offerStatus !== "pending"}
-        openOffer={rawParams.offer === "1"}
-        minStartDate={indiaToday()}
-      />
+            {/* Contact only once hired (ADR-013 rule kept). */}
+            {candidate.status === "accepted" && (
+              <p className="flex items-center gap-2 rounded-lg border border-[#bbf7d0] bg-[#f0fdf4] px-3 py-2 text-[14px] text-[#166534]">
+                <Mail aria-hidden className="size-4 shrink-0" />
+                Email: {candidate.userProfile.user.email}
+              </p>
+            )}
+
+            {candidate.userProfile.skills.length > 0 && (
+              <ul aria-label="Skills" className="flex flex-wrap gap-1.5">
+                {candidate.userProfile.skills.map((skill) => (
+                  <li
+                    key={skill}
+                    className="rounded-md border border-[#e5e5e5] px-2 py-0.5 text-[12px] text-[#404040]"
+                  >
+                    {skill}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {candidate.note && (
+              <div className="flex flex-col gap-1">
+                <p className="text-[12px] font-semibold tracking-wide text-[#737373] uppercase">
+                  Note from the candidate
+                </p>
+                <p className="text-[14px] leading-relaxed whitespace-pre-line text-[#262626]">
+                  {candidate.note}
+                </p>
+              </div>
+            )}
+
+            {candidate.resumeFileName && (
+              <a
+                href={`/api/applications/${candidate.id}/resume`}
+                className="inline-flex w-fit items-center gap-2 rounded-lg border border-[#e5e5e5] px-3 py-2 text-[13px] font-medium text-[#121212] transition-colors hover:bg-[#fafafa]"
+              >
+                <Download aria-hidden className="size-4 text-[#737373]" />
+                Download {candidate.resumeFileName}
+              </a>
+            )}
+
+            {candidate.offerStatus && candidate.offerMessage && (
+              <div className="flex flex-col gap-1.5 rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-4 text-[14px]">
+                <p className="font-semibold text-[#121212]">Your offer</p>
+                <p className="whitespace-pre-line text-[#404040]">{candidate.offerMessage}</p>
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-[#525252]">
+                  {formatStipend(candidate.offerStipendInr) && (
+                    <p>Stipend: {formatStipend(candidate.offerStipendInr)}</p>
+                  )}
+                  {formatStartDate(candidate.offerStartDate) && (
+                    <p>Start date: {formatStartDate(candidate.offerStartDate)}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {candidate.status === "rejected" && candidate.notSelectedReason && (
+              <p className="text-[13px] text-[#737373]">Note sent: {candidate.notSelectedReason}</p>
+            )}
+          </section>
+
+          {candidate.proofs.length > 0 && (
+            <Section
+              title="Proof"
+              description={`${candidate.proofs.length} ${candidate.proofs.length === 1 ? "card" : "cards"} attached`}
+            >
+              {candidate.proofs.map((proof) => (
+                <ProofCard key={proof.id} proof={proof} compact />
+              ))}
+            </Section>
+          )}
+
+          {/* The report panel has its own heading. */}
+          {interview && <AiInterviewSection interview={interview} />}
+
+          <ResumeAnalysis
+            applicationId={candidate.id}
+            analysis={candidate.analysis}
+            answers={candidate.answers}
+            canReanalyze={canReanalyze}
+            proofOnly={!candidate.resumeFileName}
+            showAnswers={false}
+          />
+
+          {(atLiveStage || candidateEvents.length > 0) && (
+            <Section title="Live interview">
+              {atLiveStage && currentStage && (
+                <ScheduleForm
+                  applicationId={candidate.id}
+                  stageId={currentStage.id}
+                  defaultDuration={currentStage.durationMinutes ?? DEFAULT_DURATION_MINUTES}
+                  interviewerOptions={interviewerOptions}
+                />
+              )}
+              {candidateEvents.length > 0 && (
+                <ScheduledEventsList
+                  events={candidateEvents}
+                  interviewerOptions={interviewerOptions}
+                />
+              )}
+              {candidateEvents.length > 0 && (
+                <div className="flex flex-col gap-2 border-t border-[#f0f0f0] pt-3">
+                  <p className="text-[12px] font-semibold tracking-wide text-[#737373] uppercase">
+                    Interviewer feedback
+                  </p>
+                  <FeedbackList items={feedback[applicationId] ?? []} />
+                </div>
+              )}
+            </Section>
+          )}
+
+          {candidate.answers.length > 0 && (
+            <Section title="Screening answers" flush>
+              <ol className="flex flex-col divide-y divide-[#f0f0f0] text-[14px]">
+                {candidate.answers.map((answer, index) => (
+                  <li key={answer.id} className="flex min-w-0 flex-col gap-1.5 px-5 py-4">
+                    <p className="font-medium break-words text-[#121212]">
+                      <span className="text-[#a3a3a3] tabular-nums">{index + 1}.</span>{" "}
+                      {answer.question.prompt}
+                    </p>
+                    <p className="leading-relaxed whitespace-pre-line break-words text-[#404040]">
+                      {answer.answer}
+                    </p>
+                    {(answer.score !== null || answer.feedback) && (
+                      <p className="text-[12px] text-[#737373]">
+                        {answer.score !== null && (
+                          <span className="font-medium text-[#525252]">
+                            AI score {answer.score}
+                          </span>
+                        )}
+                        {answer.score !== null && answer.feedback && " · "}
+                        {answer.feedback}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </Section>
+          )}
+        </div>
+
+        <aside className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-6">
+          <CandidateActionBar
+            applicationId={candidate.id}
+            currentStageId={candidate.currentStageId}
+            nextStep={row.nextStep}
+            canMarkNotSelected={submitted && candidate.offerStatus !== "pending"}
+            openOffer={rawParams.offer === "1"}
+            minStartDate={indiaToday()}
+          />
+
+          <Section title="Timeline">
+            <ol className="relative flex flex-col gap-3 pl-4 text-[13px] before:absolute before:top-1.5 before:bottom-1.5 before:left-[3px] before:w-px before:bg-[#e5e5e5]">
+              {timeline.map((item, index) => (
+                <li key={index} className="relative flex flex-col">
+                  <span
+                    aria-hidden
+                    className={`absolute top-1.5 -left-4 size-[7px] rounded-full ${
+                      index === timeline.length - 1 ? "bg-[#16a34a]" : "bg-[#d4d4d4]"
+                    }`}
+                  />
+                  <span className="font-medium text-[#121212]">{item.text}</span>
+                  <span className="text-[12px] text-[#737373] tabular-nums">
+                    {formatIndiaDateTime(item.at)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            {submitted && board.stages.length > 0 && candidate.offerStatus !== "pending" && (
+              <details className="border-t border-[#f0f0f0] pt-3 text-sm">
+                <summary className="cursor-pointer text-[13px] font-medium text-[#525252] hover:text-[#121212]">
+                  Move to a different step
+                </summary>
+                <form action={moveAction} className="mt-2 flex gap-2">
+                  <input type="hidden" name="applicationId" value={candidate.id} />
+                  <input
+                    type="hidden"
+                    name="expectedStageId"
+                    value={candidate.currentStageId ?? ""}
+                  />
+                  <select
+                    name="targetStageId"
+                    defaultValue=""
+                    className={selectClass}
+                    aria-label="Move to step"
+                  >
+                    <option value="" disabled>
+                      Choose a step…
+                    </option>
+                    <option value="applied">Applied</option>
+                    {board.stages.map((stage) => (
+                      <option key={stage.id} value={stage.id}>
+                        {stage.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                  >
+                    Move
+                  </button>
+                </form>
+              </details>
+            )}
+          </Section>
+        </aside>
+      </div>
+      {/* Room for the action bar pinned to the bottom on smaller screens. */}
+      {row.nextStep.kind !== "none" && <div aria-hidden className="h-16 lg:hidden" />}
     </RoleHome>
   );
 }

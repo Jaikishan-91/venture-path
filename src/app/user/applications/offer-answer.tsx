@@ -17,29 +17,32 @@ export function OfferAnswer({
   if (answer === null) {
     return (
       <div className="flex flex-wrap gap-2">
-        <Button type="button" onClick={() => setAnswer("accept")}>
+        <Button type="button" size="sm" onClick={() => setAnswer("accept")}>
           Accept
         </Button>
-        <Button type="button" variant="outline" onClick={() => setAnswer("decline")}>
+        <Button type="button" size="sm" variant="outline" onClick={() => setAnswer("decline")}>
           Decline
         </Button>
       </div>
     );
   }
   return (
-    <form action={respondToOfferAction} className="flex flex-col gap-2">
+    <form
+      action={respondToOfferAction}
+      className="flex flex-col gap-2.5 rounded-lg border border-[#e5e5e5] bg-white p-3"
+    >
       <input type="hidden" name="applicationId" value={applicationId} />
       <input type="hidden" name="answer" value={answer} />
-      <p className="font-medium">
+      <p className="text-[13px] font-medium text-[#121212]">
         {answer === "accept"
           ? `Accept ${business}'s offer? They'll get your email address.`
           : `Decline ${business}'s offer? This can't be undone.`}
       </p>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" variant={answer === "accept" ? "default" : "destructive"}>
+        <Button type="submit" size="sm" variant={answer === "accept" ? "default" : "destructive"}>
           {answer === "accept" ? "Yes, accept" : "Yes, decline"}
         </Button>
-        <Button type="button" variant="ghost" onClick={() => setAnswer(null)}>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setAnswer(null)}>
           Go back
         </Button>
       </div>

@@ -11,7 +11,7 @@ test("a fresh organisation sees the create-profile prompt, not dashboard stats",
   page,
 }) => {
   await signUpVerified(page, "organisation", uniqueEmail("dashboard-organisation-fresh"));
-  await expect(page.getByRole("heading", { name: "Organisation dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Welcome/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create profile" })).toHaveAttribute(
     "href",
     "/organisation/profile",
@@ -26,7 +26,7 @@ test("a pending organisation sees the awaiting-review status and stats", async (
     `Pending Dashboard Co ${randomUUID().slice(0, 8)}`,
   );
 
-  await expect(page.getByRole("heading", { name: "Organisation dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Welcome/ })).toBeVisible();
   await expect(page.getByRole("status")).toContainText("Awaiting review");
   await expect(page.getByRole("status")).toHaveCount(1);
   const summary = page.getByRole("group", { name: "Summary" });

@@ -8,7 +8,7 @@ import { assistOpportunityAction } from "./actions";
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="outline" size="sm" disabled={pending} className="self-start">
+    <Button type="submit" variant="outline" size="sm" disabled={pending} className="shrink-0">
       <Sparkles strokeWidth={1.75} aria-hidden />
       {pending ? "Asking AI…" : "Suggest with AI"}
     </Button>
@@ -20,12 +20,19 @@ export function AiSuggest({ id, canDraftQuestions }: { id: string; canDraftQuest
   return (
     <form
       action={assistOpportunityAction}
-      className="flex flex-col gap-2 rounded-xl bg-[#f5f5f5] p-3 sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-3 rounded-xl border border-[#e5e5e5] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <input type="hidden" name="id" value={id} />
-      <p className="text-sm text-[#737373]">
-        AI adds missing skills from your description
-        {canDraftQuestions ? " and drafts screening questions" : ""}. Save your edits first.
+      <p className="flex items-start gap-2.5 text-[13px] text-[#525252]">
+        <Sparkles
+          aria-hidden
+          strokeWidth={1.75}
+          className="mt-0.5 size-4 shrink-0 text-[#a3a3a3]"
+        />
+        <span>
+          AI adds missing skills from your description
+          {canDraftQuestions ? " and drafts screening questions" : ""}. Save your edits first.
+        </span>
       </p>
       <SubmitButton />
     </form>
