@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-22 — Arcane Docker UI (ADR-052)
+
+Added:
+- Arcane service in `docker-compose.yml` (http://localhost:3552, loopback only), `arcane-data` volume, `ARCANE_ENCRYPTION_KEY` in `.env.example`, README service table entry.
+
+Verified: `docker compose config` passes; image tag v3.1.1 exists on GHCR. Not started locally (Docker daemon was not running).
+
 ## 2026-11-15 — Cleaner, simpler UI (ADR-051)
 
 Changed:

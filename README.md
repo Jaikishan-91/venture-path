@@ -14,7 +14,7 @@ Project docs live in `docs/`; plans live in `plan/`.
 ```bash
 cp .env.example .env        # PowerShell: Copy-Item .env.example .env
 # In .env set BETTER_AUTH_SECRET (command in the file) and ADMIN_PASSWORD (12+ characters).
-docker compose up -d        # Postgres, Loki, Grafana, Mailpit
+docker compose up -d        # Postgres, Loki, Grafana, Mailpit, pgAdmin, Arcane
 npm install                 # also generates the Prisma client
 npx prisma migrate dev      # create the database tables
 npm run db:seed             # create the admin account from ADMIN_EMAIL / ADMIN_PASSWORD
@@ -53,6 +53,7 @@ Sign up at `/sign-up`; the verification email lands in Mailpit (http://localhost
 | Loki       | http://localhost:3100        | Readiness: `/ready`                     |
 | PostgreSQL | localhost:5432               | pgvector image; credentials from `.env` |
 | Mailpit    | http://localhost:8025        | Catches outgoing email (SMTP on 1025)   |
+| Arcane     | http://localhost:3552        | Docker UI; user `arcane`, first password via `docker compose cp arcane:/app/data/initial-admin-password .` |
 
 All service ports bind to `127.0.0.1` only.
 
@@ -86,7 +87,7 @@ docker compose run --rm next npx prisma migrate deploy   # once, and after new m
 docker compose run --rm next npm run db:seed
 ```
 
-The app builds as a standalone Next.js server; code changes need a rebuild. The `hf-cache` volume keeps the HuggingFace model between restarts. `docker:dev` and `docker:prod` both use port 3000, so run one at a time. Plain `docker compose up -d` starts only Postgres, Loki, Grafana and Mailpit.
+The app builds as a standalone Next.js server; code changes need a rebuild. The `hf-cache` volume keeps the HuggingFace model between restarts. `docker:dev` and `docker:prod` both use port 3000, so run one at a time. Plain `docker compose up -d` starts only Postgres, pgAdmin, Loki, Grafana, Mailpit and Arcane.
 
 ## Scripts
 

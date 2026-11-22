@@ -17,7 +17,7 @@ Components:
 - **Hiring pipelines and interviews** — `src/lib/pipelines.ts` (stages, soft lock), `pipeline-assist.ts` (AI suggestions), `pipeline-progress.ts` (advance, fail, move), `scheduling.ts` (events, emails, calendar sync), `team.ts` (hiring manager invites), `hm-interviews.ts` and `interview-feedback.ts` (hiring manager access and feedback). Shared types and limits in `src/lib/hiring/` (ADR-035 to ADR-037).
 - **Google Calendar (optional)** — `src/lib/google-calendar.ts` creates, updates and cancels events with Meet links on the platform account's calendar through the REST API, when `GOOGLE_CALENDAR_REFRESH_TOKEN` is set (ADR-035).
 - **Logging (pino → pino-loki → Loki → Grafana)** — structured JSON logs with labels `app`, `env`, `level`. Secrets are redacted by path.
-- **Local dev services (Docker Compose)** — Postgres, Loki, Grafana (Loki data source provisioned) and Mailpit. The app itself runs on the host (`npm run dev`), in Docker with live code sync (`npm run docker:dev`, profile `dev`), or as the production image (`npm run docker:prod`, profile `prod`) (ADR-028).
+- **Local dev services (Docker Compose)** — Postgres, Loki, Grafana (Loki data source provisioned), Mailpit and Arcane (Docker management UI, ADR-052). The app itself runs on the host (`npm run dev`), in Docker with live code sync (`npm run docker:dev`, profile `dev`), or as the production image (`npm run docker:prod`, profile `prod`) (ADR-028).
 
 Data Flow:
 User (browser) → Next.js (UI + server logic) → Prisma (`PrismaPg` adapter) → PostgreSQL
@@ -79,7 +79,7 @@ Next.js → pino → stdout (pretty in development) and pino-loki worker thread 
 
 ## Local ports (all bound to 127.0.0.1)
 
-App 3000, Grafana 3001, Loki 3100, PostgreSQL 5432, Mailpit SMTP 1025 and web 8025.
+App 3000, Grafana 3001, Loki 3100, PostgreSQL 5432, Mailpit SMTP 1025 and web 8025, Arcane 3552.
 
 Open architecture decisions (record in `docs/DECISIONS.md` when made):
 - Production hosting / deployment target (local development uses Docker Compose — ADR-008).
